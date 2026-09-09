@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import requests
-
+import base64
 
 # ---------------------------------------------------------
 # הגדרת תצורת עמוד ושפה
@@ -21,7 +21,25 @@ st.set_page_config(
     layout="wide"
 )
 
-# מתג שפה בסרגל הצד
+# פונקציית עזר להמרת תמונה ל־Base64 לצורך הטמעה מדויקת ב־HTML
+def get_base64_of_bin_file(bin_file):
+    if not bin_file or not os.path.exists(bin_file):
+        return ""
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+logo_base64 = get_base64_of_bin_file(logo_path) if logo_path else ""
+
+# ---------------------------------------------------------
+# סרגל צד: לוגו קטן למעלה, ואז מתג שפה
+# ---------------------------------------------------------
+if logo_base64:
+    st.sidebar.markdown(
+        f'<div style="text-align: center; margin-bottom: 1.5rem;"><img src="data:image/png;base64,{logo_base64}" style="width: 100px; height: auto;" /></div>',
+        unsafe_allow_html=True
+    )
+
 st.sidebar.header("🌐 Language / שפה")
 lang = st.sidebar.radio("Select Language / בחר שפה:", ["Hebrew (עברית)", "English"], index=0)
 is_hebrew = (lang == "Hebrew (עברית)")
@@ -49,10 +67,6 @@ if is_hebrew:
         unsafe_allow_html=True
     )
 
-# טעינת הלוגו בסרגל הצד בבטחה
-if logo_path and os.path.exists(logo_path):
-    st.sidebar.image(logo_path, width=180)
-
 # מילון מונחים דו-לשוני מקיף
 T = {
     "caption": "Professional MVP Project Cargo Calculator incorporating Supply Chain Costs, Incoterms, DG Class 9 Compliance, Battery Passports & EPR" if not is_hebrew else "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, Incoterms, רגולציה מלאה, חומ\"ס DG Class 9, דרכון סוללה ואחריות סביבתית",
@@ -78,21 +92,8 @@ T = {
     "site_zip": "Postal / Zip Code:" if not is_hebrew else "מיקוד / קוד דואר:",
 }
 
-# הצגת כותרת ראשית דינמית עם מיקום לוגו מותאם לשפה (מימין בעברית, משמאל באנגלית)
-import base64
-def get_base64_of_bin_file(bin_file):
-    if not bin_file or not os.path.exists(bin_file):
-        return ""
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-logo_base64 = get_base64_of_bin_file(logo_path) if logo_path else ""
-
-if logo_base64:
-    logo_img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 130px; height: auto;" />'
-else:
-    logo_img_tag = '⚡'
+# הצגת כותרת ראשית גדולה ומרשימה בגוף העמוד בהתאם לכיוון השפה
+logo_img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 140px; height: auto;" />' if logo_base64 else '⚡'
 
 if is_hebrew:
     header_html = f"""
@@ -161,7 +162,7 @@ CARRIER_FUEL_SURCHARGES = {
 }
 
 # ---------------------------------------------------------
-# סרגל צד: תרחיש ומטבע
+# סרגל צד: תרחיש ומטבע המשך
 # ---------------------------------------------------------
 st.sidebar.subheader(T["scenario_header"])
 incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"])
