@@ -224,7 +224,7 @@ with tab1:
         
         is_dg = (un_number != "Non-DG / Other")
         if is_dg:
-            st.warning("⚠️ סיווג ה־UN הוא אינדיקטיבי בלבד. יש לאמת מול גיליון בטיחות חומרים (MSDS) ויועץ חומ״ס." if is_hebrew else "⚠️ UN classification is indicative. Confirm with MSDS, dangerous-goods advisor and carrier.")
+           st.markdown('<div dir="rtl" style="text-align: right;">⚠️ סיווג ה־UN הוא אינדיקטיבי בלבד. יש לאמת מול גיליון בטיחות חומרים (MSDS) ויועץ חומ״ס.</div>' if is_hebrew else '⚠️ UN classification is indicative. Confirm with MSDS, dangerous-goods advisor and carrier.', unsafe_allow_html=True)erous-goods advisor and carrier.")
             st.info("ℹ️ DG-related permit costs remain user-controlled and are not automatically zeroed." if not is_hebrew else "ℹ️ עלויות היתרי חומ״ס נשארות בשליטת המשתמש ואינן מתאפסות אוטומטית.")
         
         if cargo_type == "BESS Container (UN3536 Class 9)" and not is_dg:
