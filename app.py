@@ -252,14 +252,19 @@ with tab1:
 
 with tab2:
     st.subheader("Full Supply Chain & Incoterms Allocation" if not is_hebrew else "שרשרת אספקה מלאה והקצאת עלויות לפי Incoterms")
-    st.info(f"💡 Current commercial Incoterm: **{incoterm}**. Defines seller's price scope." if not is_hebrew else f"💡 תנאי הסחר המסחרי: **{incoterm}**. מגדיר את היקף מחיר הספק.")
+    
+    info_msg = (
+        f'<div dir="rtl" style="text-align: right;">💡 תנאי הסחר המסחרי: <b>{incoterm}</b>. מגדיר את היקף מחיר הספק.</div>'
+        if is_hebrew
+        else f'💡 Current commercial Incoterm: <b>{incoterm}</b>. Defines seller\'s price scope.'
+    )
+    st.markdown(info_msg, unsafe_allow_html=True)
 
     col_a, col_b = st.columns(2)
     with col_a:
         selected_carrier = st.selectbox("Shipping Carrier:" if not is_hebrew else "חברת ספנות מובילה:", list(CARRIER_FUEL_SURCHARGES.keys()), index=0)
         base_freight_per_unit = st.number_input("Base Ocean Freight per Container ($):" if not is_hebrew else "מחיר הובלה ימית בסיס ליחידה ($):", value=float(suggested_freight), step=500.0, min_value=0.0)
         
-        # בחירה האם ה־BAF כלול בהובלה הימית הבסיסית או מחושב בנפרד
         baf_included = st.checkbox(
             "Bunker Surcharge (BAF) included in Base Ocean Freight" if not is_hebrew else "תוספת דלק (BAF) כלולה כבר במחיר ההובלה הימית הבסיסי",
             value=False
