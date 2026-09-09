@@ -41,14 +41,13 @@ if is_hebrew:
         unsafe_allow_html=True
     )
 
-# טעינת הלוגו בבטחה
+# טעינת הלוגו בסרגל הצד בבטחה
 logo_path = os.path.join(os.path.dirname(__file__), "logo.png")
 if os.path.exists(logo_path):
     st.sidebar.image(logo_path, width=180)
 
 # מילון מונחים דו-לשוני מקיף
 T = {
-    "title": "⚡ Terra Vol",
     "caption": "Professional MVP Project Cargo Calculator incorporating Supply Chain Costs, Incoterms, DG Class 9 Compliance, Battery Passports & EPR" if not is_hebrew else "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, Incoterms, רגולציה מלאה, חומ\"ס DG Class 9, דרכון סוללה ואחריות סביבתית",
     "scenario_header": "🗂️ Scenario & Incoterm Setup" if not is_hebrew else "🗂️ הגדרות תרחיש ותנאי סחר (Incoterms)",
     "incoterm_label": "Commercial Incoterm (Supplier Scope):" if not is_hebrew else "תנאי סחר מסחרי (אחריות ספק):",
@@ -72,7 +71,12 @@ T = {
     "site_zip": "Postal / Zip Code:" if not is_hebrew else "מיקוד / קוד דואר:",
 }
 
-st.title(T["title"])
+# הצגת הלוגו החדש ככותרת הראשית באפליקציה במקום סמל הברק הישן
+if os.path.exists(logo_path):
+    st.image(logo_path, width=280)
+else:
+    st.title("⚡ Terra Vol")
+
 st.caption(T["caption"])
 
 # ---------------------------------------------------------
