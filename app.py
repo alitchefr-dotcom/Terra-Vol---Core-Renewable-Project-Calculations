@@ -224,13 +224,11 @@ with tab1:
         
         is_dg = (un_number != "Non-DG / Other")
         if is_dg:
-    msg = (
-        '<div dir="rtl" style="text-align: right;">⚠️ סיווג ה־UN הוא אינדיקטיבי בלבד. יש לאמת מול גיליון בטיחות חומרים (MSDS) ויועץ חומ״ס.</div>'
-        if is_hebrew
-        else '⚠️ UN classification is indicative. Confirm with MSDS, dangerous-goods advisor and carrier.'
-    )
+    if is_hebrew:
+        msg = '<div dir="rtl" style="text-align: right;">⚠️ סיווג ה־UN הוא אינדיקטיבי בלבד. יש לאמת מול גיליון בטיחות חומרים (MSDS) ויועץ חומ״ס.</div>'
+    else:
+        msg = '⚠️ UN classification is indicative. Confirm with MSDS, dangerous-goods advisor and carrier.'
     st.markdown(msg, unsafe_allow_html=True)
-    )
     st.markdown(msg, unsafe_allow_html=True)
             "ℹ️ עלויות היתרי חומ״ס נשארות בשליטת המשתמש ואינן מתאפסות אוטומטית.")
         
