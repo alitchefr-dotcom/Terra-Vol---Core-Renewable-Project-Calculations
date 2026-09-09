@@ -72,11 +72,11 @@ T = {
     "site_zip": "Postal / Zip Code:" if not is_hebrew else "מיקוד / קוד דואר:",
 }
 
-# הצגת הלוגו החדש ככותרת הראשית באפליקציה
+# הצגת הלוגו הנקי ללא סמל הברק של Streamlit
 if os.path.exists(logo_path):
     st.image(logo_path, width=280)
 else:
-    st.title("⚡ Terra Vol")
+    st.markdown("<h1>Terra Vol</h1>", unsafe_allow_html=True)
 
 st.caption(T["caption"])
 
