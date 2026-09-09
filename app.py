@@ -7,7 +7,6 @@ import requests
 # ---------------------------------------------------------
 # הגדרת תצורת עמוד ושפה
 # ---------------------------------------------------------
-# בדיקת אפשרויות שמות שונות לקובץ הלוגו
 possible_logo_names = ["logo.png", "logo.png.png", "Logo.png"]
 logo_path = None
 for name in possible_logo_names:
@@ -79,12 +78,38 @@ T = {
     "site_zip": "Postal / Zip Code:" if not is_hebrew else "מיקוד / קוד דואר:",
 }
 
-# הצגת הלוגו הנקי בראש העמוד
-if logo_path and os.path.exists(logo_path):
-    st.image(logo_path, width=280)
-else:
-    st.markdown("<h1>Terra Vol</h1>", unsafe_allow_html=True)
+# הצגת כותרת ראשית דינמית עם מיקום לוגו מותאם לשפה (מימין בעברית, משמאל באנגלית)
+import base64
+def get_base64_of_bin_file(bin_file):
+    if not bin_file or not os.path.exists(bin_file):
+        return ""
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
+logo_base64 = get_base64_of_bin_file(logo_path) if logo_path else ""
+
+if logo_base64:
+    logo_img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 130px; height: auto;" />'
+else:
+    logo_img_tag = '⚡'
+
+if is_hebrew:
+    header_html = f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; direction: rtl; margin-bottom: 0rem;">
+        <h1 style="margin: 0; font-size: 3rem; font-weight: 700;">Terra Vol</h1>
+        <div>{logo_img_tag}</div>
+    </div>
+    """
+else:
+    header_html = f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; direction: ltr; margin-bottom: 0rem;">
+        <h1 style="margin: 0; font-size: 3rem; font-weight: 700;">Terra Vol</h1>
+        <div>{logo_img_tag}</div>
+    </div>
+    """
+
+st.markdown(header_html, unsafe_allow_html=True)
 st.caption(T["caption"])
 
 # ---------------------------------------------------------
