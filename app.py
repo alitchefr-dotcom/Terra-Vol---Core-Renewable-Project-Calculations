@@ -23,17 +23,14 @@ if is_hebrew:
     st.markdown(
         """
         <style>
-        /* יישור כללי של טקסטים ומעטפות ל-RTL */
         .stApp {
             direction: rtl;
             text-align: right;
         }
-        /* התאמת תגיות כותרת וטקסט */
         h1, h2, h3, h4, h5, h6, p, label, div {
             direction: rtl;
             text-align: right;
         }
-        /* יישור תוויות של שדות קלט */
         .stTextInput label, .stSelectbox label, .stNumberInput label {
             direction: rtl;
             text-align: right;
@@ -179,8 +176,10 @@ show_route_optimization = (dest_country != "Israel")
 
 if show_route_optimization:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab5_eu"], T["tab_summary"]])
+    tab_summary = tab6
 else:
-    tab1, tab2, tab3, tab4, tab6 = st.tabs([T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab_summary"]])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab_summary"]])
+    tab_summary = tab5
 
 # =========================================================
 # ממשק משתמש (לשוניות קלט)
@@ -323,7 +322,7 @@ with tab2:
     supplier_quote_available = st.checkbox("Enter actual supplier commercial quote" if not is_hebrew else "הזן הצעת מחיר מסחרית אמיתית מהספק", value=False)
     if supplier_quote_available:
         supplier_quoted_price = st.number_input("Supplier Quoted Price under Selected Incoterm (USD):" if not is_hebrew else "מחיר ספק מוצע תחת תנאי הסחר הנבחר (USD):", min_value=0.0, value=exw_value_usd)
-        st.info("💡 **Supplier Quote Benchmark — not netted against project cost:** Displayed as a benchmark only. Verify which scope components are included or excluded." if not is_hebrew else "💡 **בנצ'מרק הצעת ספק — אינה מופחתת מעלות הפרויקט:** מוצג להשוואה בלבד. יש לאמת אילו רכיבי Scope כלולים ואילו מוחרגים.")
+        st.info("💡 **Supplier Quote Benchmark — not netted against project cost:** Displayed as a benchmark only. Verify which scope components are included or excluded." if not is_hebrew else "💡 **בנצ'מרק הצעת ספק — אינה מופחתת מעלות הפרויקט:** מוצג להשוואה בלבד. יש לאמת אילו רכיבי Scope كلולים ואילו מוחרגים.")
 
 with tab3:
     st.subheader("Port Demurrage, Storage & Inland Drayage" if not is_hebrew else "קנסות נמל, אחסנה חיצונית והובלה יבשתית לאתר")
@@ -563,7 +562,7 @@ if supplier_quote_available and supplier_quoted_price < exw_value_usd:
     st.warning("Supplier quote is below the modeled EXW equipment value. Verify currency, quantity and quote scope." if not is_hebrew else "הצעת הספק נמוכה מערך ה־EXW המחושב. יש לוודא מטבע, כמות והיקף ההצעה.")
 
 # ----- דוח סיכום ובקרה (Tab Summary) -----
-with tab6:
+with tab_summary:
     st.subheader(f"📊 Financial & Regulatory Control Dashboard - {incoterm} ({display_currency})")
     
     m1, m2, m3, m4, m5, m6 = st.columns(6)
