@@ -251,7 +251,12 @@ with tab1:
                 st.warning("⚠️ EXW value per container appears unusually high. Verify pricing." if not is_hebrew else "⚠️ ערך ה־EXW למכולה נראה גבוה באופן חריג. יש לוודא את התמחור.")
 
 with tab2:
-    st.subheader("Full Supply Chain & Incoterms Allocation" if not is_hebrew else "שרשרת אספקה מלאה והקצאת עלויות לפי Incoterms")
+    sub_title_html = (
+        '<div dir="rtl" style="text-align: right; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">שרשרת אספקה מלאה והקצאת עלויות לפי Incoterms</div>'
+        if is_hebrew
+        else '<div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Full Supply Chain & Incoterms Allocation</div>'
+    )
+    st.markdown(sub_title_html, unsafe_allow_html=True)
     
     info_msg = (
         f'<div dir="rtl" style="text-align: right;">💡 תנאי הסחר המסחרי: <b>{incoterm}</b>. מגדיר את היקף מחיר הספק.</div>'
