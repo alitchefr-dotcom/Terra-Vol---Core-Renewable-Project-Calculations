@@ -18,6 +18,32 @@ st.sidebar.header("🌐 Language / שפה")
 lang = st.sidebar.radio("Select Language / בחר שפה:", ["Hebrew (עברית)", "English"], index=0)
 is_hebrew = (lang == "Hebrew (עברית)")
 
+# הזרקת CSS גלובלי ליישור לימין בעברית
+if is_hebrew:
+    st.markdown(
+        """
+        <style>
+        /* יישור כללי של טקסטים ומעטפות ל-RTL */
+        .stApp {
+            direction: rtl;
+            text-align: right;
+        }
+        /* התאמת תגיות כותרת וטקסט */
+        h1, h2, h3, h4, h5, h6, p, label, div {
+            direction: rtl;
+            text-align: right;
+        }
+        /* יישור תוויות של שדות קלט */
+        .stTextInput label, .stSelectbox label, .stNumberInput label {
+            direction: rtl;
+            text-align: right;
+            width: 100%;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
 # טעינת הלוגו בבטחה
 logo_path = os.path.join(os.path.dirname(__file__), "logo.png")
 if os.path.exists(logo_path):
