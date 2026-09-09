@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-
+import requests
 # ---------------------------------------------------------
 # הגדרת תצורת עמוד ושפה
 # ---------------------------------------------------------
@@ -105,8 +105,24 @@ st.sidebar.subheader(T["scenario_header"])
 incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"])
 display_currency = st.sidebar.selectbox(T["currency_label"], ["USD ($)", "EUR (€)", "ILS (₪)"])
 
-usd_to_eur = st.sidebar.number_input("USD to EUR Rate:", value=0.92, step=0.01, min_value=0.0001)
-usd_to_ils = st.sidebar.number_input("USD to ILS Rate:", value=3.70, step=0.01, min_value=0.0001)
+# פונקציה לשליפת שערי חליפין מעודכנים מ־API חינמי
+def fetch_live_exchange_rates():
+    try:
+        response = requests.get("https://api.frankfurter.app/latest?from=USD&to=EUR,ILS", timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            rates = data.get("rates", {})
+            eur_rate = rates.get("EUR", 0.92)
+            ils_rate = rates.get("ILS", 3.70)
+            return eur_rate, ils_rate
+    except Exception:
+        pass
+    return 0.92, 3.70
+
+live_eur, live_ils = fetch_live_exchange_rates()
+
+usd_to_eur = st.sidebar.number_input("USD to EUR Rate:", value=float(live_eur), step=0.01, min_value=0.0001)
+usd_to_ils = st.sidebar.number_input("USD to ILS Rate:", value=float(live_ils), step=0.01, min_value=0.0001)
 
 if usd_to_eur <= 0 or usd_to_ils <= 0:
     st.error("Exchange rates must be greater than zero.")
