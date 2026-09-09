@@ -7,11 +7,18 @@ import requests
 # ---------------------------------------------------------
 # הגדרת תצורת עמוד ושפה
 # ---------------------------------------------------------
-logo_path = os.path.join(os.path.dirname(__file__), "logo.png")
+# בדיקת אפשרויות שמות שונות לקובץ הלוגו
+possible_logo_names = ["logo.png", "logo.png.png", "Logo.png"]
+logo_path = None
+for name in possible_logo_names:
+    full_path = os.path.join(os.path.dirname(__file__), name)
+    if os.path.exists(full_path):
+        logo_path = full_path
+        break
 
 st.set_page_config(
     page_title="Terra Vol",
-    page_icon=logo_path if os.path.exists(logo_path) else "⚡",
+    page_icon=logo_path if logo_path else "⚡",
     layout="wide"
 )
 
@@ -44,7 +51,7 @@ if is_hebrew:
     )
 
 # טעינת הלוגו בסרגל הצד בבטחה
-if os.path.exists(logo_path):
+if logo_path and os.path.exists(logo_path):
     st.sidebar.image(logo_path, width=180)
 
 # מילון מונחים דו-לשוני מקיף
@@ -72,8 +79,8 @@ T = {
     "site_zip": "Postal / Zip Code:" if not is_hebrew else "מיקוד / קוד דואר:",
 }
 
-# הצגת הלוגו הנקי ללא סמל הברק של Streamlit
-if os.path.exists(logo_path):
+# הצגת הלוגו הנקי בראש העמוד
+if logo_path and os.path.exists(logo_path):
     st.image(logo_path, width=280)
 else:
     st.markdown("<h1>Terra Vol</h1>", unsafe_allow_html=True)
