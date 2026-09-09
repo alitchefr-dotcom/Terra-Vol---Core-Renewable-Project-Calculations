@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 import requests
+
+
 # ---------------------------------------------------------
 # הגדרת תצורת עמוד ושפה
 # ---------------------------------------------------------
@@ -124,6 +126,7 @@ live_eur, live_ils = fetch_live_exchange_rates()
 usd_to_eur = st.sidebar.number_input("USD to EUR Rate:", value=float(live_eur), step=0.01, min_value=0.0001)
 usd_to_ils = st.sidebar.number_input("USD to ILS Rate:", value=float(live_ils), step=0.01, min_value=0.0001)
 
+
 if usd_to_eur <= 0 or usd_to_ils <= 0:
     st.error("Exchange rates must be greater than zero.")
     st.stop()
@@ -224,13 +227,13 @@ with tab1:
         
         is_dg = (un_number != "Non-DG / Other")
         if is_dg:
-    if is_hebrew:
-        msg = '<div dir="rtl" style="text-align: right;">⚠️ סיווג ה־UN הוא אינדיקטיבי בלבד. יש לאמת מול גיליון בטיחות חומרים (MSDS) ויועץ חומ״ס.</div>'
-    else:
-        msg = '⚠️ UN classification is indicative. Confirm with MSDS, dangerous-goods advisor and carrier.'
-    st.markdown(msg, unsafe_allow_html=True)
-    st.markdown(msg, unsafe_allow_html=True)
-            "ℹ️ עלויות היתרי חומ״ס נשארות בשליטת המשתמש ואינן מתאפסות אוטומטית.")
+            if is_hebrew:
+                msg = '<div dir="rtl" style="text-align: right;">⚠️ סיווג ה־UN הוא אינדיקטיבי בלבד. יש לאמת מול גיליון בטיחות חומרים (MSDS) ויועץ חומ״ס.</div>'
+            else:
+                msg = '⚠️ UN classification is indicative. Confirm with MSDS, dangerous-goods advisor and carrier.'
+            st.markdown(msg, unsafe_allow_html=True)
+        else:
+            st.info("ℹ️ DG-related permit costs remain user-controlled and are not automatically zeroed." if not is_hebrew else "ℹ️ עלויות היתרי חומ״ס נשארות בשליטת המשתמש ואינן מתאפסות אוטומטית.")
         
         if cargo_type == "BESS Container (UN3536 Class 9)" and not is_dg:
             st.error("BESS cargo is marked as Non-DG. Verify SDS and transport classification." if not is_hebrew else "מטען BESS מסומן כ־Non-DG. יש לאמת את גיליון הבטיחות וסיווג ההובלה.")
