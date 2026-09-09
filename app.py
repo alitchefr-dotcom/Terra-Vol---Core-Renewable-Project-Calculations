@@ -430,21 +430,48 @@ inland_drayage_total_usd = inland_drayage_per_unit * float(container_count)
 if show_route_optimization:
     with tab5:
         display_site = site_address if site_address else ("Unnamed Site" if not is_hebrew else "אתר ללא שם")
-        st.subheader(f"🗺️ Illustrative Route Assumptions ({dest_country})" if not is_hebrew else f"🗺️ הנחות מסלולים אינדיקטיביות ({dest_country})")
+        st.subheader(f"🗺️ Illustrative Route & Port Comparison ({dest_country})" if not is_hebrew else f"🗺️ הנחות מסלולים והשוואת נמלים אינדיקטיבית ({dest_country})")
         st.warning("⚠️ This tab is illustrative only. Route-specific freight, transit time, port fees and customs costs are not separately modeled." if not is_hebrew else "⚠️ לשונית זו היא אינדיקטיבית בלבד. עלויות הובלה, זמן מעבר, אגרות נמל ועלויות מכס אינן מחושבות בנפרד לכל מסלול.")
-        st.caption(f"Route comparison assumptions for site: {display_site} (Note: Values reflect current scenario inputs)" if not is_hebrew else f"הנחות השוואת מסלולים לאתר הפרויקט: {display_site} (הערה: הערכים משקפים את קלטי התרחיש הנוכחיים)")
+        st.caption(f"Route comparison assumptions for site: {display_site} in {dest_country} (Note: Values reflect current scenario inputs)" if not is_hebrew else f"הנחות השוואת מסלולים לאתר הפרויקט: {display_site} ב־{dest_country} (הערה: הערכים משקפים את קלטי התרחיש הנוכחיים)")
         
         col_r1, col_r2 = st.columns(2)
         with col_r1:
-            st.markdown("### 🇧🇬 Route A: via Burgas Port (Bulgaria)")
-            st.markdown(f"* **Ocean Freight:** ~${total_ocean_freight:,.0f}")
-            st.markdown(f"* **Cross-Border Drayage to {display_site}:** ~${inland_drayage_total_usd:,.0f}")
-            st.markdown("* **Key Advantage:** Fast DG Class 9 port clearance")
-        with col_r2:
-            st.markdown("### 🇷🇴 Route B: via Constanța Port (Romania)")
+            if dest_country == "Romania":
+                r1_title = "🇧🇬 Route A: via Burgas Port (Bulgaria)"
+                r1_adv = "Fast DG Class 9 port clearance" if not is_hebrew else "שחרור מהיר מטעני חומ״ס DG Class 9"
+            elif dest_country == "Spain":
+                r1_title = "🇪🇸 Route A: via Mediterranean Ports (Valencia / Barcelona)"
+                r1_adv = "Direct maritime access to southern and central Spain" if not is_hebrew else "גישה ימית ישירה לדרום ולמרכז ספרד"
+            elif dest_country == "Germany":
+                r1_title = "🇩🇪 Route A: via Hamburg / Bremerhaven"
+                r1_adv = "Direct deep-sea container discharge" if not is_hebrew else "פריקת מכולות ישירה בנמלי הים הצפוני"
+            else:
+                r1_title = f"⚓ Route A: Primary Port Entry ({dest_country})"
+                r1_adv = "Standard regional import gateway" if not is_hebrew else "שער יבוא אזורי סטנדרטי"
+
+            st.markdown(f"### {r1_title}")
             st.markdown(f"* **Ocean Freight:** ~${total_ocean_freight:,.0f}")
             st.markdown(f"* **Inland Drayage to {display_site}:** ~${inland_drayage_total_usd:,.0f}")
-            st.markdown("* **Key Advantage:** Direct discharge in destination country")
+            st.markdown(f"* **Key Advantage:** {r1_adv}")
+
+        with col_r2:
+            if dest_country == "Romania":
+                r2_title = "🇷🇴 Route B: via Constanța Port (Romania)"
+                r2_adv = "Direct discharge in destination country" if not is_hebrew else "פריקה ישירה במדינת היעד"
+            elif dest_country == "Spain":
+                r2_title = "🇪🇸 Route B: via Northern Ports (Bilbao / Alternative)"
+                r2_adv = "Alternative gateway for northern project sites" if not is_hebrew else "שער חלופי עבור אתרי פרויקט בצפון המדינה"
+            elif dest_country == "Germany":
+                r2_title = "🇩🇪 Route B: via Rotterdam (Netherlands) Transit"
+                r2_adv = "Alternative multimodal barge / rail connection" if not is_hebrew else "חיבור מולטימודלי חלופי ברכבת או ברג'ים"
+            else:
+                r2_title = f"⚓ Route B: Alternative Gateway"
+                r2_adv = "Alternative regional routing option" if not is_hebrew else "אפשרות ניתוב אזורית חלופית"
+
+            st.markdown(f"### {r2_title}")
+            st.markdown(f"* **Ocean Freight:** ~${total_ocean_freight:,.0f}")
+            st.markdown(f"* **Inland Drayage to {display_site}:** ~${inland_drayage_total_usd:,.0f}")
+            st.markdown(f"* **Key Advantage:** {r2_adv}")
 
 # =========================================================
 # מנוע החישוב הפיננסי המלא (כולל התאמות מע״מ ו־DDP מוקדם)
