@@ -191,16 +191,31 @@ with tab1:
     with col1:
         origin_port = st.selectbox(T["origin_port"], ["Shanghai", "Ningbo", "Shenzhen / Yantian", "Guangzhou / Nansha", "Custom Origin Port"])
         
+        # התאמה דינמית של נמלי יעד לפי מדינת הפרויקט
         if dest_country == "Israel":
-            dest_port = st.selectbox(T["dest_port"], ["Haifa / Ashdod, Israel", "Custom Destination Port"])
+            dest_port_options = ["Haifa / Ashdod, Israel", "Custom Destination Port"]
+        elif dest_country == "Romania":
+            dest_port_options = ["Constanța, Romania", "Burgas, Bulgaria (Transit to Romania)", "Hamburg / Rotterdam, North Europe", "Custom Destination Port"]
+        elif dest_country == "Spain":
+            dest_port_options = ["Valencia / Barcelona, Spain", "Burgas, Bulgaria (Transit)", "Hamburg / Rotterdam, North Europe", "Custom Destination Port"]
+        elif dest_country == "Germany":
+            dest_port_options = ["Hamburg / Bremerhaven, Germany", "Rotterdam, Netherlands", "Custom Destination Port"]
+        elif dest_country == "Italy":
+            dest_port_options = ["Genoa / Trieste, Italy", "Burgas, Bulgaria (Transit)", "Custom Destination Port"]
+        elif dest_country == "Greece":
+            dest_port_options = ["Piraeus / Thessaloniki, Greece", "Custom Destination Port"]
+        elif dest_country == "Poland":
+            dest_port_options = ["Gdansk / Gdynia, Poland", "Hamburg / Rotterdam, North Europe", "Custom Destination Port"]
         else:
-            dest_port = st.selectbox(T["dest_port"], [
-                "Burgas, Bulgaria (Burgas Transit to Romania)", 
+            dest_port_options = [
                 "Constanța, Romania", 
+                "Burgas, Bulgaria (Transit)", 
                 "Piraeus / Thessaloniki, Greece", 
                 "Hamburg / Rotterdam, North Europe", 
                 "Custom Destination Port"
-            ])
+            ]
+            
+        dest_port = st.selectbox(T["dest_port"], dest_port_options)
 
         site_address = st.text_input(T["site_address"], key="site_name_input", placeholder="e.g. Ashalim / Iepurești")
         
@@ -322,7 +337,7 @@ with tab2:
     supplier_quote_available = st.checkbox("Enter actual supplier commercial quote" if not is_hebrew else "הזן הצעת מחיר מסחרית אמיתית מהספק", value=False)
     if supplier_quote_available:
         supplier_quoted_price = st.number_input("Supplier Quoted Price under Selected Incoterm (USD):" if not is_hebrew else "מחיר ספק מוצע תחת תנאי הסחר הנבחר (USD):", min_value=0.0, value=exw_value_usd)
-        st.info("💡 **Supplier Quote Benchmark — not netted against project cost:** Displayed as a benchmark only. Verify which scope components are included or excluded." if not is_hebrew else "💡 **בנצ'מרק הצעת ספק — אינה מופחתת מעלות הפרויקט:** מוצג להשוואה בלבד. יש לאמת אילו רכיבי Scope كلולים ואילו מוחרגים.")
+        st.info("💡 **Supplier Quote Benchmark — not netted against project cost:** Displayed as a benchmark only. Verify which scope components are included or excluded." if not is_hebrew else "💡 **בנצ'מרק הצעת ספק — אינה מופחתת מעלות הפרויקט:** מוצג להשוואה בלבד. יש לאמת אילו רכיבי Scope כלולים ואילו מוחרגים.")
 
 with tab3:
     st.subheader("Port Demurrage, Storage & Inland Drayage" if not is_hebrew else "קנסות נמל, אחסנה חיצונית והובלה יבשתית לאתר")
