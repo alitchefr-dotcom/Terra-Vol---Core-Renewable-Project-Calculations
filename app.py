@@ -7,9 +7,11 @@ import requests
 # ---------------------------------------------------------
 # הגדרת תצורת עמוד ושפה
 # ---------------------------------------------------------
+logo_path = os.path.join(os.path.dirname(__file__), "logo.png")
+
 st.set_page_config(
     page_title="Terra Vol",
-    page_icon="⚡",
+    page_icon=logo_path if os.path.exists(logo_path) else "⚡",
     layout="wide"
 )
 
@@ -42,7 +44,6 @@ if is_hebrew:
     )
 
 # טעינת הלוגו בסרגל הצד בבטחה
-logo_path = os.path.join(os.path.dirname(__file__), "logo.png")
 if os.path.exists(logo_path):
     st.sidebar.image(logo_path, width=180)
 
@@ -71,7 +72,7 @@ T = {
     "site_zip": "Postal / Zip Code:" if not is_hebrew else "מיקוד / קוד דואר:",
 }
 
-# הצגת הלוגו החדש ככותרת הראשית באפליקציה במקום סמל הברק הישן
+# הצגת הלוגו החדש ככותרת הראשית באפליקציה
 if os.path.exists(logo_path):
     st.image(logo_path, width=280)
 else:
