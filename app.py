@@ -38,7 +38,7 @@ if logo_base64:
     )
 
 st.sidebar.header("🌐 Language / שפה")
-lang = st.sidebar.radio("Select Language / بחר שפה:", ["Hebrew (עברית)", "English"], index=0)
+lang = st.sidebar.radio("Select Language / בחר שפה:", ["Hebrew (עברית)", "English"], index=0)
 is_hebrew = (lang == "Hebrew (עברית)")
 
 if is_hebrew:
@@ -53,6 +53,7 @@ if is_hebrew:
         unsafe_allow_html=True
     )
 
+# מילון תרגום מרכזי מורחב
 T = {
     "caption": "Professional MVP Project Cargo Calculator incorporating Supply Chain Costs, Incoterms, DG Compliance & Market Forecasting" if not is_hebrew else "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, Incoterms, רגולציה ותחזית שוק",
     "scenario_header": "🗂️ Scenario, Incoterm & Market Forecast" if not is_hebrew else "🗂️ הגדרות תרחיש, תנאי סחר ותחזית שוק",
@@ -70,6 +71,7 @@ T = {
     "site_address": "Project Site Name / Location:" if not is_hebrew else "שם / מיקום אתר הפרויקט:",
     "site_coords": "GPS Coordinates (Lat, Long):" if not is_hebrew else "קואורדינטות GPS (רוחב, אורך):",
     "site_zip": "Postal / Zip Code:" if not is_hebrew else "מיקוד / קוד דואר:",
+    "exw_val": "EXW Equipment Value (USD):" if not is_hebrew else "ערך ציוד בבית המפעל בסין (EXW USD):",
 }
 
 logo_img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 140px; height: auto;" />' if logo_base64 else '⚡'
@@ -154,13 +156,11 @@ EQUIPMENT_CONFIG = {
     }
 }
 
-# רשימת נמלי מוצא סגורה בסין
 ORIGIN_PORTS = [
     "Shanghai", "Ningbo-Zhoushan", "Shenzhen / Yantian", 
     "Guangzhou / Nansha", "Qingdao", "Tianjin", "Xiamen"
 ]
 
-# רשימת נמלי יעד סגורה ומפורטת (הפרדת נמלים באירופה ובישראל)
 DESTINATION_PORTS = {
     "Israel": [
         "Haifa Port", 
@@ -214,7 +214,7 @@ CARRIER_FUEL_SURCHARGES = {
     "Custom Carrier": {"baf": 450.0, "code": "Custom BAF"}
 }
 
-# סרגל צד: תרחיש, מטבע ומודל תחזית תאריך עתידי (Forecast-by-Date)
+# סרגל צד: תרחיש, מטבע ומנוע תחזית לפי תאריך
 st.sidebar.subheader(T["scenario_header"])
 incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"])
 display_currency = st.sidebar.selectbox(T["currency_label"], ["USD ($)", "EUR (€)", "ILS (₪)"])
@@ -224,7 +224,6 @@ st.sidebar.markdown("📅 **Market Forecast Engine**" if not is_hebrew else "�
 forecast_date = st.sidebar.date_input("Target Delivery Date:" if not is_hebrew else "תאריך יעד למשלוח:", value=date(2027, 6, 30))
 market_scenario = st.sidebar.selectbox("Market Scenario:" if not is_hebrew else "תרחיש שוק:", ["Conservative (+8.0% p.a.)", "Base Market Trend (+4.5% p.a.)", "Optimistic / Stable (0.0%)"])
 
-# חישוב אחוז השפעת זמן בהתבסס על הפרש חודשים מהיום (נוסחת ריבית דריבית מותאמת לשוק)
 today_date = date.today()
 delta_days = (forecast_date - today_date).days
 years_diff = max(0.0, delta_days / 365.25)
@@ -239,6 +238,8 @@ else:
 trend_multiplier = (1.0 + annual_inflation) ** years_diff
 trend_pct = (trend_multiplier - 1.0) * 100.0
 
+# TTL מקוצר ל־300 שניות לניסיון חוזר מהיר במקרה של נפילת API (המלצת קלוד)
+@st.cache_data(ttl=300)
 def fetch_live_exchange_rates():
     try:
         response = requests.get("https://api.frankfurter.app/latest?from=USD&to=EUR,ILS", timeout=5)
@@ -248,9 +249,13 @@ def fetch_live_exchange_rates():
             return rates.get("EUR", 0.92), rates.get("ILS", 3.70)
     except Exception:
         pass
-    return 0.92, 3.70
+    return None, None
 
 live_eur, live_ils = fetch_live_exchange_rates()
+if live_eur is None or live_ils is None:
+    st.sidebar.toast("⚠️ Live exchange rates unavailable. Using default fallback rates.", icon="⚠️")
+    live_eur, live_ils = 0.92, 3.70
+
 usd_to_eur = st.sidebar.number_input("USD to EUR Rate:", value=float(live_eur), step=0.01, min_value=0.0001)
 usd_to_ils = st.sidebar.number_input("USD to ILS Rate:", value=float(live_ils), step=0.01, min_value=0.0001)
 
@@ -293,8 +298,6 @@ with tab1:
     
     with col1:
         origin_port = st.selectbox(T["origin_port"], ORIGIN_PORTS)
-        
-        # בחירת נמל יעד לפי המדינה שנבחרה מתוך מאסטר נמלים מסודר
         available_dest_ports = DESTINATION_PORTS.get(dest_country, DESTINATION_PORTS["Other / Custom"])
         dest_port = st.selectbox(T["dest_port"], available_dest_ports)
 
@@ -315,8 +318,6 @@ with tab1:
         cfg = EQUIPMENT_CONFIG[cargo_type]
         is_bess = cfg["is_bess"]
         
-        # שליפת נתוני HS Code ו-Duty מתוך הקונפיגורציה עם Governance metadata
-        region_key = "Israel" if dest_country == "Israel" else "EU"
         current_duty = cfg["il_duty"] if dest_country == "Israel" else cfg["eu_duty"]
         current_hs = cfg["il_hs"] if dest_country == "Israel" else cfg["eu_hs"]
         
@@ -331,14 +332,17 @@ with tab1:
         capacity_val = st.number_input(cfg["capacity_label"], value=40.0, step=5.0, min_value=0.1)
         
         if is_bess:
-            weight_tier = st.selectbox("Weight Tier (MTS / Ton):" if not is_hebrew else "מדרגת משקל ליחידת BESS (MTS / Ton):", [
-                "Below 27 MTS ($6,300)", "27.0 - 34.9 MTS ($12,600)", "35.0 - 44.9 MTS ($18,375)", "45.0 - 48.0 MTS ($21,000)"
-            ], index=3)
-            suggested_freight = 6300.0 if "Below 27" in weight_tier else (12600.0 if "27.0" in weight_tier else (18375.0 if "35.0" in weight_tier else 21000.0))
+            weight_tier_options = {
+                "Below 27 MTS ($6,300)": 6300.0,
+                "27.0 - 34.9 MTS ($12,600)": 12600.0,
+                "35.0 - 44.9 MTS ($18,375)": 18375.0,
+                "45.0 - 48.0 MTS ($21,000)": 21000.0
+            }
+            weight_tier = st.selectbox("Weight Tier (MTS / Ton):" if not is_hebrew else "מדרגת משקל ליחידת BESS (MTS / Ton):", list(weight_tier_options.keys()), index=3)
+            suggested_freight = weight_tier_options[weight_tier]
         else:
             suggested_freight = cfg["default_freight"]
 
-        # סיווג UN דינמי
         if is_bess:
             un_number = st.selectbox(
                 "UN Number (Dangerous Goods Classification):" if not is_hebrew else "מספר UN (סיווג מטען מסוכן):", 
@@ -352,7 +356,6 @@ with tab1:
         
         is_dg = (un_number != "Non-DG / Other")
 
-        # ניהול EXW ב-Session State למניעת דריסה בעת מעבר בין סוגי ציוד
         if 'last_cargo_type' not in st.session_state:
             st.session_state.last_cargo_type = cargo_type
             st.session_state.exw_user_value = cfg["default_exw"]
@@ -361,7 +364,7 @@ with tab1:
             st.session_state.last_cargo_type = cargo_type
             st.session_state.exw_user_value = cfg["default_exw"]
 
-        exw_value_usd = st.number_input(T.get("exw_val", "EXW Equipment Value (USD):"), value=float(st.session_state.exw_user_value), step=10000.0, min_value=0.0)
+        exw_value_usd = st.number_input(T["exw_val"], value=float(st.session_state.exw_user_value), step=10000.0, min_value=0.0)
         st.session_state.exw_user_value = exw_value_usd
 
 with tab2:
@@ -386,7 +389,7 @@ with tab2:
         insurance_pct = st.number_input("Marine Cargo Insurance Rate (%):" if not is_hebrew else "שיעור ביטוח ימי (%):", value=DEFAULT_INSURANCE_RATES.get(dest_country, 0.08), step=0.01, min_value=0.0, max_value=20.0)
 
 with tab3:
-    st.subheader("Port Demurrage, Storage & Inland Drayage" if not is_hebrew else "קנסות נמל, אחסנה חיצונית והובלה יבשתית לאתר")
+    st.subheader("Port Demurrage, Storage & Inland Drayage" if not is_hebrew else "קנסות נמל, אחסנה חיצונית והובלת אתר")
     col_x, col_y = st.columns(2)
     with col_x:
         free_days = st.number_input("Port Free Days:", value=DEFAULT_FREE_DAYS.get(dest_country, 7), step=1, min_value=0)
@@ -409,7 +412,6 @@ with tab3:
         include_delay_scenario = st.checkbox("Include demurrage and external storage in project cost", value=False)
 
 with tab4:
-    # Tab שם דינמי לפי סוג הציוד (מונע בלבול מושגים כמו Battery Passport בפאנלים סולאריים)
     tab_title_reg = "🛡️ DG Compliance, Battery Passport & EPR" if is_bess else "🛡️ DG Compliance & Product Regulation"
     st.subheader(tab_title_reg)
     
@@ -488,9 +490,10 @@ demurrage_total_usd = float(overdue_days) * demurrage_daily_rate * float(contain
 external_storage_total_usd = (float(ext_storage_days) * ext_storage_daily_rate * float(container_count)) if use_external_storage else 0.0
 
 effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
-active_regulatory_permits = local_regulatory_permits if (local_regulatory_permits and 'include_regulatory' in locals() and include_regulatory) else 0.0
+
+active_regulatory_permits = local_regulatory_permits if include_regulatory else 0.0
 active_site_crane = site_crane_unloading if include_site_crane else 0.0
-active_heavy_lift = heavy_lift_survey if (requires_heavy_lift and include_heavy_lift_toggle) else 0.0
+active_heavy_lift = heavy_lift_survey if requires_heavy_lift else 0.0
 
 project_delivery_cost = (
     ddp_supplier_scope_ex_vat + 
@@ -522,7 +525,6 @@ total_landed_cost_ex_vat = buyer_supply_chain_total + contingency_usd
 economic_cost_ex_vat = total_landed_cost_ex_vat + effective_non_recoverable_vat
 total_cash_requirement_incl_vat = total_landed_cost_ex_vat + effective_vat_cash
 
-# חישוב מדדי יחידה דינמיים לפי יחידת המידה של הציוד (MWh, MWp, MVA וכו')
 metric_name = cfg["unit_metric"]
 total_capacity_units = capacity_val if capacity_val > 0 else 1.0
 operational_logistics_only_usd = china_inland_drayage + china_origin_thc + total_ocean_freight + destination_thc_total + inland_drayage_total_usd
@@ -536,7 +538,6 @@ cash_val, _ = convert_from_usd(total_cash_requirement_incl_vat, display_currency
 econ_val, _ = convert_from_usd(economic_cost_ex_vat, display_currency)
 op_log_display, _ = convert_from_usd(logistics_per_unit_metric, display_currency)
 reg_metric_display, _ = convert_from_usd(regulatory_per_unit_metric, display_currency)
-vat_base_display, _ = convert_from_usd(indicative_vat_base_import_usd, display_currency)
 
 with tab_summary:
     st.subheader(f"📊 Financial & Regulatory Control Dashboard - {incoterm} ({display_currency})")
@@ -554,7 +555,6 @@ with tab_summary:
 
     st.subheader("Detailed Cost Breakdown (USD Base)")
     
-    # בניית רשימת עלויות דינמית המושטת בהתאם לסוג הציוד (מונע הצגת שורות EPR/Passport ריקות בפאנלים)
     cost_labels = [
         "Equipment Value (EXW + Forecast Trend)" if not is_hebrew else "ערך ציוד (כולל תחזית שוק)",
         "China Inland Transport & Export", "China Origin THC & Port Fees",
@@ -600,7 +600,7 @@ with tab_summary:
         label="📥 Export Financial & Regulatory CSV Report" if not is_hebrew else "📥 ייצוא דוח פיננסי ורגולטורי ל-CSV",
         data=csv_data,
         file_name=csv_filename,
-        mime="text/csv"
+        mime="text/csv"  # ← תוקן מ־text/css ל־text/csv לפי הערת קלוד
     )
 
 st.markdown("---")
