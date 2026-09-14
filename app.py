@@ -270,7 +270,18 @@ with tab1:
         else:
             suggested_freight = 3360.0
 
-        un_number = st.selectbox("UN Number (Dangerous Goods Classification):" if not is_hebrew else "מספר UN (סיווג מטען מסוכן):", ["UN3536 (Cargo Transport Unit containing lithium ion batteries)", "UN3480 (Lithium ion batteries)", "UN3481 (Lithium ion batteries packed with equipment)", "Non-DG / Other"])
+        # סיווג UN דינמי לחלוטין בהתאם לסוג הציוד הנבחר
+        if is_bess:
+            un_number = st.selectbox(
+                "UN Number (Dangerous Goods Classification):" if not is_hebrew else "מספר UN (סיווג מטען מסוכן):", 
+                ["UN3536 (Cargo Transport Unit containing lithium ion batteries)", "UN3480 (Lithium ion batteries)", "UN3481 (Lithium ion batteries packed with equipment)", "Non-DG / Other"]
+            )
+        else:
+            un_number = st.selectbox(
+                "UN Number (Dangerous Goods Classification):" if not is_hebrew else "מספר UN (סיווג מטען מסוכן):", 
+                ["Non-DG / Other", "UN3480 (Lithium ion batteries)", "UN3481 (Lithium ion batteries packed with equipment)", "UN3536 (Cargo Transport Unit containing lithium ion batteries)"]
+            )
+        
         is_dg = (un_number != "Non-DG / Other")
 
         exw_value_usd = st.number_input(T["exw_val"], value=500000.0, step=10000.0, min_value=0.0)
