@@ -131,7 +131,6 @@ st.sidebar.subheader(T["scenario_header"])
 incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"])
 display_currency = st.sidebar.selectbox(T["currency_label"], ["USD ($)", "EUR (€)", "ILS (₪)"])
 
-# Price Forecasting / Market Trend Multiplier (BloombergNEF trend alignment)
 price_trend_option = st.sidebar.selectbox(
     "Market Price Trend Horizon / BNEF Adjustment:" if not is_hebrew else "אופק תחזית מחירים בשוק / התאמת BNEF:",
     ["Current Spot (Base 0%)", "Q1/Q2 2027 (+3.5%)", "H2 2027 (+6.0%)", "2028 Long-term Outlook (+10.0%)", "Custom Adjustment %"]
@@ -208,9 +207,14 @@ with tab1:
             ["Shanghai", "Ningbo", "Shenzhen / Yantian", "Guangzhou / Nansha", "Qingdao", "Tianjin", "Xiamen"]
         )
         
-        # רשימה סגורה ומובנית לנמלי יעד לפי מדינה
+        # רשימה סגורה ומובנית לנמלי יעד לפי מדינה (כולל הרחבה מדויקת לישראל)
         if dest_country == "Israel":
-            dest_port_options = ["Haifa Port", "Ashdod Port (South Port / Main)", "Israel Shipyards Port"]
+            dest_port_options = [
+                "Haifa Port", 
+                "Israel Shipyards Port", 
+                "South Port (Ashdod)", 
+                "Israel Petrochemical / Specialized Berths"
+            ]
         elif dest_country == "Romania":
             dest_port_options = ["Constanța, Romania", "Burgas, Bulgaria (Transit to Romania)", "Hamburg / Rotterdam, North Europe"]
         elif dest_country == "Spain":
@@ -243,6 +247,13 @@ with tab1:
         cargo_type = st.selectbox(T["cargo_type"], list(CUSTOMS_DUTIES["EU"].keys()))
         is_bess = (cargo_type == "BESS Container (UN3536 Class 9)")
         
+        # הצגת קוד HS מותאם אישית ודינמי מיד עם בחירת הציוד
+        region_key = "Israel" if dest_country == "Israel" else "EU"
+        current_hs_data = CUSTOMS_DUTIES[region_key].get(cargo_type, {"duty_pct": 0.0, "hs_code": "N/A"})
+        selected_hs_code = current_hs_data["hs_code"]
+        default_duty_pct = current_hs_data["duty_pct"]
+        st.caption(f"📌 **Selected Equipment HS Code:** {selected_hs_code} | **Indicative Duty:** {default_duty_pct}%" if not is_hebrew else f"📌 **קוד HS לציוד הנבחר:** {selected_hs_code} | **מכס אינדיקטיבי:** {default_duty_pct}%")
+
         sub_c1, sub_c2 = st.columns(2)
         with sub_c1:
             system_count = st.number_input(T["system_cnt"], min_value=1, value=10, step=1)
@@ -281,10 +292,8 @@ with tab2:
         china_origin_thc = st.number_input("China Origin THC & Port Fees ($):" if not is_hebrew else "אגרות ותעריפי נמל מוצא בסין (Origin THC סה\"כ):", value=1300.0, step=200.0, min_value=0.0)
         heavy_lift_survey = st.number_input("Heavy Lift / Route Survey ($):" if not is_hebrew else "סקר הנדסי / היטל הובלה חריגה פרויקטלית ($ סה\"כ):", value=2500.0, step=500.0, min_value=0.0)
         
-        region_key = "Israel" if dest_country == "Israel" else "EU"
-        customs_duty_pct = st.number_input("Indicative Import Customs Duty (%):" if not is_hebrew else "שיעור מכס אינדיקטיבי (%):", value=float(CUSTOMS_DUTIES[region_key][cargo_type]["duty_pct"]), step=0.1, min_value=0.0, max_value=100.0)
-        selected_hs_code = CUSTOMS_DUTIES[region_key][cargo_type]["hs_code"]
-        st.caption(f"Country: {dest_country} | HS Code: {selected_hs_code}")
+        customs_duty_pct = st.number_input("Indicative Import Customs Duty (%):" if not is_hebrew else "שיעור מכס אינדיקטיבי (%):", value=float(default_duty_pct), step=0.1, min_value=0.0, max_value=100.0)
+        st.caption(f"Country: {dest_country} | Active HS Code: {selected_hs_code}")
         insurance_pct = st.number_input("Marine Cargo Insurance Rate (%):" if not is_hebrew else "שיעור ביטוח ימי (%):", value=DEFAULT_INSURANCE_RATES.get(dest_country, 0.08), step=0.01, min_value=0.0, max_value=20.0)
 
 with tab3:
@@ -321,7 +330,6 @@ with tab4:
     with col_reg2:
         st.markdown("### ♻️ Battery Passport, EPR & End-of-Life (EoL)")
         
-        # התאמה דינמית מלאה: אם לא מדובר ב־BESS, מנטרלים אוטומטית את עלויות דרכון הסוללה וה־EPR
         if is_bess:
             include_epr = st.checkbox("Include EPR / Recycling cost", value=True)
             include_battery_passport = st.checkbox("Include Battery Passport / Carbon Audit cost", value=True)
