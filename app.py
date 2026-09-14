@@ -53,7 +53,6 @@ if is_hebrew:
         unsafe_allow_html=True
     )
 
-# מילון תרגום מרכזי מורחב
 T = {
     "caption": "Professional MVP Project Cargo Calculator incorporating Supply Chain Costs, Incoterms, DG Compliance & Market Forecasting" if not is_hebrew else "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, Incoterms, רגולציה ותחזית שוק",
     "scenario_header": "🗂️ Scenario, Incoterm & Market Forecast" if not is_hebrew else "🗂️ הגדרות תרחיש, תנאי סחר ותחזית שוק",
@@ -85,9 +84,6 @@ header_html = f"""
 st.markdown(header_html, unsafe_allow_html=True)
 st.caption(T["caption"])
 
-# ---------------------------------------------------------
-# מודל הגדרות ציוד מרכזי (Equipment Configuration Engine)
-# ---------------------------------------------------------
 EQUIPMENT_CONFIG = {
     "BESS Container (UN3536 Class 9)": {
         "code_key": "BESS",
@@ -214,7 +210,6 @@ CARRIER_FUEL_SURCHARGES = {
     "Custom Carrier": {"baf": 450.0, "code": "Custom BAF"}
 }
 
-# סרגל צד: תרחיש, מטבע ומנוע תחזית לפי תאריך
 st.sidebar.subheader(T["scenario_header"])
 incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"])
 display_currency = st.sidebar.selectbox(T["currency_label"], ["USD ($)", "EUR (€)", "ILS (₪)"])
@@ -238,7 +233,6 @@ else:
 trend_multiplier = (1.0 + annual_inflation) ** years_diff
 trend_pct = (trend_multiplier - 1.0) * 100.0
 
-# TTL מקוצר ל־300 שניות לניסיון חוזר מהיר במקרה של נפילת API (המלצת קלוד)
 @st.cache_data(ttl=300)
 def fetch_live_exchange_rates():
     try:
@@ -289,9 +283,6 @@ else:
     tab1, tab2, tab3, tab4, tab5 = st.tabs([T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab_summary"]])
     tab_summary = tab5
 
-# =========================================================
-# ממשק משתמש (לשוניות קלט מבוססות Equipment Config)
-# =========================================================
 with tab1:
     st.subheader("Equipment Specification & Site Destination" if not is_hebrew else "מפרט ציוד, מאפייני פרויקט ומיקום אתר")
     col1, col2 = st.columns(2)
@@ -465,7 +456,7 @@ if show_route_optimization:
         st.markdown(f"* **Inland Drayage to {display_site}:** ~${inland_drayage_total_usd:,.0f}")
 
 # =========================================================
-# מנוע החישוב הפיננסי המלא
+# מנוע החישוב הפיננסי המלא (הטמעת הפרדת Incoterms של קלוד)
 # =========================================================
 cif_valuation_base = trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight
 insurance_total_usd = cif_valuation_base * (insurance_pct / 100.0)
@@ -489,11 +480,11 @@ overdue_days = max(0, actual_port_days - free_days)
 demurrage_total_usd = float(overdue_days) * demurrage_daily_rate * float(container_count)
 external_storage_total_usd = (float(ext_storage_days) * ext_storage_daily_rate * float(container_count)) if use_external_storage else 0.0
 
-effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
-
 active_regulatory_permits = local_regulatory_permits if include_regulatory else 0.0
 active_site_crane = site_crane_unloading if include_site_crane else 0.0
 active_heavy_lift = heavy_lift_survey if requires_heavy_lift else 0.0
+
+effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
 
 project_delivery_cost = (
     ddp_supplier_scope_ex_vat + 
@@ -515,6 +506,10 @@ supplier_commercial_price_options = {
 modeled_supplier_price = supplier_commercial_price_options.get(incoterm, trended_exw)
 supplier_commercial_price = modeled_supplier_price
 
+# יישום ההצעה של קלוד להפרדת תשלום ספק מול תשלום ישיר של הקונה לפי Incoterm
+supplier_scope_total = supplier_commercial_price_options.get(incoterm, trended_exw)
+buyer_direct_payment_usd = max(0.0, project_delivery_cost - supplier_scope_total)
+
 effective_vat_cash = 0.0 if vat_paid_by_supplier else vat_total_usd
 recoverable_vat = vat_total_usd * (vat_recovery_pct / 100.0)
 effective_non_recoverable_vat = 0.0 if vat_paid_by_supplier else (vat_total_usd - recoverable_vat)
@@ -533,7 +528,8 @@ regulatory_only_usd = active_regulatory_permits + battery_passport_total_usd + e
 regulatory_per_unit_metric = regulatory_only_usd / total_capacity_units
 
 display_val, curr_symbol = convert_from_usd(total_landed_cost_ex_vat, display_currency)
-supplier_val, _ = convert_from_usd(supplier_commercial_price, display_currency)
+supplier_val, _ = convert_from_usd(supplier_scope_total, display_currency)
+buyer_direct_val, _ = convert_from_usd(buyer_direct_payment_usd, display_currency)
 cash_val, _ = convert_from_usd(total_cash_requirement_incl_vat, display_currency)
 econ_val, _ = convert_from_usd(economic_cost_ex_vat, display_currency)
 op_log_display, _ = convert_from_usd(logistics_per_unit_metric, display_currency)
@@ -542,13 +538,14 @@ reg_metric_display, _ = convert_from_usd(regulatory_per_unit_metric, display_cur
 with tab_summary:
     st.subheader(f"📊 Financial & Regulatory Control Dashboard - {incoterm} ({display_currency})")
     
-    m1, m2, m3, m4, m5, m6 = st.columns(6)
+    # הצגת 6 מדדים מרכזיים כולל ההפרדה המסחרית החדשה (Paid to Supplier מול Paid Directly by Buyer)
+    m1, m2, m3, m4, m7, m5 = st.columns(6)
     m1.metric("Landed Cost (ex-VAT)", f"{curr_symbol} {display_val:,.2f}")
     m2.metric("Economic Cost", f"{curr_symbol} {econ_val:,.2f}")
-    m3.metric("Total Project Cash Requirement", f"{curr_symbol} {cash_val:,.2f}")
-    m4.metric("Supplier Commercial Price", f"{curr_symbol} {supplier_val:,.2f}")
+    m3.metric("Total Cash Requirement", f"{curr_symbol} {cash_val:,.2f}")
+    m4.metric("Paid to Supplier (Invoice)", f"{curr_symbol} {supplier_val:,.2f}")
+    m7.metric("Paid Directly by Buyer", f"{curr_symbol} {buyer_direct_val:,.2f}")
     m5.metric(f"Logistics / {metric_name}", f"{curr_symbol} {op_log_display:.4f} /{metric_name}")
-    m6.metric(f"Regulatory / {metric_name}", f"{curr_symbol} {reg_metric_display:.4f} /{metric_name}")
 
     st.markdown("---")
     st.info(f"📌 Market Model: Internal Verified Assumptions | Target Date: {forecast_date} | Trend Adjustment: {trend_pct:+.1f}%")
@@ -600,7 +597,7 @@ with tab_summary:
         label="📥 Export Financial & Regulatory CSV Report" if not is_hebrew else "📥 ייצוא דוח פיננסי ורגולטורי ל-CSV",
         data=csv_data,
         file_name=csv_filename,
-        mime="text/csv"  # ← תוקן מ־text/css ל־text/csv לפי הערת קלוד
+        mime="text/csv"
     )
 
 st.markdown("---")
