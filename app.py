@@ -201,13 +201,11 @@ with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        # רשימה סגורה ומובנית לנמלי מוצא בסין
         origin_port = st.selectbox(
             T["origin_port"], 
             ["Shanghai", "Ningbo", "Shenzhen / Yantian", "Guangzhou / Nansha", "Qingdao", "Tianjin", "Xiamen"]
         )
         
-        # רשימה סגורה ומובנית לנמלי יעד לפי מדינה (כולל הרחבה מדויקת לישראל)
         if dest_country == "Israel":
             dest_port_options = [
                 "Haifa Port", 
@@ -247,7 +245,6 @@ with tab1:
         cargo_type = st.selectbox(T["cargo_type"], list(CUSTOMS_DUTIES["EU"].keys()))
         is_bess = (cargo_type == "BESS Container (UN3536 Class 9)")
         
-        # הצגת קוד HS מותאם אישית ודינמי מיד עם בחירת הציוד
         region_key = "Israel" if dest_country == "Israel" else "EU"
         current_hs_data = CUSTOMS_DUTIES[region_key].get(cargo_type, {"duty_pct": 0.0, "hs_code": "N/A"})
         selected_hs_code = current_hs_data["hs_code"]
@@ -270,7 +267,6 @@ with tab1:
         else:
             suggested_freight = 3360.0
 
-        # סיווג UN דינמי לחלוטין בהתאם לסוג הציוד הנבחר
         if is_bess:
             un_number = st.selectbox(
                 "UN Number (Dangerous Goods Classification):" if not is_hebrew else "מספר UN (סיווג מטען מסוכן):", 
@@ -284,7 +280,20 @@ with tab1:
         
         is_dg = (un_number != "Non-DG / Other")
 
-        exw_value_usd = st.number_input(T["exw_val"], value=500000.0, step=10000.0, min_value=0.0)
+        # הגדרת ברירת מחדל דינמית לערך ה־EXW בהתאם לסוג הציוד (250,000 דולר ל־MVS/סקידים וממירים, ו־500,000 דולר ל־BESS)
+        default_exw = 250000.0 if ("Inverters" in cargo_type or "Skids" in cargo_type) else 500000.0
+        
+        # שמירת הערך ב־session_state כדי לא לאפס אותו בכל שינוי קטן, אלא רק כשמחליפים קטגוריית ציוד ראשית
+        if 'last_cargo_type' not in st.session_state:
+            st.session_state.last_cargo_type = cargo_type
+            st.session_state.exw_user_value = default_exw
+
+        if st.session_state.last_cargo_type != cargo_type:
+            st.session_state.last_cargo_type = cargo_type
+            st.session_state.exw_user_value = default_exw
+
+        exw_value_usd = st.number_input(T["exw_val"], value=float(st.session_state.exw_user_value), step=10000.0, min_value=0.0)
+        st.session_state.exw_user_value = exw_value_usd
 
 with tab2:
     st.markdown('<div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">שרשרת אספקה מלאה והקצאת עלויות לפי Incoterms</div>' if is_hebrew else '<div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Full Supply Chain & Incoterms Allocation</div>', unsafe_allow_html=True)
