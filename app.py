@@ -280,10 +280,8 @@ with tab1:
         
         is_dg = (un_number != "Non-DG / Other")
 
-        # הגדרת ברירת מחדל דינמית לערך ה־EXW בהתאם לסוג הציוד (250,000 דולר ל־MVS/סקידים וממירים, ו־500,000 דולר ל־BESS)
         default_exw = 250000.0 if ("Inverters" in cargo_type or "Skids" in cargo_type) else 500000.0
         
-        # שמירת הערך ב־session_state כדי לא לאפס אותו בכל שינוי קטן, אלא רק כשמחליפים קטגוריית ציוד ראשית
         if 'last_cargo_type' not in st.session_state:
             st.session_state.last_cargo_type = cargo_type
             st.session_state.exw_user_value = default_exw
@@ -345,7 +343,8 @@ with tab4:
     col_reg1, col_reg2 = st.columns(2)
     with col_reg1:
         st.markdown("### 📦 Dangerous Goods & Safety Permits")
-        local_regulatory_permits = st.number_input("Hazardous Permits & DG Clearance ($):", value=1500.0 if is_dg else 400.0, step=100.0, min_value=0.0)
+        include_regulatory = st.checkbox("Include Hazardous Permits & DG Clearance cost" if not is_hebrew else "כלול עלות אישורי חומ\"ס והיתר רעלים", value=True)
+        local_regulatory_permits = st.number_input("Hazardous Permits & DG Clearance ($):", value=1500.0 if is_dg else 400.0, step=100.0, min_value=0.0, disabled=not include_regulatory)
 
     with col_reg2:
         st.markdown("### ♻️ Battery Passport, EPR & End-of-Life (EoL)")
@@ -373,7 +372,8 @@ with tab4:
             epr_recycling_total_usd = 0.0
             battery_passport_total_usd = 0.0
 
-    requires_heavy_lift = st.checkbox("Heavy-haul / abnormal-load handling required", value=is_bess)
+    include_heavy_lift_toggle = st.checkbox("Include heavy-haul / abnormal-load handling cost" if not is_hebrew else "כלול עלות הובלה חריגה / מטען כבד", value=is_bess)
+    requires_heavy_lift = is_bess and include_heavy_lift_toggle
 
 # תחזית מחירים והחלת מקדם הטרנד (Trend Multiplier) על תשומות הלוגיסטיקה והציוד
 trended_exw = exw_value_usd * trend_multiplier
@@ -391,7 +391,7 @@ if show_route_optimization:
         st.markdown(f"* **Inland Drayage to {display_site}:** ~${inland_drayage_total_usd:,.0f}")
 
 # =========================================================
-# מנוע החישוב הפיננסי המלא
+# מנוע החישוב הפיננסי המלא (מותנה בבחירת המשתמש - Anat's Feedback)
 # =========================================================
 cif_valuation_base = trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight
 insurance_total_usd = cif_valuation_base * (insurance_pct / 100.0)
@@ -416,13 +416,17 @@ demurrage_total_usd = float(overdue_days) * demurrage_daily_rate * float(contain
 external_storage_total_usd = (float(ext_storage_days) * ext_storage_daily_rate * float(container_count)) if use_external_storage else 0.0
 
 effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
+active_regulatory_permits = local_regulatory_permits if (local_regulatory_permits and 'include_regulatory' in locals() and include_regulatory) else 0.0
+active_site_crane = site_crane_unloading if include_site_crane else 0.0
+active_heavy_lift = heavy_lift_survey if (requires_heavy_lift and include_heavy_lift_toggle) else 0.0
+
 project_delivery_cost = (
     ddp_supplier_scope_ex_vat + 
-    (site_crane_unloading if include_site_crane else 0.0) + 
-    local_regulatory_permits + 
+    active_site_crane + 
+    active_regulatory_permits + 
     epr_recycling_total_usd + 
     battery_passport_total_usd + 
-    (heavy_lift_survey if requires_heavy_lift else 0.0) + 
+    active_heavy_lift + 
     effective_delay_cost
 )
 
@@ -450,7 +454,7 @@ total_cash_requirement_incl_vat = total_landed_cost_ex_vat + effective_vat_cash
 total_kwh = bess_mwh * 1000.0 if (bess_mwh > 0 and is_bess) else 1.0
 operational_logistics_only_usd = china_inland_drayage + china_origin_thc + total_ocean_freight + destination_thc_total + inland_drayage_total_usd
 operational_logistics_kwh = operational_logistics_only_usd / total_kwh
-regulatory_only_usd = local_regulatory_permits + battery_passport_total_usd + epr_recycling_total_usd
+regulatory_only_usd = active_regulatory_permits + battery_passport_total_usd + epr_recycling_total_usd
 regulatory_kwh = regulatory_only_usd / total_kwh
 
 display_val, curr_symbol = convert_from_usd(total_landed_cost_ex_vat, display_currency)
@@ -491,11 +495,11 @@ with tab_summary:
     amounts_no_vat = [
         trended_exw, china_inland_drayage, china_origin_thc, total_ocean_freight,
         insurance_total_usd, customs_duty_usd, destination_thc_total,
-        local_regulatory_permits, battery_passport_total_usd, epr_recycling_total_usd,
+        active_regulatory_permits, battery_passport_total_usd, epr_recycling_total_usd,
         (demurrage_total_usd if include_delay_scenario else 0.0),
         (external_storage_total_usd if include_delay_scenario else 0.0),
-        inland_drayage_total_usd, (site_crane_unloading if include_site_crane else 0.0),
-        (heavy_lift_survey if requires_heavy_lift else 0.0), contingency_usd
+        inland_drayage_total_usd, active_site_crane,
+        active_heavy_lift, contingency_usd
     ]
 
     df_summary = pd.DataFrame({
