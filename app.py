@@ -157,6 +157,7 @@ ORIGIN_PORTS = [
     "Guangzhou / Nansha", "Qingdao", "Tianjin", "Xiamen"
 ]
 
+# רשימת נמלים מורחבת הכוללת את כל המדינות מקובץ האקסל של שירה (כולל הונגריה, פינלנד ושוודיה)
 DESTINATION_PORTS = {
     "Israel": [
         "Haifa Port", 
@@ -166,6 +167,20 @@ DESTINATION_PORTS = {
     "Romania": [
         "Constanța, Romania", 
         "Burgas, Bulgaria (Transit to Romania)"
+    ],
+    "Hungary": [
+        "Koper, Slovenia (Transit to Hungary)",
+        "Rijeka, Croatia (Transit to Hungary)",
+        "Hamburg, Germany (Rail Transit)"
+    ],
+    "Finland": [
+        "Helsinki, Finland",
+        "Turku, Finland",
+        "Kotka, Finland"
+    ],
+    "Sweden": [
+        "Gothenburg, Sweden",
+        "Helsingborg, Sweden"
     ],
     "Spain": [
         "Valencia, Spain", 
@@ -195,12 +210,23 @@ DESTINATION_PORTS = {
 }
 
 VAT_RATES = {
-    "Israel": 18.0, "Romania": 19.0, "Germany": 19.0, "Spain": 21.0, 
-    "Italy": 22.0, "Greece": 24.0, "Poland": 23.0, "Other / Custom": 0.0
+    "Israel": 18.0, "Romania": 19.0, "Hungary": 27.0, "Finland": 25.5, 
+    "Sweden": 25.0, "Germany": 19.0, "Spain": 21.0, "Italy": 22.0, 
+    "Greece": 24.0, "Poland": 23.0, "Other / Custom": 0.0
 }
 
-DEFAULT_INSURANCE_RATES = {"Israel": 0.08, "Romania": 0.15, "Germany": 0.15, "Spain": 0.15, "Italy": 0.15, "Greece": 0.15, "Poland": 0.15, "Other / Custom": 0.15}
-DEFAULT_FREE_DAYS = {"Israel": 4, "Romania": 7, "Germany": 7, "Spain": 7, "Italy": 7, "Greece": 7, "Poland": 7, "Other / Custom": 7}
+DEFAULT_INSURANCE_RATES = {
+    "Israel": 0.08, "Romania": 0.15, "Hungary": 0.15, "Finland": 0.15,
+    "Sweden": 0.15, "Germany": 0.15, "Spain": 0.15, "Italy": 0.15, 
+    "Greece": 0.15, "Poland": 0.15, "Other / Custom": 0.15
+}
+
+DEFAULT_FREE_DAYS = {
+    "Israel": 4, "Romania": 7, "Hungary": 7, "Finland": 7,
+    "Sweden": 7, "Germany": 7, "Spain": 7, "Italy": 7, 
+    "Greece": 7, "Poland": 7, "Other / Custom": 7
+}
+
 CARRIER_FUEL_SURCHARGES = {
     "ZIM (Integrated Shipping)": {"baf": 843.0, "code": "NBF / EFS"},
     "Hapag-Lloyd": {"baf": 780.0, "code": "MFR / EFS"},
@@ -440,7 +466,6 @@ with tab4:
     include_heavy_lift_toggle = st.checkbox("Include heavy-haul / abnormal-load handling cost" if not is_hebrew else "כלול עלות הובלה חריגה / מטען כבד", value=is_bess)
     requires_heavy_lift = is_bess and include_heavy_lift_toggle
 
-# תחזית מחירים והחלת מקדם הטרנד המבוסס על תאריך היעד
 trended_exw = exw_value_usd * trend_multiplier
 trended_ocean_freight = ((base_freight_per_unit + baf_surcharge) * float(container_count)) * trend_multiplier
 trended_drayage = (inland_drayage_per_unit * float(container_count)) * trend_multiplier
@@ -455,9 +480,6 @@ if show_route_optimization:
         st.markdown(f"* **Ocean Freight (Forecasted):** ~${total_ocean_freight:,.0f}")
         st.markdown(f"* **Inland Drayage to {display_site}:** ~${inland_drayage_total_usd:,.0f}")
 
-# =========================================================
-# מנוע החישוב הפיננסי המלא (הטמעת הפרדת Incoterms של קלוד)
-# =========================================================
 cif_valuation_base = trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight
 insurance_total_usd = cif_valuation_base * (insurance_pct / 100.0)
 
@@ -506,7 +528,6 @@ supplier_commercial_price_options = {
 modeled_supplier_price = supplier_commercial_price_options.get(incoterm, trended_exw)
 supplier_commercial_price = modeled_supplier_price
 
-# יישום ההצעה של קלוד להפרדת תשלום ספק מול תשלום ישיר של הקונה לפי Incoterm
 supplier_scope_total = supplier_commercial_price_options.get(incoterm, trended_exw)
 buyer_direct_payment_usd = max(0.0, project_delivery_cost - supplier_scope_total)
 
@@ -538,7 +559,6 @@ reg_metric_display, _ = convert_from_usd(regulatory_per_unit_metric, display_cur
 with tab_summary:
     st.subheader(f"📊 Financial & Regulatory Control Dashboard - {incoterm} ({display_currency})")
     
-    # הצגת 6 מדדים מרכזיים כולל ההפרדה המסחרית החדשה (Paid to Supplier מול Paid Directly by Buyer)
     m1, m2, m3, m4, m7, m5 = st.columns(6)
     m1.metric("Landed Cost (ex-VAT)", f"{curr_symbol} {display_val:,.2f}")
     m2.metric("Economic Cost", f"{curr_symbol} {econ_val:,.2f}")
