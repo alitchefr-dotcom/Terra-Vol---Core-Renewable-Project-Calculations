@@ -151,7 +151,7 @@ with tab1:
 
 with tab2:
     st.subheader("Enlight 2027-2028 Project Portfolio (Enriched)")
-    st.info("קובץ זה מסונכרן אוטומטית עם נתוני המיסים, קודי ה־HS, המע"מ ועלויות הרגולציה באפליקציה.")
+    st.info("קובץ זה מסונכרן אוטומטית עם נתוני המיסים, קודי ה-HS, המע״מ ועלויות הרגולציה באפליקציה.")
     
     sample_data = [
         {"Site": "Genzano", "Country": "Italy", "Equipment": "PV Modules", "CONT": 9, "HS": "8541400000", "TAX": "0.0%", "VAT": "22.0%", "EPR": "Standard CE", "Cost/Unit": 30000},
