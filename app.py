@@ -366,7 +366,7 @@ with tab1:
                 "Below 27 MTS ($6,300)": 6300.0,
                 "27.0 - 34.9 MTS ($12,600)": 12600.0,
                 "35.0 - 44.9 MTS ($18,375)": 18375.0,
-                "45.0 - 48.0 MTS ($21,000)": 21000.0
+                "45.0 - 48.0 MTS ($24,500)": 24500.0  # <--- מתוקן ומדויק יותר למשקל חריג
             }
             weight_tier = st.selectbox("Weight Tier (MTS / Ton):" if not is_hebrew else "מדרגת משקל ליחידת BESS (MTS / Ton):", list(weight_tier_options.keys()), index=3, key="tab1_weight_tier")
             suggested_freight = weight_tier_options[weight_tier]
@@ -496,7 +496,6 @@ if show_route_optimization:
         st.markdown(f"* **Ocean Freight (Forecasted):** ~${total_ocean_freight:,.0f}")
         st.markdown(f"* **Inland Drayage to {display_site}:** ~${inland_drayage_total_usd:,.0f}")
 
-# טאב פרויקטי Enlight דינמי עם ערכי EXW אמיתיים (למשל $500k ל־BESS ו־$300k לפאנלים)
 with (tab6 if show_route_optimization else tab5):
     st.subheader("📂 Enlight 2027-2028 EU Projects Portfolio (Enriched & Realistic EXW)")
     st.info("טבלה זו משתמשת בערכי הבסיס האמיתיים של המפעל (EXW) לכל סוג ציוד: ~$500,000 למכולת BESS ו־~$300,000 לפאנלים סולאריים.")
