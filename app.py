@@ -496,10 +496,10 @@ if show_route_optimization:
         st.markdown(f"* **Ocean Freight (Forecasted):** ~${total_ocean_freight:,.0f}")
         st.markdown(f"* **Inland Drayage to {display_site}:** ~${inland_drayage_total_usd:,.0f}")
 
-# טאב פרויקטי Enlight דינמי המקושר למקורות האמת (VAT_RATES & EQUIPMENT_CONFIG)
+# טאב פרויקטי Enlight דינמי עם ערכי EXW אמיתיים (למשל $500k ל־BESS ו־$300k לפאנלים)
 with (tab6 if show_route_optimization else tab5):
-    st.subheader("📂 Enlight 2027-2028 EU Projects Portfolio (Enriched & Dynamic)")
-    st.info("טבלה זו נבנית דינמית מול בסיסי הנתונים המרכזיים של האפליקציה (קודי HS, מיסים, מע\"מ ו־EPR) ומציגה את עלות הבסיס לכל פריט.")
+    st.subheader("📂 Enlight 2027-2028 EU Projects Portfolio (Enriched & Realistic EXW)")
+    st.info("טבלה זו משתמשת בערכי הבסיס האמיתיים של המפעל (EXW) לכל סוג ציוד: ~$500,000 למכולת BESS ו־~$300,000 לפאנלים סולאריים.")
 
     raw_shira_data = [
         {"Site": "Genzano", "Country": "Italy", "Equipment": "PV Modules", "Actual CONT": 9},
@@ -547,31 +547,30 @@ with (tab6 if show_route_optimization else tab5):
         country = item["Country"]
         eq = item["Equipment"]
         
-        # Map equipment to configuration keys
         if "BESS" in eq:
             cfg_key = "BESS Container (UN3536 Class 9)"
             tax_val = f"{EQUIPMENT_CONFIG[cfg_key]['eu_duty']}%"
             hs_val = EQUIPMENT_CONFIG[cfg_key]['eu_hs']
             recy_val = "Battery Passport & EPR"
-            cost_unit = 50000.0
+            cost_unit = EQUIPMENT_CONFIG[cfg_key]['default_exw']
         elif "PV" in eq:
             cfg_key = "Solar PV Modules"
             tax_val = f"{EQUIPMENT_CONFIG[cfg_key]['eu_duty']}%"
             hs_val = EQUIPMENT_CONFIG[cfg_key]['eu_hs']
             recy_val = "Standard CE"
-            cost_unit = 30000.0
+            cost_unit = EQUIPMENT_CONFIG[cfg_key]['default_exw']
         elif "TRANSFORMER" in eq:
             cfg_key = "Transformers / Heavy Equipment"
             tax_val = f"{EQUIPMENT_CONFIG[cfg_key]['eu_duty']}%"
             hs_val = EQUIPMENT_CONFIG[cfg_key]['eu_hs']
             recy_val = "Standard CE"
-            cost_unit = 40000.0
+            cost_unit = EQUIPMENT_CONFIG[cfg_key]['default_exw']
         else:
             cfg_key = "Inverters / MV Station / Power Skids"
             tax_val = f"{EQUIPMENT_CONFIG[cfg_key]['eu_duty']}%"
             hs_val = EQUIPMENT_CONFIG[cfg_key]['eu_hs']
             recy_val = "Standard CE"
-            cost_unit = 35000.0
+            cost_unit = EQUIPMENT_CONFIG[cfg_key]['default_exw']
 
         vat_val = f"{VAT_RATES.get(country, 19.0)}%"
 
@@ -584,7 +583,7 @@ with (tab6 if show_route_optimization else tab5):
             "TAX": tax_val,
             "VAT": vat_val,
             "Recycling": recy_val,
-            "Cost per Commodity ($)": cost_unit
+            "EXW Cost / Container ($)": cost_unit
         })
 
     projects_df = pd.DataFrame(processed_rows)
