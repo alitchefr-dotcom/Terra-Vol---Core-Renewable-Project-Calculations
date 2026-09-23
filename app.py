@@ -366,7 +366,7 @@ with tab1:
                 "Below 27 MTS ($6,300)": 6300.0,
                 "27.0 - 34.9 MTS ($12,600)": 12600.0,
                 "35.0 - 44.9 MTS ($18,375)": 18375.0,
-                "45.0 - 48.0 MTS ($24,500)": 24500.0  # <--- מתוקן ומדויק יותר למשקל חריג
+                "45.0 - 48.0 MTS ($24,500)": 24500.0
             }
             weight_tier = st.selectbox("Weight Tier (MTS / Ton):" if not is_hebrew else "מדרגת משקל ליחידת BESS (MTS / Ton):", list(weight_tier_options.keys()), index=3, key="tab1_weight_tier")
             suggested_freight = weight_tier_options[weight_tier]
@@ -416,7 +416,22 @@ with tab2:
         china_origin_thc = st.number_input("China Origin THC & Port Fees ($):" if not is_hebrew else "אגרות ותעריפי נמל מוצא בסין (Origin THC סה\"כ):", value=1300.0, step=200.0, min_value=0.0, key="tab2_china_thc")
         heavy_lift_survey = st.number_input("Heavy Lift / Route Survey ($):" if not is_hebrew else "סקר הנדסי / היטל הובלה חריגה פרויקטלית ($ סה\"כ):", value=2500.0, step=500.0, min_value=0.0, key="tab2_heavy_lift")
         
-        customs_duty_pct = st.number_input("Indicative Import Customs Duty (%):" if not is_hebrew else "שיעור מכס אינדיקטיבי (%):", value=float(current_duty), step=0.1, min_value=0.0, max_value=100.0, key=f"tab2_duty_{cargo_type}")
+        # --- מנגנון דינמי מלא לסנכרון שיעור המכס ---
+        duty_key = f"tab2_duty_{cargo_type}_{dest_country}"
+        if duty_key not in st.session_state:
+            st.session_state[duty_key] = float(current_duty)
+        if st.session_state.get(f"prev_duty_{cargo_type}_{dest_country}") != current_duty:
+            st.session_state[duty_key] = float(current_duty)
+            st.session_state[f"prev_duty_{cargo_type}_{dest_country}"] = current_duty
+
+        customs_duty_pct = st.number_input(
+            "Indicative Import Customs Duty (%):" if not is_hebrew else "שיעור מכס אינדיקטיבי (%):", 
+            step=0.1, 
+            min_value=0.0, 
+            max_value=100.0, 
+            key=duty_key
+        )
+        
         st.caption(f"Country: {dest_country} | Active HS Code: {current_hs}")
         insurance_pct = st.number_input("Marine Cargo Insurance Rate (%):" if not is_hebrew else "שיעור ביטוח ימי (%):", value=DEFAULT_INSURANCE_RATES.get(dest_country, 0.08), step=0.01, min_value=0.0, max_value=20.0, key=f"tab2_ins_{dest_country}")
 
