@@ -142,7 +142,7 @@ dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), i
 default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "Israel" else "Iepurești / Project Site"
 show_route_optimization = (dest_country != "Israel")
 
-# הגדרה אחידה ובטוחה של כל הטאבים למניעת שגיאות NameError
+# הגדרה אחידה ובטוחה של כל הטאבים
 if show_route_optimization:
     tab1, tab2, tab3, tab4, tab5_eu, tab_projects, tab_summary = st.tabs([
         T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab5_eu"], T["tab_projects"], T["tab_summary"]
@@ -373,15 +373,18 @@ if show_route_optimization and tab5_eu is not None:
 
 with tab_projects:
     st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
-    st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט בשנים 2027–2028.")
+    st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה בשנים 2027–2028.")
     
-    enlight_project_type = st.selectbox("בחר פרויקט לטעינת נתונים אוטומטית:", ["פרויקט אשלים / צאלים (ישראל)", "פרויקט Iepurești (רומניה)", "פרויקט Stk. Ned (מזרח אירופה)"], key="enlight_proj_sel")
-    if "אשלים" in enlight_project_type:
-        st.markdown("📌 **מאפייני פרויקט ישראל:** 20 יחידות BESS, הובלה דרך נמל חיפה, אישורי משרד התחבורה חובה.")
-    elif "Iepurești" in enlight_project_type:
-        st.markdown("📌 **מאפייני פרויקט רומניה:** פרויקט סולארי + BESS, פריקה בקונסטנצה, רגולציית איחוד אירופי.")
+    enlight_project_type = st.selectbox("בחר פרויקט אירופאי של שירה לטעינת נתונים אוטומטית:", [
+        "פרויקט Iepurești (רומניה)", 
+        "פרויקט Ghimpați (רומניה)", 
+        "פרויקט פולין / מרכז אירופה"
+    ], key="enlight_proj_sel")
+    
+    if "Iepurești" in enlight_project_type or "Ghimpați" in enlight_project_type:
+        st.markdown("📌 **מאפייני פרויקט רומניה:** פריקה דרך נמל קונסטנצה, הובלה יבשתית לאתר, עמידה בתקן UN3536 ודרכון סוללות אירופאי.")
     else:
-        st.markdown("📌 **מאפייני פרויקט אירופאי כללי:** עמידה בדרכון סוללות ותקן UN3536.")
+        st.markdown("📌 **מאפייני פרויקט אירופאי כללי:** ניהול שרשרת אספקה אזורית, עמידה בדרישות EPR ודרכון סוללות דיגיטלי.")
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
@@ -504,7 +507,7 @@ with tab_summary:
     st.subheader("📥 ייצוא נתונים לאקסל (Excel Export)")
     
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(output) as writer:
         summary_df.to_excel(writer, sheet_name='Cost Summary', index=False)
     excel_data = output.getvalue()
 
