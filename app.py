@@ -236,9 +236,9 @@ with tab1:
     with col_meta2:
         sub_col_a, sub_col_b = st.columns(2)
         with sub_col_a:
-            site_coords = st.text_input(T["GPS Coordinates", "קואורדינטות GPS"], key="site_coords_input", placeholder="Lat, Long")
+            site_coords = st.text_input("GPS Coordinates" if not is_hebrew else "קואורדינטות GPS", key="site_coords_input", placeholder="Lat, Long")
         with sub_col_b:
-            site_zip = st.text_input(T["Postal Code", "מיקוד"], key="site_zip_input", placeholder="Postal Code")
+            site_zip = st.text_input("Postal Code" if not is_hebrew else "מיקוד", key="site_zip_input", placeholder="Postal Code")
 
         applied_vat = st.number_input(f"VAT Rate ({dest_country}) %:", value=float(VAT_RATES[dest_country]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country}")
         vat_recovery_pct = st.number_input("VAT Recoverability (%)" if not is_hebrew else "אחוז קיזוז מע\"מ (%):", value=100.0, min_value=0.0, max_value=100.0, step=1.0, key="tab1_vat_rec")
@@ -290,13 +290,11 @@ with tab1:
         solar_exw = st.number_input("Solar Unit EXW ($):", min_value=0.0, value=300000.0, step=10000.0, key="proj_solar_exw")
         solar_freight_unit = 3360.0
 
-    # תיכלול כולל של הפרויקט
     total_containers_project = bess_count + oog_count + mvs_count + transformer_count + solar_count
-    total_containers_project = max(1, total_containers_project) # למניעת חלוקה באפס
+    total_containers_project = max(1, total_containers_project)
 
     total_exw_project = (bess_count * bess_exw) + (oog_count * oog_exw) + (mvs_count * mvs_exw) + (transformer_count * transformer_exw) + (solar_count * solar_exw)
     
-    # ממוצע משוקלל של הובלה ימית ליחידה לפי כמויות
     weighted_freight_total = (
         (bess_count * bess_freight_unit) +
         (oog_count * oog_freight_unit) +
@@ -310,7 +308,7 @@ with tab1:
     is_bess = (bess_count > 0 or oog_count > 0)
     is_dg = is_bess
 
-    st.success(cfg_msg := (f"📊 **סיכום ביניים לפרויקט:** סה\"כ מכולות/יחידות: **{total_containers_project}** | סה\"כ ערך EXW במפעל: **${total_exw_project:,.2f}**"))
+    st.success(f"📊 **סיכום ביניים לפרויקט:** סה\"כ מכולות/יחידות: **{total_containers_project}** | סה\"כ ערך EXW במפעל: **${total_exw_project:,.2f}**")
 
 with tab2:
     st.markdown('<div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">שרשרת אספקה מלאה והקצאת עלויות לפי Incoterms</div>' if is_hebrew else '<div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Full Supply Chain & Incoterms Allocation</div>', unsafe_allow_html=True)
@@ -406,7 +404,6 @@ with tab4:
 
     requires_heavy_lift = is_bess
 
-# חישובים גלובליים לפרויקט המלא
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = ((base_freight_input + baf_surcharge) * float(total_containers_project)) * trend_multiplier
 trended_drayage = (inland_drayage_per_unit * float(total_containers_project)) * trend_multiplier
@@ -424,7 +421,6 @@ if show_route_optimization:
 with (tab6 if show_route_optimization else tab5):
     st.subheader("📂 Enlight 2027-2028 EU Projects Portfolio")
     st.info("טבלה זו משתמשת בערכי הבסיס האמיתיים של המפעל (EXW) לכל רכיב בפרויקטי צבר אירופה.")
-    # (טבלת פרויקטים נשמרת ברקע)
 
 cif_valuation_base = trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight
 insurance_total_usd = cif_valuation_base * (insurance_pct / 100.0)
