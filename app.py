@@ -615,10 +615,7 @@ with tab4:
                 decom_display_val, _ = convert_from_usd(decommissioning_total_usd, display_currency)
                 st.info(
                     f'💡 עלות מוערכת ליחידה: <span class="ltr-val"><b>{curr_symbol} {decom_per_unit_display:,.2f}</b></span> ({bess_capacity_mwh:.1f} MWh × <span class="ltr-val">{curr_symbol}{decom_cost_per_kwh:,.0f}</span>/kWh) | '
-                    f'סה"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: <span class="ltr-val"><b>{curr_symbol} {decom_display_val:,.2f}</b></span>'
-                    if is_hebrew else
-                    f'💡 Estimated cost per unit: <span class="ltr-val"><b>{curr_symbol} {decom_per_unit_display:,.2f}</b></span> ({bess_capacity_mwh:.1f} MWh × <span class="ltr-val">{curr_symbol}{decom_cost_per_kwh:,.0f}</span>/kWh) | '
-                    f'Total planned decommissioning provision for {int(bess_count + oog_count)} BESS/OOG units: <span class="ltr-val"><b>{curr_symbol} {decom_display_val:,.2f}</b></span>',
+                    f'סה"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: <span class="ltr-val"><b>{curr_symbol} {decom_display_val:,.2f}</b></span>',
                     unsafe_allow_html=True
                 )
             else:
@@ -690,7 +687,7 @@ if is_european_dest and tab_projects is not None:
         SHIRA_COUNTRY_TO_KEY = {
             "italy": "איטליה", "poland": "פולין", "germany": "גרמניה", "sweden": "שוודיה",
             "greece": "יוון", "spain": "ספרד", "bulgaria": "בולגריה", "hungary": "הונגריה",
-            "romania": "רומניה", "israel": "ישראל", "finland": "פינלנד",
+            "romania": "רומניה", "isראל": "ישראל", "finland": "פינלנד",
         }
         SHIRA_EPR_FEE_PER_BESS_UNIT_USD = 450.0
 
