@@ -42,13 +42,36 @@ st.sidebar.header("🌐 שפה / Language")
 lang = st.sidebar.radio("בחר שפה / Select Language:", ["עברית", "English"], index=0, key="lang_select")
 is_hebrew = (lang == "עברית")
 
-# עיצוב גלובלי וטבלה פיננסית מותאמת אישית ללא חיתוכי טקסט
+# עיצוב גלובלי וכרטיסי מדדים מותאמים אישית (סימן מטבע משמאל למספר)
 st.markdown(
     """
     <style>
     .stApp { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     h1, h2, h3, h4, h5, h6, p, label, div, span { direction: rtl; text-align: right; }
     .stTextInput label, .stSelectbox label, .stNumberInput label { direction: rtl; text-align: right; width: 100%; font-weight: 600; }
+    
+    /* עיצוב כרטיסי מדדים פיננסיים מקצועיים */
+    .metric-container {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+    }
+    .metric-title {
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+    .metric-value {
+        font-size: 1.5rem;
+        color: #1e3d59;
+        font-weight: 700;
+        direction: ltr;
+        text-align: right;
+    }
     
     /* עיצוב טבלה פיננסית מותאמת אישית */
     .custom-finance-table {
@@ -502,11 +525,36 @@ econ_val, _ = convert_from_usd(economic_cost_ex_vat, display_currency)
 with tab_summary:
     st.subheader(f"📊 דוח בקרה פיננסית ורגולטורית — {incoterm} ({display_currency})")
     
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("עלות נחיתה (לפני מע\"מ)", f"{curr_symbol} {display_val:,.2f}")
-    m2.metric("עלות כלכלית כוללת", f"{curr_symbol} {econ_val:,.2f}")
-    m3.metric("דרישת מזומנים כוללת", f"{curr_symbol} {cash_val:,.2f}")
-    m4.metric("תשלום ישיר לספק", f"{curr_symbol} {supplier_val:,.2f}")
+    # תצוגת מדדים באמצעות HTML מותאם אישית כדי שסימן המטבע יהיה משמאל למספר בפורמט פיננסי תקני
+    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    with m_col1:
+        st.markdown(f"""
+        <div class="metric-container">
+            <div class="metric-title">עלות נחיתה (לפני מע"מ)</div>
+            <div class="metric-value">{curr_symbol} {display_val:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with m_col2:
+        st.markdown(f"""
+        <div class="metric-container">
+            <div class="metric-title">עלות כלכלית כוללת</div>
+            <div class="metric-value">{curr_symbol} {econ_val:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with m_col3:
+        st.markdown(f"""
+        <div class="metric-container">
+            <div class="metric-title">דרישת מזומנים כוללת</div>
+            <div class="metric-value">{curr_symbol} {cash_val:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with m_col4:
+        st.markdown(f"""
+        <div class="metric-container">
+            <div class="metric-title">תשלום ישיר לספק</div>
+            <div class="metric-value">{curr_symbol} {supplier_val:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.subheader("📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)")
@@ -630,7 +678,6 @@ with tab_summary:
     st.markdown("---")
     st.subheader("📥 ייצוא נתונים לדוח אקסל (Excel Export)")
     
-    # סידור העמודות באקסל כך ששם הרכיב נמצא מימין (עמודה A) והסיכום משמאל (RTL מוגדר באופן אוטומטי)
     excel_summary_data = [
         [
             "רכיב עלות בפרויקט",
@@ -653,13 +700,11 @@ with tab_summary:
         ["סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)", "-", 0, total_landed_cost_ex_vat]
     ]
 
-    # יצירת קובץ אקסל והגדרת הגיליון כ־RTL (מימין לשמאל) בצורה מפורשת
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df_export = pd.DataFrame(excel_summary_data[1:], columns=excel_summary_data[0])
         df_export.to_excel(writer, sheet_name='Cost Summary', index=False)
         
-        # הגדרת כיוון גיליון האקסל ל־RTL כך שעמודה A תופיע מימין
         ws = writer.sheets['Cost Summary']
         ws.views.sheetView[0].rightToLeft = True
 
