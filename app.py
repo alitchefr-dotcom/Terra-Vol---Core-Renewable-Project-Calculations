@@ -94,10 +94,10 @@ DEFAULT_INSURANCE_RATES = {"Israel": 0.08, "Romania": 0.15, "Poland": 0.15, "Ger
 DEFAULT_FREE_DAYS = {"Israel": 4, "Romania": 7, "Poland": 7, "Germany": 7, "Other / Custom": 7}
 
 CARRIER_FUEL_SURCHARGES = {
-    "ZIM (Premium DG & Flexibility)": {"baf": 843.0, "bess_multiplier": 1.0},
-    "MSC (Discounted Rates)": {"baf": 750.0, "bess_multiplier": 0.82},
-    "Hapag-Lloyd (Standard)": {"baf": 780.0, "bess_multiplier": 0.95},
-    "Other / Spot Market": {"baf": 750.0, "bess_multiplier": 0.90}
+    "ZIM (Premium DG & Flexibility)": {"baf": 843.0, "bess_multiplier": 1.0, "dthc_mult": 1.0},
+    "MSC (Discounted Rates)": {"baf": 750.0, "bess_multiplier": 0.82, "dthc_mult": 0.90},
+    "Hapag-Lloyd (Standard)": {"baf": 780.0, "bess_multiplier": 0.95, "dthc_mult": 0.95},
+    "Other / Spot Market": {"baf": 750.0, "bess_multiplier": 0.90, "dthc_mult": 0.90}
 }
 
 incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "DAP (Delivered at Place)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"], key="sidebar_incoterm")
@@ -203,37 +203,54 @@ with tab1:
     st.success(f"📊 סה\"כ יחידות לפרויקט: {total_containers_project} | סה\"כ ערך EXW במפעל: **${total_exw_project:,.2f}**")
 
 with tab2:
-    st.subheader("🚢 תעריפי הובלה ימית נפרדים לכל סוג מוצר (Itemized Ocean Freight)" if is_hebrew else "Itemized Ocean Freight per Equipment Type")
+    st.subheader("🚢 תעריפי הובלה ימית ו־DTHC פרטניים לפי סוג מוצר וחברת ספנות" if is_hebrew else "Itemized Ocean Freight & DTHC per Equipment Type")
     
     selected_carrier = st.selectbox("בחירת חברת ספנות:" if is_hebrew else "Select Carrier:", list(CARRIER_FUEL_SURCHARGES.keys()), key="tab2_carrier")
-    carrier_bess_mult = CARRIER_FUEL_SURCHARGES[selected_carrier]["bess_multiplier"]
-    baf_val = CARRIER_FUEL_SURCHARGES[selected_carrier]["baf"]
-    baf_surcharge = st.number_input("תוספת דלק ליחידה (BAF) ($):", value=float(baf_val), step=50.0, key="tab2_baf")
+    carrier_data = CARRIER_FUEL_SURCHARGES[selected_carrier]
+    baf_surcharge = st.number_input("תוספת דלק ליחידה (BAF) ($):", value=float(carrier_data["baf"]), step=50.0, key="tab2_baf")
 
-    st.markdown("##### הגדרת עלות הובלה ימית ליחידה (USD):")
+    st.markdown("##### 1. עלות הובלה ימית ליחידה (Ocean Freight / Unit):")
     oc_col1, oc_col2, oc_col3 = st.columns(3)
     with oc_col1:
-        unit_freight_bess = st.number_input("BESS Ocean Freight / Unit ($):", value=31850.0 * carrier_bess_mult, step=500.0, key="freight_bess")
-        unit_freight_oog = st.number_input("OOG Flat Rack Freight / Unit ($):", value=29900.0, step=500.0, key="freight_oog")
+        unit_freight_bess = st.number_input("BESS Freight ($):", value=31850.0 * carrier_data["bess_multiplier"], step=500.0, key="freight_bess")
+        unit_freight_oog = st.number_input("OOG Flat Rack Freight ($):", value=29900.0, step=500.0, key="freight_oog")
     with oc_col2:
-        unit_freight_mvs = st.number_input("MVS Ocean Freight / Unit ($):", value=4200.0, step=200.0, key="freight_mvs")
-        unit_freight_trans = st.number_input("Transformer Freight / Unit ($):", value=5500.0, step=200.0, key="freight_trans")
+        unit_freight_mvs = st.number_input("MVS Freight ($):", value=4200.0, step=200.0, key="freight_mvs")
+        unit_freight_trans = st.number_input("Transformer Freight ($):", value=5500.0, step=200.0, key="freight_trans")
     with oc_col3:
-        unit_freight_access = st.number_input("Accessories / Dry Freight / Unit ($):", value=3200.0, step=200.0, key="freight_access")
-        unit_freight_solar = st.number_input("Solar PV Freight / Unit ($):", value=3360.0, step=200.0, key="freight_solar")
+        unit_freight_access = st.number_input("Accessories / Dry Freight ($):", value=3200.0, step=200.0, key="freight_access")
+        unit_freight_solar = st.number_input("Solar PV Freight ($):", value=3360.0, step=200.0, key="freight_solar")
 
-    # חישוב ימי מדויק לפי כמויות ותעריפים פרטניים
+    st.markdown("---")
+    st.markdown("##### 2. דמי טיפול בנמל יעד (DTHC - Destination THC) לפי סוג מכולה/ציוד:")
+    dthc_mult = carrier_data["dthc_mult"]
+    
+    dh_col1, dh_col2, dh_col3 = st.columns(3)
+    with dh_col1:
+        dthc_bess = st.number_input("BESS (20/40 DG Heavy) DTHC ($):", value=650.0 * dthc_mult, step=50.0, key="dthc_bess")
+        dthc_oog = st.number_input("OOG Flat Rack DTHC ($):", value=850.0 * dthc_mult, step=50.0, key="dthc_oog")
+    with dh_col2:
+        dthc_mvs = st.number_input("MVS Station DTHC ($):", value=420.0 * dthc_mult, step=30.0, key="dthc_mvs")
+        dthc_trans = st.number_input("Transformer DTHC ($):", value=480.0 * dthc_mult, step=30.0, key="dthc_trans")
+    with dh_col3:
+        dthc_access = st.number_input("Accessories (20/40 Dry) DTHC ($):", value=280.0 * dthc_mult, step=20.0, key="dthc_access")
+        dthc_solar = st.number_input("Solar PV DTHC ($):", value=300.0 * dthc_mult, step=20.0, key="dthc_solar")
+
+    # חישוב ימי מדויק
     total_base_ocean_freight = (
-        (bess_count * unit_freight_bess) +
-        (oog_count * unit_freight_oog) +
-        (mvs_count * unit_freight_mvs) +
-        (transformer_count * unit_freight_trans) +
-        (access_count * unit_freight_access) +
-        (solar_count * unit_freight_solar)
+        (bess_count * unit_freight_bess) + (oog_count * unit_freight_oog) +
+        (mvs_count * unit_freight_mvs) + (transformer_count * unit_freight_trans) +
+        (access_count * unit_freight_access) + (solar_count * unit_freight_solar)
     )
     total_baf_ocean = baf_surcharge * float(total_containers_project)
     
-    dest_thc_port_fee = st.number_input("Destination THC per Container ($):", value=380.0, step=20.0, key="tab2_dest_thc")
+    # חישוב DTHC כולל מותאם אישית לכל מכולה
+    total_destination_thc = (
+        (bess_count * dthc_bess) + (oog_count * dthc_oog) +
+        (mvs_count * dthc_mvs) + (transformer_count * dthc_trans) +
+        (access_count * dthc_access) + (solar_count * dthc_solar)
+    )
+
     china_inland_drayage = 2200.0 * (total_containers_project / 10)
     china_origin_thc = 1300.0 * (total_containers_project / 10)
     heavy_lift_survey = 2500.0
@@ -255,14 +272,10 @@ with tab3:
         drayage_access = st.number_input("Accessories Drayage / Unit ($):", value=850.0, step=100.0, key="dray_access")
         drayage_solar = st.number_input("Solar PV Drayage / Unit ($):", value=950.0, step=100.0, key="dray_solar")
 
-    # חישוב יבשתי מדויק לפי כמויות ותעריפים פרטניים
     inland_drayage_total_base = (
-        (bess_count * drayage_bess) +
-        (oog_count * drayage_oog) +
-        (mvs_count * drayage_mvs) +
-        (transformer_count * drayage_trans) +
-        (access_count * drayage_access) +
-        (solar_count * drayage_solar)
+        (bess_count * drayage_bess) + (oog_count * drayage_oog) +
+        (mvs_count * drayage_mvs) + (transformer_count * drayage_trans) +
+        (access_count * drayage_access) + (solar_count * drayage_solar)
     )
 
     free_days = DEFAULT_FREE_DAYS.get(dest_country, 7)
@@ -297,7 +310,7 @@ insurance_total_usd = cif_valuation_base * (insurance_pct / 100.0)
 
 customs_valuation_base_usd = cif_valuation_base + insurance_total_usd
 customs_duty_usd = customs_valuation_base_usd * (customs_duty_pct / 100.0)
-destination_thc_total = dest_thc_port_fee * float(total_containers_project)
+destination_thc_total = total_destination_thc  # משתמש בערך המחושב המדויק לכל סוג מכולה!
 
 indicative_vat_base_import_usd = customs_valuation_base_usd + customs_duty_usd + destination_thc_total
 vat_total_usd = indicative_vat_base_import_usd * (applied_vat / 100.0)
