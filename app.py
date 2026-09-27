@@ -144,16 +144,33 @@ st.markdown(header_html, unsafe_allow_html=True)
 st.caption(T["caption"])
 
 ORIGIN_PORTS = ["שאנגחאי (Shanghai)", "נינגבו (Ningbo)", "שנג'ן (Shenzhen)", "צ'ינגדאו (Qingdao)"]
+
 DESTINATION_PORTS = {
     "ישראל": ["נמל חיפה", "נמל אשדוד"],
     "רומניה": ["קונסטנצה, רומניה (Constanța)", "בורגס, בולגריה (Burgas)"],
     "פולין": ["גדנסק, פולין (Gdansk)", "גדיניה, פולין (Gdynia)"],
     "גרמניה": ["המבורג, גרמניה (Hamburg)", "ברמרהאפן, גרמניה (Bremerhaven)"],
-    "אחר / מותאם": ["רוטרדם, הולנד (Rotterdam)"]
+    "שוודיה": ["גטבורג, שוודיה (Gothenburg)", "סטוקהולם, שוודיה (Stockholm)"],
+    "יוון": ["פיראוס, יוון (Piraeus)", "סלוניקי, יוון (Thessaloniki)"],
+    "ספרד": ["ולנסיה, ספרד (Valencia)", "ברצלונה, ספרד (Barcelona)"],
+    "איטליה": ["ג'נואה, איטליה (Genoa)", "טרייסטה, איטליה (Trieste)"],
+    "בולגריה": ["וורנה, בולגריה (Varna)", "בורגס, בולגריה (Burgas)"],
+    "הונגריה": ["בודפשט, הונגריה (Budapest - Rail/Multimodal)"],
+    "אחר / מותאם": ["רוטרדם, הולנד (Rotterdam)", "אנטוורפן, בלגיה (Antwerp)"]
 }
-VAT_RATES = {"ישראל": 18.0, "רומניה": 19.0, "פולין": 23.0, "גרמניה": 19.0, "אחר / מותאם": 0.0}
-DEFAULT_INSURANCE_RATES = {"ישראל": 0.08, "רומניה": 0.15, "פולין": 0.15, "גרמניה": 0.15, "אחר / מותאם": 0.15}
-DEFAULT_FREE_DAYS = {"ישראל": 4, "רומניה": 7, "פולין": 7, "גרמניה": 7, "אחר / מותאם": 7}
+
+VAT_RATES = {
+    "ישראל": 18.0, "רומניה": 19.0, "פולין": 23.0, "גרמניה": 19.0, 
+    "שוודיה": 25.0, "יוון": 24.0, "ספרד": 21.0, "איטליה": 22.0, "בולגריה": 20.0, "הונגריה": 27.0, "אחר / מותאם": 0.0
+}
+DEFAULT_INSURANCE_RATES = {
+    "ישראל": 0.08, "רומניה": 0.15, "פולין": 0.15, "גרמניה": 0.15, 
+    "שוודיה": 0.15, "יוון": 0.15, "ספרד": 0.15, "איטליה": 0.15, "בולגריה": 0.15, "הונגריה": 0.15, "אחר / מותאם": 0.15
+}
+DEFAULT_FREE_DAYS = {
+    "ישראל": 4, "רומניה": 7, "פולין": 7, "גרמניה": 7, 
+    "שוודיה": 7, "יוון": 7, "ספרד": 7, "איטליה": 7, "בולגריה": 7, "הונגריה": 7, "אחר / מותאם": 7
+}
 
 CARRIER_FUEL_SURCHARGES = {
     "ZIM (שירות מועדף למטעני חומ\"ס וגמישות)": {"bess_multiplier": 1.0, "dthc_mult": 1.0},
@@ -202,7 +219,7 @@ def convert_from_usd(amount_usd, target_curr):
 curr_symbol = "$" if "USD" in display_currency else ("€" if "EUR" in display_currency else "₪")
 
 dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), index=0, key="sidebar_dest_country")
-default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "ישראל" else "Iepurești / Project Site"
+default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "ישראל" else "Project Site / Site Address"
 is_european_dest = (dest_country != "ישראל")
 
 if is_european_dest:
@@ -339,7 +356,6 @@ with tab2:
     china_origin_thc = 1300.0 * (total_containers_project / 10)
     heavy_lift_survey = 2500.0
     
-    # תיקון מכס יבוא: 0% לישראל, 2.7% לאירופה/אחר
     customs_duty_pct = 0.0 if dest_country == "ישראל" else 2.7
     insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country, 0.15)
 
@@ -438,21 +454,29 @@ if is_european_dest and tab5_eu is not None:
 if is_european_dest and tab_projects is not None:
     with tab_projects:
         st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
-        st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה בשנים 2027–2028 (על בסיס נתוני האקסל של שירה).")
-        
-        enlight_project_type = st.selectbox("בחר פרויקט אירופאי של שירה לטעינת נתונים אוטומטית:", [
-            "פרויקט Iepurești (רומניה)", 
-            "פרויקט Ghimpați (רומניה)", 
-            "פרויקט Mosciska / Czerwona Woda (פולין)",
-            "פרויקט Genzano (איטליה)"
-        ], key="enlight_proj_sel")
-        
-        if "Iepurești" in enlight_project_type or "Ghimpați" in enlight_project_type:
-            st.markdown("📌 **מאפייני פרויקט רומניה (שירה):** פריקה דרך נמל קונסטנצה, הובלה יבשתית לאתר, עמידה בתקן UN3536 ודרכון סוללות אירופאי.")
-        elif "Mosciska" in enlight_project_type:
-            st.markdown("📌 **מאפייני פרויקט פולין (שירה):** פרויקט BESS GEN2 ו־MVS, דרישות EPR ודרכון סוללות מנדטורי.")
-        else:
-            st.markdown("📌 **מאפייני פרויקט אירופאי (שירה):** ניהול שרשרת אספקה אזורית, עמידה בדרישות EPR ודרכון סוללות דיגיטלי.")
+        st.info("טבלת מעקב פרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה עם כל עמודות הבקרה המלאות (מחזור, מע\"מ, מיסים, הובלות וכו').")
+
+        # טבלה מלאה המכילה את כל העמודות המקוריות ששירה הגדירה (Tax other destination, Sea transport, Recycling, Land transport, Custom agent, Insurance, VAT, SPV, over 50 container, Direct or transshipment)
+        shira_full_table_data = [
+            {"Name": "no number", "CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 32, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 16, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS for BESS", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 52, "Site": "Czerwona Woda", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 174, "Site": "Ostrow Wielkopolski", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 198, "Site": "Sokole", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 480, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 45, "Site": "Karpen Alpha", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 89, "Site": "Karpen Gamma", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 88, "Site": "Touvilan", "Country site": "Finland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 22, "Site": "Picasso", "Country site": "Sweden, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 44, "Site": "Picasso", "Country site": "Sweden, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Custom agent": "", "Insurance": "", "VAT": "", "SPV": "", "over 50 container": "", "Direct or transshipment": ""}
+        ]
+
+        df_shira_full = pd.DataFrame(shira_full_table_data)
+        st.dataframe(df_shira_full, use_container_width=True)
+        st.success("✅ כל עמודות הבקרה המקוריות של שירה (מחזור, מע\"מ, מיסים, הובלות, ביטוח, SPV ועוד) שוחזרו במלואן!")
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
