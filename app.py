@@ -42,18 +42,20 @@ st.sidebar.header("🌐 שפה / Language")
 lang = st.sidebar.radio("בחר שפה / Select Language:", ["עברית", "English"], index=0, key="lang_select")
 is_hebrew = (lang == "עברית")
 
-# עיצוב טבלאות ויישור לימין בהתאמה מושלמת לעברית עסקית
+# עיצוב מתקדם לטבלאות — מניעת חסימת עמודות ויישור מדויק
 st.markdown(
     """
     <style>
     .stApp { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     h1, h2, h3, h4, h5, h6, p, label, div, span { direction: rtl; text-align: right; }
     .stTextInput label, .stSelectbox label, .stNumberInput label { direction: rtl; text-align: right; width: 100%; font-weight: 600; }
-    table { width: 100%; direction: rtl; }
-    th:nth-child(1), td:nth-child(1) { text-align: right !important; }
-    th:nth-child(2), td:nth-child(2) { text-align: left !important; direction: ltr; }
-    th { background-color: #f8f9fa; color: #333; padding: 12px; font-weight: bold; border-bottom: 2px solid #dee2e6; }
-    td { padding: 10px; border-bottom: 1px solid #dee2e6; }
+    
+    /* עיצוב רחב וברור לטבלאות התקציב */
+    [data-testid="stDataFrame"] { width: 100%; }
+    [data-testid="stDataFrame"] table { width: 100% !important; direction: rtl; }
+    [data-testid="stDataFrame"] th { background-color: #f1f5f9 !important; color: #1e3d59 !important; font-weight: 700 !important; padding: 12px !important; text-align: center !important; }
+    [data-testid="stDataFrame"] td { padding: 10px !important; text-align: center !important; }
+    [data-testid="stDataFrame"] td:nth-child(1) { text-align: right !important; font-weight: 600; }
     </style>
     """,
     unsafe_allow_html=True
@@ -475,7 +477,7 @@ with tab_summary:
     st.markdown("---")
     st.subheader("📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)")
 
-    # יצירת טבלה עסקית מסודרת עם כמויות, עלות ליחידה וסה"כ לפי סעיף
+    # יצירת טבלה מרווחת ומאורגנת עם 4 עמודות ברורות לחלוטין
     summary_data = [
         ["ערך ציוד במפעל (Equipment EXW)", f"{int(total_containers_project)} יחידות", f"${total_exw_project/max(1, total_containers_project):,.2f}", trended_exw],
         ["הובלה יבשתית ונמלית במוצא", f"{int(total_containers_project)} יחידות", f"${(china_inland_drayage + china_origin_thc)/max(1, total_containers_project):,.2f}", china_inland_drayage + china_origin_thc],
@@ -494,10 +496,17 @@ with tab_summary:
 
     summary_df = pd.DataFrame(summary_data, columns=["רכיב עלות בפרויקט", "כמות / בסיס חישוב", "עלות ליחידה (USD)", "סה\"כ סעיף ב־USD ($)"])
     
+    # הצגת טבלה באמצעות st.dataframe עם הגדרת רוחב עמודות אוטומטית / מרווחת
     st.dataframe(
         summary_df.style.format({"סה\"כ סעיף ב־USD ($)": "${:,.2f}"}),
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
+        column_config={
+            "רכיב עלות בפרויקט": st.column_config.TextColumn("רכיב עלות בפרויקט", width="medium"),
+            "כמות / בסיס חישוב": st.column_config.TextColumn("כמות / בסיס חישוב", width="small"),
+            "עלות ליחידה (USD)": st.column_config.TextColumn("עלות ליחידה (USD)", width="small"),
+            "סה\"כ סעיף ב־USD ($)": st.column_config.TextColumn("סה\"כ סעיף ב־USD ($)", width="medium")
+        }
     )
 
     st.markdown("---")
