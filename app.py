@@ -227,13 +227,7 @@ with tab2:
     baf_mult = carrier_data["dthc_mult"]
     base_baf_per_teu = st.number_input("תעריף BAF בסיסי ל־TEU אחד ($):", value=420.0 * baf_mult, step=20.0, key="baf_per_teu")
 
-    # חישוב ערכי TEU לכל סוג מכולה בפרויקט (מכולות 40/BESS שוות 2 TEU, מכולות רגילות 20 פיט שוות 1 TEU)
-    teu_bess = 2.0
-    teu_oog = 2.0
-    teu_mvs = 1.0
-    teu_trans = 1.0
-    teu_access = 1.0
-    teu_solar = 1.0
+    teu_bess, teu_oog, teu_mvs, teu_trans, teu_access, teu_solar = 2.0, 2.0, 1.0, 1.0, 1.0, 1.0
 
     baf_bess = 0.0 if baf_included else (base_baf_per_teu * teu_bess)
     baf_oog = 0.0 if baf_included else (base_baf_per_teu * teu_oog)
@@ -259,7 +253,6 @@ with tab2:
         dthc_access = st.number_input("Accessories (20/40 Dry) DTHC ($):", value=280.0 * dthc_mult, step=20.0, key="dthc_access")
         dthc_solar = st.number_input("Solar PV DTHC ($):", value=300.0 * dthc_mult, step=20.0, key="dthc_solar")
 
-    # חישוב ימי מדויק כולל BAF ו־DTHC פרטניים
     total_base_ocean_freight = (
         (bess_count * unit_freight_bess) + (oog_count * unit_freight_oog) +
         (mvs_count * unit_freight_mvs) + (transformer_count * unit_freight_trans) +
@@ -315,13 +308,26 @@ with tab3:
     include_delay_scenario = False
 
 with tab4:
-    include_regulatory = True
-    local_regulatory_permits = 1500.0 if is_dg else 400.0
-    include_epr = True
-    include_battery_passport = True
-    epr_recycling_total_usd = (450.0 * float(bess_count + oog_count)) if include_epr else 0.0
-    battery_passport_total_usd = 1200.0 if include_battery_passport else 0.0
-    requires_heavy_lift = is_bess
+    st.subheader("⚖️ רגולציית חומ\"ס (DG), תקן UN3536 ודרכון סוללות" if is_hebrew else "DG Compliance, UN3536 & Battery Regulation")
+    st.info("הגדרת דרישות סיווג חומ\"ס, היתרים מקומיים, עלויות מחזור (EPR) ודרכון סוללות דיגיטלי למערכות אגירה.")
+
+    reg_col1, reg_col2 = st.columns(2)
+    with reg_col1:
+        include_regulatory = st.checkbox("כלול עלויות היתרי רגולציה מקומיים לחומ\"ס (Local Regulatory Permits)", value=True, key="reg_permits_toggle")
+        base_reg_cost = 1500.0 if is_dg else 400.0
+        local_regulatory_permits = st.number_input("עלות כוללת להיתרים ואישורים רגולטוריים ($):", value=base_reg_cost, step=100.0, key="reg_cost_input")
+
+        include_epr = st.checkbox("כלול דמי טיפול ומחזור באחריות יצרן מורחבת (EPR / Recycling)", value=True, key="epr_toggle")
+        epr_fee_per_unit = st.number_input("עלות EPR ליחידת BESS ($):", value=450.0, step=50.0, key="epr_unit_input")
+        epr_recycling_total_usd = (epr_fee_per_unit * float(bess_count + oog_count)) if include_epr else 0.0
+
+    with reg_col2:
+        include_battery_passport = st.checkbox("כלול דרישות דרכון סוללות דיגיטלי (EU Battery Passport)", value=True, key="bp_toggle")
+        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):", value=1200.0, step=100.0, key="bp_cost_input")
+        battery_passport_total_usd = battery_passport_flat if include_battery_passport else 0.0
+
+        requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)", value=is_bess, key="hl_survey_toggle")
+        heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input")
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
@@ -354,7 +360,7 @@ external_storage_total_usd = (float(ext_storage_days) * ext_storage_daily_rate *
 
 active_regulatory_permits = local_regulatory_permits if include_regulatory else 0.0
 active_site_crane = site_crane_unloading if include_site_crane else 0.0
-active_heavy_lift = heavy_lift_survey if requires_heavy_lift else 0.0
+active_heavy_lift = heavy_lift_survey_cost if requires_heavy_lift else 0.0
 effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
 
 project_delivery_cost = (
