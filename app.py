@@ -38,39 +38,41 @@ if logo_base64:
         unsafe_allow_html=True
     )
 
-st.sidebar.header("🌐 Language / שפה")
-lang = st.sidebar.radio("Select Language / בחר שפה:", ["Hebrew (עברית)", "English"], index=0, key="lang_select")
-is_hebrew = (lang == "Hebrew (עברית)")
+st.sidebar.header("🌐 שפה / Language")
+lang = st.sidebar.radio("בחר שפה / Select Language:", ["עברית", "English"], index=0, key="lang_select")
+is_hebrew = (lang == "עברית")
 
-# עיצוב גלובלי עברית נקי וברור
+# עיצוב טבלאות ויישור לימין בהתאמה מושלמת לעברית עסקית
 st.markdown(
     """
     <style>
     .stApp { direction: rtl; text-align: right; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     h1, h2, h3, h4, h5, h6, p, label, div, span { direction: rtl; text-align: right; }
     .stTextInput label, .stSelectbox label, .stNumberInput label { direction: rtl; text-align: right; width: 100%; font-weight: 600; }
-    table { width: 100%; direction: rtl; text-align: right; }
-    th { background-color: #f8f9fa; color: #333; text-align: right !important; padding: 10px; font-weight: bold; border-bottom: 2px solid #dee2e6; }
-    td { text-align: right !important; padding: 10px; border-bottom: 1px solid #dee2e6; }
+    table { width: 100%; direction: rtl; }
+    th:nth-child(1), td:nth-child(1) { text-align: right !important; }
+    th:nth-child(2), td:nth-child(2) { text-align: left !important; direction: ltr; }
+    th { background-color: #f8f9fa; color: #333; padding: 12px; font-weight: bold; border-bottom: 2px solid #dee2e6; }
+    td { padding: 10px; border-bottom: 1px solid #dee2e6; }
     </style>
     """,
     unsafe_allow_html=True
 )
 
 T = {
-    "caption": "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, Incoterms, רגולציה ותחזית שוק",
+    "caption": "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, תנאי סחר, רגולציה ותחזית שוק",
     "incoterm_label": "תנאי סחר מסחרי (אחריות ספק):",
-    "currency_label": "מטבע הצגה ראשי בדשבורד:",
-    "tab1": "📋 תמהיל רכיבי הציוד לפרויקט (Multi-Item)",
+    "currency_label": "מטבע תצוגה ראשי:",
+    "tab1": "📋 תמהיל ציוד וכמויות לפרויקט",
     "tab2": "⚓ שרשרת אספקה ותנאי סחר",
-    "tab3": "📦 אחסנה, השהיות והובלת אתר",
+    "tab3": "📦 אחסנה, השהיות והובלת משאיות לאתר",
     "tab4": "⚖️ רגולציה ואישורים מנדטוריים",
-    "tab5_eu": "🗺️ הנחות מסלולים אינדיקטיביות",
+    "tab5_eu": "🗺️ הנחות מסלולים באירופה",
     "tab_projects": "📂 פרויקטי Enlight 2027-2028 (שירה)",
-    "tab_summary": "📊 דוח בקרה פיננסית ורגולטורית",
+    "tab_summary": "📊 דוח בקרה תקציבית ורגולטורית",
     "origin_port": "נמל מוצא:",
-    "dest_port": "נמל יעד ימי (Port of Discharge):",
-    "dest_country": "מדינת יעד סופית (אתר הפרויקט):",
+    "dest_port": "נמל פריקה (יעד):",
+    "dest_country": "מדינת יעד לפרויקט:",
 }
 
 logo_img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 140px; height: auto;" />' if logo_base64 else '⚡'
@@ -84,35 +86,35 @@ header_html = f"""
 st.markdown(header_html, unsafe_allow_html=True)
 st.caption(T["caption"])
 
-ORIGIN_PORTS = ["Shanghai", "Ningbo-Zhoushan", "Shenzhen / Yantian", "Qingdao"]
+ORIGIN_PORTS = ["שאנגחאי (Shanghai)", "נינגבו (Ningbo)", "שנג'ן (Shenzhen)", "צ'ינגדאו (Qingdao)"]
 DESTINATION_PORTS = {
-    "Israel": ["Haifa Port", "Ashdod Port"],
-    "Romania": ["Constanța, Romania", "Burgas, Bulgaria"],
-    "Poland": ["Gdansk, Poland", "Gdynia, Poland"],
-    "Germany": ["Hamburg, Germany", "Bremerhaven, Germany"],
-    "Other / Custom": ["Rotterdam, Netherlands"]
+    "ישראל": ["נמל חיפה", "נמל אשדוד"],
+    "רומניה": ["קונסטנצה, רומניה (Constanța)", "בורגס, בולגריה (Burgas)"],
+    "פולין": ["גדנסק, פולין (Gdansk)", "גדיניה, פולין (Gdynia)"],
+    "גרמניה": ["המבורג, גרמניה (Hamburg)", "ברמרהאפן, גרמניה (Bremerhaven)"],
+    "אחר / מותאם": ["רוטרדם, הולנד (Rotterdam)"]
 }
-VAT_RATES = {"Israel": 18.0, "Romania": 19.0, "Poland": 23.0, "Germany": 19.0, "Other / Custom": 0.0}
-DEFAULT_INSURANCE_RATES = {"Israel": 0.08, "Romania": 0.15, "Poland": 0.15, "Germany": 0.15, "Other / Custom": 0.15}
-DEFAULT_FREE_DAYS = {"Israel": 4, "Romania": 7, "Poland": 7, "Germany": 7, "Other / Custom": 7}
+VAT_RATES = {"ישראל": 18.0, "רומניה": 19.0, "פולין": 23.0, "גרמניה": 19.0, "אחר / מותאם": 0.0}
+DEFAULT_INSURANCE_RATES = {"ישראל": 0.08, "רומניה": 0.15, "פולין": 0.15, "גרמניה": 0.15, "אחר / מותאם": 0.15}
+DEFAULT_FREE_DAYS = {"ישראל": 4, "רומניה": 7, "פולין": 7, "גרמניה": 7, "אחר / מותאם": 7}
 
 CARRIER_FUEL_SURCHARGES = {
-    "ZIM (Premium DG & Flexibility)": {"bess_multiplier": 1.0, "dthc_mult": 1.0},
-    "MSC (Discounted Rates)": {"bess_multiplier": 0.82, "dthc_mult": 0.90},
-    "Hapag-Lloyd (Standard)": {"bess_multiplier": 0.95, "dthc_mult": 0.95},
-    "Other / Spot Market": {"bess_multiplier": 0.90, "dthc_mult": 0.90}
+    "ZIM (שירות מועדף למטעני חומ\"ס וגמישות)": {"bess_multiplier": 1.0, "dthc_mult": 1.0},
+    "MSC (תעריפים מועדפים)": {"bess_multiplier": 0.82, "dthc_mult": 0.90},
+    "Hapag-Lloyd (סטנדרטי)": {"bess_multiplier": 0.95, "dthc_mult": 0.95},
+    "שוק חופשי / ספוט": {"bess_multiplier": 0.90, "dthc_mult": 0.90}
 }
 
-incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "DAP (Delivered at Place)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"], key="sidebar_incoterm")
+incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (אחריות מלאה כולל מיסים)", "DAP (מסירה באתר ללא פריקה ומכס)", "CIF (עלות, ביטוח והובלה ימית)", "FOB (מסירה על הסיפון בנמל מוצא)", "EXW (איסוף עצמי ממפעל הספק)"], key="sidebar_incoterm")
 display_currency = st.sidebar.selectbox(T["currency_label"], ["USD ($)", "EUR (€)", "ILS (₪)"], key="sidebar_currency")
 
-forecast_date = st.sidebar.date_input("תאריך יעד לאספקה:", value=date(2027, 6, 30), key="sidebar_forecast_date")
-market_scenario = st.sidebar.selectbox("תסחיף שוק ותחזית אינפלציה:", ["Conservative (+8.0% p.a.)", "Base Market Trend (+4.5% p.a.)", "Optimistic / Stable (0.0%)"], key="sidebar_market_scenario")
+forecast_date = st.sidebar.date_input("תאריך יעד לאספקה באתר:", value=date(2027, 6, 30), key="sidebar_forecast_date")
+market_scenario = st.sidebar.selectbox("תחזית אינפלציה ומגמת שוק:", ["שמרני (+8.0% לשנה)", "בסיסי (+4.5% לשנה)", "יציב / ללא שינוי (0.0%)"], key="sidebar_market_scenario")
 
 today_date = date.today()
 delta_days = (forecast_date - today_date).days
 years_diff = max(0.0, delta_days / 365.25)
-annual_inflation = 0.08 if "Conservative" in market_scenario else (0.045 if "Base" in market_scenario else 0.0)
+annual_inflation = 0.08 if "שמרני" in market_scenario else (0.045 if "בסיסי" in market_scenario else 0.0)
 trend_multiplier = (1.0 + annual_inflation) ** years_diff
 
 @st.cache_data(ttl=300)
@@ -131,8 +133,8 @@ live_eur, live_ils = fetch_live_exchange_rates()
 if live_eur is None or live_ils is None:
     live_eur, live_ils = 0.92, 3.70
 
-usd_to_eur = st.sidebar.number_input("שער USD ל־EUR:", value=float(live_eur), step=0.01, min_value=0.0001, key="sidebar_usd_eur")
-usd_to_ils = st.sidebar.number_input("שער USD ל־ILS:", value=float(live_ils), step=0.01, min_value=0.0001, key="sidebar_usd_ils")
+usd_to_eur = st.sidebar.number_input("שער המרה USD ל־EUR:", value=float(live_eur), step=0.01, min_value=0.0001, key="sidebar_usd_eur")
+usd_to_ils = st.sidebar.number_input("שער המרה USD ל־ILS:", value=float(live_ils), step=0.01, min_value=0.0001, key="sidebar_usd_ils")
 
 def convert_from_usd(amount_usd, target_curr):
     if target_curr == "USD ($)": return amount_usd, "$"
@@ -141,8 +143,8 @@ def convert_from_usd(amount_usd, target_curr):
     return amount_usd, "$"
 
 dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), index=0, key="sidebar_dest_country")
-default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "Israel" else "Iepurești / Project Site"
-show_route_optimization = (dest_country != "Israel")
+default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "ישראל" else "Iepurești / Project Site"
+show_route_optimization = (dest_country != "ישראל")
 
 if show_route_optimization:
     tab1, tab2, tab3, tab4, tab5_eu, tab_projects, tab_summary = st.tabs([
@@ -156,37 +158,37 @@ else:
 
 with tab1:
     st.subheader("הגדרת רכיבי הציוד וכמויות לפרויקט")
-    st.info("הזן את כמויות מכולות ה־BESS, הממירים, השנאים ועלויות ה־EXW במפעל.")
+    st.info("הזן את כמויות מכולות הסוללה, הממירים, השנאים ועלויות הייצור במפעל (EXW).")
 
     col_meta1, col_meta2 = st.columns(2)
     with col_meta1:
         origin_port = st.selectbox(T["origin_port"], ORIGIN_PORTS, key="tab1_origin_port")
-        available_dest_ports = DESTINATION_PORTS.get(dest_country, DESTINATION_PORTS["Other / Custom"])
+        available_dest_ports = DESTINATION_PORTS.get(dest_country, DESTINATION_PORTS["אחר / מותאם"])
         dest_port = st.selectbox(T["dest_port"], available_dest_ports, key=f"tab1_dest_port_{dest_country}")
         site_address = st.text_input("שם אתר הפרויקט:", key="site_name_input", placeholder=default_site_placeholder)
 
     with col_meta2:
         applied_vat = st.number_input(f"שיעור מע\"מ ({dest_country}) %:", value=float(VAT_RATES[dest_country]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country}")
         vat_recovery_pct = st.number_input("אחוז החזר מע\"מ (%)", value=100.0, min_value=0.0, max_value=100.0, step=1.0, key="tab1_vat_rec")
-        vat_paid_by_supplier = st.checkbox("מע\"מ משולם על ידי הספק במסגרת תנאי המסחר", value=False, key="tab1_vat_supplier")
+        vat_paid_by_supplier = st.checkbox("המע\"מ משולם על ידי הספק במסגרת תנאי המסחר", value=False, key="tab1_vat_supplier")
 
     st.markdown("---")
     col_q1, col_q2, col_q3 = st.columns(3)
     
     with col_q1:
-        st.markdown("#### מכולות סוללה BESS")
-        bess_count = st.number_input("כמות BESS (40' HC DG):", min_value=0, value=20, step=1, key="proj_bess_count")
+        st.markdown("#### מכולות סוללה (BESS)")
+        bess_count = st.number_input("כמות מכולות BESS (40' HC DG):", min_value=0, value=20, step=1, key="proj_bess_count")
         bess_exw = st.number_input("עלות EXW ליחידת BESS ($):", min_value=0.0, value=400000.0, step=10000.0, key="proj_bess_exw")
 
-        oog_count = st.number_input("כמות מכולות חריגות OOG:", min_value=0, value=0, step=1, key="proj_oog_count")
+        oog_count = st.number_input("כמות מכולות חריגות (OOG):", min_value=0, value=0, step=1, key="proj_oog_count")
         oog_exw = st.number_input("עלות EXW ליחידת OOG ($):", min_value=0.0, value=400000.0, step=10000.0, key="proj_oog_exw")
 
     with col_q2:
-        st.markdown("#### תחנות ממיר MVS ושנאים")
-        mvs_count = st.number_input("כמות תחנות MVS:", min_value=0, value=4, step=1, key="proj_mvs_count")
+        st.markdown("#### תחנות המרה ושנאים")
+        mvs_count = st.number_input("כמות תחנות מתח גבוה (MVS):", min_value=0, value=4, step=1, key="proj_mvs_count")
         mvs_exw = st.number_input("עלות EXW ליחידת MVS ($):", min_value=0.0, value=250000.0, step=10000.0, key="proj_mvs_exw")
 
-        transformer_count = st.number_input("כמות שנאים עיקריים:", min_value=0, value=2, step=1, key="proj_trans_count")
+        transformer_count = st.number_input("כמות שנאים ראשיים:", min_value=0, value=2, step=1, key="proj_trans_count")
         transformer_exw = st.number_input("עלות EXW ליחידת שנאי ($):", min_value=0.0, value=120000.0, step=10000.0, key="proj_trans_exw")
 
     with col_q3:
@@ -194,7 +196,7 @@ with tab1:
         access_count = st.number_input("מכולות ציוד נלווה / יבש:", min_value=0, value=2, step=1, key="proj_access_count")
         access_exw = st.number_input("עלות EXW ליחידת ציוד נלווה ($):", min_value=0.0, value=50000.0, step=5000.0, key="proj_access_exw")
 
-        solar_count = st.number_input("יחידות פאנלים סולאריים PV:", min_value=0, value=0, step=1, key="proj_solar_count")
+        solar_count = st.number_input("יחידות פאנלים סולאריים (PV):", min_value=0, value=0, step=1, key="proj_solar_count")
         solar_exw = st.number_input("עלות EXW ליחידה סולארית ($):", min_value=0.0, value=300000.0, step=10000.0, key="proj_solar_exw")
 
     total_containers_project = max(1, bess_count + oog_count + mvs_count + transformer_count + access_count + solar_count)
@@ -206,17 +208,17 @@ with tab1:
     is_bess = (bess_count > 0 or oog_count > 0)
     is_dg = is_bess
 
-    st.success(f"📊 סה\"כ יחידות לפרויקט: {total_containers_project} | סה\"כ ערך EXW במפעל: **${total_exw_project:,.2f}**")
+    st.success(f"📊 סה\"כ יחידות לפרויקט: {total_containers_project} | סה\"כ ערך ציוד במפעל (EXW): **${total_exw_project:,.2f}**")
 
 with tab2:
-    st.subheader("🚢 תעריפי הובלה ימית, BAF לפי TEU ו־DTHC פרטניים")
+    st.subheader("🚢 תעריפי הובלה ימית, היטל דלק (BAF) ודמי טיפול בנמל יעד (DTHC)")
     
     selected_carrier = st.selectbox("בחירת חברת ספנות:", list(CARRIER_FUEL_SURCHARGES.keys()), key="tab2_carrier")
     carrier_data = CARRIER_FUEL_SURCHARGES[selected_carrier]
 
-    baf_included = st.checkbox("תוספת דלק (BAF) כלולה כבר במחיר ההובלה הימית הבסיסי", value=False, key="tab2_baf_incl")
+    baf_included = st.checkbox("תוספת דלק (BAF) כלולה כבר במחיר ההובלה הימית", value=False, key="tab2_baf_incl")
 
-    st.markdown("##### 1. עלות הובלה ימית ליחידה (Ocean Freight / Unit):")
+    st.markdown("##### 1. עלות הובלה ימית ליחידה:")
     oc_col1, oc_col2, oc_col3 = st.columns(3)
     with oc_col1:
         unit_freight_bess = st.number_input("הובלת BESS ($):", value=31850.0 * carrier_data["bess_multiplier"], step=500.0, key="freight_bess")
@@ -229,9 +231,9 @@ with tab2:
         unit_freight_solar = st.number_input("הובלת סולארי ($):", value=3360.0, step=200.0, key="freight_solar")
 
     st.markdown("---")
-    st.markdown("##### 2. היטל דלק (BAF - Bunker Surcharge) מחושב לפי נפח TEU:")
+    st.markdown("##### 2. היטל דלק ימי (BAF) מחושב לפי נפח TEU:")
     baf_mult = carrier_data["dthc_mult"]
-    base_baf_per_teu = st.number_input("תעריף BAF בסיסי ל־TEU אחד ($):", value=420.0 * baf_mult, step=20.0, key="baf_per_teu")
+    base_baf_per_teu = st.number_input("תעריף BAF בסיסי ל־TEU יחיד ($):", value=420.0 * baf_mult, step=20.0, key="baf_per_teu")
 
     teu_bess, teu_oog, teu_mvs, teu_trans, teu_access, teu_solar = 2.0, 2.0, 1.0, 1.0, 1.0, 1.0
 
@@ -243,19 +245,19 @@ with tab2:
     baf_solar = 0.0 if baf_included else (base_baf_per_teu * teu_solar)
 
     st.markdown("---")
-    st.markdown("##### 3. דמי טיפול בנמל יעד (DTHC - Destination THC) לפי סוג מכולה/ציוד:")
+    st.markdown("##### 3. דמי טיפול בנמל יעד (Destination THC):")
     dthc_mult = carrier_data["dthc_mult"]
     
     dh_col1, dh_col2, dh_col3 = st.columns(3)
     with dh_col1:
-        dthc_bess = st.number_input("DTHC ל־BESS ($):", value=650.0 * dthc_mult, step=50.0, key="dthc_bess")
-        dthc_oog = st.number_input("DTHC ל־OOG ($):", value=850.0 * dthc_mult, step=50.0, key="dthc_oog")
+        dthc_bess = st.number_input("DTHC מכולת BESS ($):", value=650.0 * dthc_mult, step=50.0, key="dthc_bess")
+        dthc_oog = st.number_input("DTHC מכולת OOG ($):", value=850.0 * dthc_mult, step=50.0, key="dthc_oog")
     with dh_col2:
-        dthc_mvs = st.number_input("DTHC ל־MVS ($):", value=420.0 * dthc_mult, step=30.0, key="dthc_mvs")
-        dthc_trans = st.number_input("DTHC לשנאי ($):", value=480.0 * dthc_mult, step=30.0, key="dthc_trans")
+        dthc_mvs = st.number_input("DTHC תחנת MVS ($):", value=420.0 * dthc_mult, step=30.0, key="dthc_mvs")
+        dthc_trans = st.number_input("DTHC שנאי ($):", value=480.0 * dthc_mult, step=30.0, key="dthc_trans")
     with dh_col3:
-        dthc_access = st.number_input("DTHC לציוד נלווה ($):", value=280.0 * dthc_mult, step=20.0, key="dthc_access")
-        dthc_solar = st.number_input("DTHC לסולארי ($):", value=300.0 * dthc_mult, step=20.0, key="dthc_solar")
+        dthc_access = st.number_input("DTHC ציוד נלווה ($):", value=280.0 * dthc_mult, step=20.0, key="dthc_access")
+        dthc_solar = st.number_input("DTHC פאנלים ($):", value=300.0 * dthc_mult, step=20.0, key="dthc_solar")
 
     total_base_ocean_freight = (
         (bess_count * unit_freight_bess) + (oog_count * unit_freight_oog) +
@@ -280,7 +282,7 @@ with tab2:
     insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country, 0.15)
 
 with tab3:
-    st.subheader("🚚 תעריפי הובלה יבשתית נפרדים מנמל לאתר (Port to Site)")
+    st.subheader("🚚 הובלה יבשתית מנמל הפריקה לאתר הפרויקט (Port to Site)")
     
     dr_col1, dr_col2, dr_col3 = st.columns(3)
     with dr_col1:
@@ -313,13 +315,13 @@ with tab3:
 with tab4:
     st.subheader("⚖️ רגולציה ואישורים מנדטוריים")
 
-    if dest_country == "Israel":
+    if dest_country == "ישראל":
         st.markdown("### 🇮🇱 רגולציית חומ\"ס ואישורי הובלה שוטפים (ישראל)")
-        st.error("🚨 **מנדטורי (חובה חוקית בישראל):** אישור הובלה פרטני מאגף הפיקוח והרכב במשרד התחבורה לכל מכולת BESS.")
+        st.error("🚨 **חובה חוקית בישראל:** אישור הובלה פרטני מאגף הפיקוח והרכב במשרד התחבורה לכל מכולת BESS.")
         mot_fee_per_bess = st.number_input("עלות אגרת אישור הובלה ממשרד התחבורה ליחידת BESS ($):", value=350.0, step=50.0, key="mot_fee_input")
         mot_total_approval_cost = mot_fee_per_bess * float(bess_count + oog_count)
 
-        st.warning("⚠️ **מנדטורי (חובה נמלית):** אגרות בדיקה, פיקוח חומ\"ס ואישורי כבאות בנמלי הים.")
+        st.warning("⚠️ **דרישה נמלית:** אגרות בדיקה, פיקוח חומ\"ס ואישורי כבאות בנמלי הים.")
         local_regulatory_permits = st.number_input("עלות כוללת להיתרי חומ\"ס נמלים ($):", value=1500.0, step=100.0, key="reg_cost_input")
         
         epr_recycling_total_usd = 0.0
@@ -330,15 +332,15 @@ with tab4:
 
     else:
         st.markdown(f"### 🇪🇺 רגולציה שוטפת ואחריות יצרן (איחוד אירופי — {dest_country})")
-        st.error("🚨 **מנדטורי (חובה באירופה):** דרכון סוללות דיגיטלי (EU Battery Passport) ותיעוד שרשרת אספקה.")
+        st.error("🚨 **חובה באירופה:** דרכון סוללות דיגיטלי (EU Battery Passport) ותיעוד שרשרת אספקה.")
         battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):", value=1200.0, step=100.0, key="bp_cost_input")
         battery_passport_total_usd = battery_passport_flat
 
-        st.warning("⚠️ **מנדטורי (חובה באירופה):** דמי טיפול באחריות יצרן מורחבת (EPR / Recycling שוטף).")
+        st.warning("⚠️ **חובה באירופה:** דמי טיפול באחריות יצרן מורחבת (EPR / Recycling שוטף).")
         epr_fee_per_unit = st.number_input("עלות EPR שוטף ליחידת BESS ($):", value=450.0, step=50.0, key="epr_unit_input")
         epr_recycling_total_usd = epr_fee_per_unit * float(bess_count + oog_count)
 
-        include_regulatory = st.checkbox("כלול אגרות היתרי כניסה והיערכות אתר מקומיים באירופה", value=True, key="reg_permits_toggle")
+        include_regulatory = st.checkbox("הכלל אגרות היתרי כניסה והיערכות אתר מקומיים באירופה", value=True, key="reg_permits_toggle")
         local_regulatory_permits = st.number_input("עלות היתרים מקומיים ($):", value=600.0, step=100.0, key="reg_cost_input") if include_regulatory else 0.0
 
         mot_total_approval_cost = 0.0
@@ -363,13 +365,13 @@ with tab4:
                 decommissioning_total_usd = 0.0
 
     st.markdown("---")
-    requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)", value=is_bess, key="hl_survey_toggle")
+    requires_heavy_lift = st.checkbox("נדרש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)", value=is_bess, key="hl_survey_toggle")
     heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
 
 if show_route_optimization and tab5_eu is not None:
     with tab5_eu:
-        st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Romania / Poland / Germany)")
-        st.info("ניתוח חלופות נמלי פריקה (לדוגמה Constanța מול Burgas) והובלה יבשתית לאתר הפרויקט.")
+        st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה")
+        st.info("ניתוח חלופות נמלי פריקה והובלה יבשתית לאתר הפרויקט.")
 
 with tab_projects:
     st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
@@ -435,11 +437,11 @@ project_delivery_cost = (
 )
 
 supplier_commercial_price_options = {
-    "EXW (Ex Works)": trended_exw,
-    "FOB (Free on Board)": trended_exw + china_inland_drayage + china_origin_thc,
-    "CIF (Cost, Insurance & Freight)": trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight + insurance_total_usd,
-    "DAP (Delivered at Place)": ddp_supplier_scope_ex_vat,
-    "DDP (Delivered Duty Paid)": ddp_supplier_scope_incl_vat
+    "EXW (איסוף עצמי ממפעל הספק)": trended_exw,
+    "FOB (מסירה על הסיפון בנמל מוצא)": trended_exw + china_inland_drayage + china_origin_thc,
+    "CIF (עלות, ביטוח והובלה ימית)": trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight + insurance_total_usd,
+    "DAP (מסירה באתר ללא פריקה ומכס)": ddp_supplier_scope_ex_vat,
+    "DDP (אחריות מלאה כולל מיסים)": ddp_supplier_scope_incl_vat
 }
 
 supplier_scope_total = supplier_commercial_price_options.get(incoterm, trended_exw)
@@ -465,39 +467,35 @@ with tab_summary:
     st.subheader(f"📊 דוח בקרה פיננסית ורגולטורית — {incoterm} ({display_currency})")
     
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("עלות נחיתה (ex-VAT)", f"{curr_symbol} {display_val:,.2f}")
+    m1.metric("עלות נחיתה (לפני מע\"מ)", f"{curr_symbol} {display_val:,.2f}")
     m2.metric("עלות כלכלית כוללת", f"{curr_symbol} {econ_val:,.2f}")
     m3.metric("דרישת מזומנים כוללת", f"{curr_symbol} {cash_val:,.2f}")
     m4.metric("תשלום ישיר לספק", f"{curr_symbol} {supplier_val:,.2f}")
 
     st.markdown("---")
-    st.subheader("📋 טבלת פירוט רכיבי תקציב הפרויקט (Cost Breakdown)")
+    st.subheader("📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)")
 
-    # יצירת טבלה מפורטת ומקצועית בעברית עם שורת סיכום ברורה
+    # יצירת טבלה עסקית מסודרת עם כמויות, עלות ליחידה וסה"כ לפי סעיף
     summary_data = [
-        ["ערך ציוד במפעל (Equipment EXW)", trended_exw],
-        ["הובלה יבשתית ונמלית במוצא (China Inland & THC)", china_inland_drayage + china_origin_thc],
-        ["הובלה ימית בסיסית (Ocean Freight)", total_base_ocean_freight * trend_multiplier],
-        ["היטל דלק ימי לפי TEU (BAF)", total_baf_ocean * trend_multiplier],
-        ["דמי טיפול בנמל יעד (Destination THC)", destination_thc_total],
-        ["ביטוח ימי (Marine Insurance)", insurance_total_usd],
-        ["מכס יבוא (Customs Duty)", customs_duty_usd],
-        ["הובלה יבשתית לאתר (Inland Drayage)", inland_drayage_total_usd],
-        ["רגולציה מקומית ואישורי חומ\"ס/משרד התחבורה", active_regulatory_permits],
-        ["עגורן ופריקה באתר (Site Crane & Unloading)", active_site_crane],
-        ["הפרשת מחזור סוף חיים (Decommissioning)", decommissioning_total_usd],
-        ["בלת״ם פרויקטי (Contingency)", contingency_usd]
+        ["ערך ציוד במפעל (Equipment EXW)", f"{int(total_containers_project)} יחידות", f"${total_exw_project/max(1, total_containers_project):,.2f}", trended_exw],
+        ["הובלה יבשתית ונמלית במוצא", f"{int(total_containers_project)} יחידות", f"${(china_inland_drayage + china_origin_thc)/max(1, total_containers_project):,.2f}", china_inland_drayage + china_origin_thc],
+        ["הובלה ימית בסיסית", f"{int(total_containers_project)} מכולות", f"${(total_base_ocean_freight)/max(1, total_containers_project):,.2f}", total_base_ocean_freight * trend_multiplier],
+        ["היטל דלק ימי לפי TEU (BAF)", f"{int(total_containers_project)} יחידות", f"${(total_baf_ocean)/max(1, total_containers_project):,.2f}", total_baf_ocean * trend_multiplier],
+        ["דמי טיפול בנמל יעד (Destination THC)", f"{int(total_containers_project)} יחידות", f"${(total_destination_thc)/max(1, total_containers_project):,.2f}", destination_thc_total],
+        ["ביטוח ימי", "אחוז מערך CIF", "-", insurance_total_usd],
+        ["מכס יבוא", f"על פי סיווג ({customs_duty_pct}%)", "-", customs_duty_usd],
+        ["הובלה יבשתית מנמל לאתר", f"{int(total_containers_project)} משאיות", f"${inland_drayage_total_base/max(1, total_containers_project):,.2f}", inland_drayage_total_usd],
+        ["רגולציה מקומית ואישורי חומ\"ס / משרד התחבורה", "הוצאה כוללת", "-", active_regulatory_permits],
+        ["עגורן מנוף ופריקה באתר", "הוצאה כוללת", "-", active_site_crane],
+        ["הפרשת מחזור סוף חיים (Decommissioning)", f"{int(bess_count + oog_count)} יחידות BESS", "-", decommissioning_total_usd],
+        ["בלת״ם פרויקטי", "5% מסך שרשרת האספקה", "-", contingency_usd],
+        ["סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)", "-", "-", total_landed_cost_ex_vat]
     ]
 
-    summary_df = pd.DataFrame(summary_data, columns=["רכיב עלות בפרויקט (Cost Component)", "עלות ב־USD ($)"])
+    summary_df = pd.DataFrame(summary_data, columns=["רכיב עלות בפרויקט", "כמות / בסיס חישוב", "עלות ליחידה (USD)", "סה\"כ סעיף ב־USD ($)"])
     
-    # הוספת שורת סיכום כוללת לטבלה
-    total_row = pd.DataFrame([["סא\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)", summary_df["עלות ב־USD ($)"].sum()]], columns=summary_df.columns)
-    summary_df = pd.concat([summary_df, total_row], ignore_index=True)
-
-    # הצגת טבלה מעוצבת בעברית
     st.dataframe(
-        summary_df.style.format({"עלות ב־USD ($)": "${:,.2f}"}),
+        summary_df.style.format({"סה\"כ סעיף ב־USD ($)": "${:,.2f}"}),
         use_container_width=True,
         hide_index=True
     )
