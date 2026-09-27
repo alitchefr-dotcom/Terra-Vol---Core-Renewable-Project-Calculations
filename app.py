@@ -58,7 +58,7 @@ T = {
     "scenario_header": "🗂️ Scenario, Incoterm & Market Forecast" if not is_hebrew else "🗂️ הגדרות תרחיש, תנאי סחר ותחזית שוק",
     "incoterm_label": "Commercial Incoterm (Supplier Scope):" if not is_hebrew else "תנאי סחר מסחרי (אחריות ספק):",
     "currency_label": "Dashboard Main Currency:" if not is_hebrew else "מטבע הצגה ראשי בדשבורד:",
-    "tab1": "📋 Multi-Item Project Scope" if not is_hebrew else "📋 תמהיל רכיבי הפרויקט (Multi-Item)",
+    "tab1": "📋 Multi-Item Project Scope" if not is_hebrew else "📋 תמהיל רכיבי הציוד לפרויקט (Multi-Item)",
     "tab2": "⚓ Supply Chain & Incoterms" if not is_hebrew else "⚓ שרשרת אספקה ותנאי סחר",
     "tab3": "📦 Storage & Site Drayage" if not is_hebrew else "📦 אחסנה, השהיות והובלת אתר",
     "tab4": "⚖️ DG Compliance & Regulation" if not is_hebrew else "⚖️ רגולציית חומ\"ס DG ורגולציית מוצר",
@@ -143,6 +143,10 @@ def convert_from_usd(amount_usd, target_curr):
     return amount_usd, "$"
 
 dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), index=0, key="sidebar_dest_country")
+
+# התאמה דינמית של דוגמת שם האתר לפי מדינת היעד (אשלים בישראל, איפוטשט ברומניה/אירופה)
+default_site_placeholder = "אשלים / מתחם אגירה (אנלייט)" if dest_country == "Israel" else "Iepurești / Project Site"
+
 show_route_optimization = (dest_country != "Israel")
 
 if show_route_optimization:
@@ -161,7 +165,7 @@ with tab1:
         origin_port = st.selectbox(T["origin_port"], ORIGIN_PORTS, key="tab1_origin_port")
         available_dest_ports = DESTINATION_PORTS.get(dest_country, DESTINATION_PORTS["Other / Custom"])
         dest_port = st.selectbox(T["dest_port"], available_dest_ports, key=f"tab1_dest_port_{dest_country}")
-        site_address = st.text_input("Project Site Name", key="site_name_input", placeholder="e.g. Iepurești")
+        site_address = st.text_input("Project Site Name / שם אתר הפרויקט", key="site_name_input", placeholder=default_site_placeholder)
 
     with col_meta2:
         applied_vat = st.number_input(f"VAT Rate ({dest_country}) %:", value=float(VAT_RATES[dest_country]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country}")
