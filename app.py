@@ -409,9 +409,9 @@ with tab1:
 
     exw_display_val, _ = convert_from_usd(total_exw_project, display_currency)
     if is_hebrew:
-        st.success(f'📊 סה"כ יחידות לפרויקט: {total_containers_project:,} | סה"כ ערך ציוד במפעל (EXW): <span class="ltr-val"><b>{curr_symbol} {exw_display_val:,.2f}</b></span>', unsafe_allow_html=True)
+        st.success(f'📊 Project Units: {total_containers_project:,} | Total Factory EXW Value: {curr_symbol} {exw_display_val:,.2f}')
     else:
-        st.success(f'📊 Total Project Units: {total_containers_project:,} | Total Factory EXW Value: <span class="ltr-val"><b>{curr_symbol} {exw_display_val:,.2f}</b></span>', unsafe_allow_html=True)
+        st.success(f'📊 Project Units: {total_containers_project:,} | Total Factory EXW Value: {curr_symbol} {exw_display_val:,.2f}')
 
 with tab2:
     st.subheader("🚢 תעריפי הובלה ימית, היטל דלק (BAF) ודמי טיפול בנמל יעד (DTHC)" if is_hebrew else "🚢 Ocean Freight, BAF & Destination THC")
@@ -614,9 +614,8 @@ with tab4:
                 decom_per_unit_display, _ = convert_from_usd(decom_cost_per_bess, display_currency)
                 decom_display_val, _ = convert_from_usd(decommissioning_total_usd, display_currency)
                 st.info(
-                    f'💡 עלות מוערכת ליחידה: <span class="ltr-val"><b>{curr_symbol} {decom_per_unit_display:,.2f}</b></span> ({bess_capacity_mwh:.1f} MWh × <span class="ltr-val">{curr_symbol}{decom_cost_per_kwh:,.0f}</span>/kWh) | '
-                    f'סה"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: <span class="ltr-val"><b>{curr_symbol} {decom_display_val:,.2f}</b></span>',
-                    unsafe_allow_html=True
+                    f'Estimated unit cost: {curr_symbol} {decom_per_unit_display:,.2f} ({bess_capacity_mwh:.1f} MWh × {curr_symbol}{decom_cost_per_kwh:,.0f}/kWh) | '
+                    f'Total decommissioning provision for {int(bess_count + oog_count)} units: {curr_symbol} {decom_display_val:,.2f}'
                 )
             else:
                 decommissioning_total_usd = 0.0
@@ -687,7 +686,7 @@ if is_european_dest and tab_projects is not None:
         SHIRA_COUNTRY_TO_KEY = {
             "italy": "איטליה", "poland": "פולין", "germany": "גרמניה", "sweden": "שוודיה",
             "greece": "יוון", "spain": "ספרד", "bulgaria": "בולגריה", "hungary": "הונגריה",
-            "romania": "רומניה", "isראל": "ישראל", "finland": "פינלנד",
+            "romania": "רומניה", "israel": "ישראל", "finland": "פינלנד",
         }
         SHIRA_EPR_FEE_PER_BESS_UNIT_USD = 450.0
 
@@ -740,7 +739,7 @@ if is_european_dest and tab_projects is not None:
             "with BESS (not \"MVS for BESS\") at $450/unit — the same EPR default used in the Regulation tab. The "
             "Attila sites in Hungary have no source container count, so they're flagged \"qty missing\" rather than $0."
         )
-        st.success("✅ טבלת פרויקטי Enlight המלאה נטענה בהצלחה!" if is_hebrew else "✅ Full Enlight project table loaded successfully!")
+        st.success("Full Enlight project table loaded successfully!")
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
