@@ -338,11 +338,13 @@ with tab3:
     
     if dest_country != "Israel" and dest_country != "Other / Custom":
         st.markdown("🇪🇺 **חישוב הובלה יבשתית לפי קילומטר (Cost per KM - CPK באירופה):**" if is_hebrew else "🇪🇺 **European Trucking Cost per KM (CPK) Calculator:**")
-        use_cpk_calc = st.checkbox("Calculate inland drayage based on distance (km) & country rate" if not is_hebrew else "חשב הובלה יבשתית אוטומטית לפי מרחק (ק"מ) ותעריף מקומי במדינה", value=False, key="tab3_cpk_toggle")
+        
+        cpk_label = "Calculate inland drayage based on distance (km) & country rate" if not is_hebrew else "חשב הובלה יבשתית אוטומטית לפי מרחק (ק\"מ) ותעריף מקומי במדינה"
+        use_cpk_calc = st.checkbox(cpk_label, value=False, key="tab3_cpk_toggle")
         
         if use_cpk_calc:
             default_km = 350.0 if dest_country in ["Germany", "Poland", "Romania", "Hungary"] else 550.0
-            route_km = st.number_input("Estimated Port-to-Site Distance (One-way KM):" if not is_hebrew else "מרחק משוער מהנמל לאתר הפרויקט (ק"מ לכיוון אחד):", value=default_km, step=25.0, min_value=10.0, key="tab3_route_km")
+            route_km = st.number_input("Estimated Port-to-Site Distance (One-way KM):" if not is_hebrew else "מרחק משוער מהנמל לאתר הפרויקט (ק\"מ לכיוון אחד):", value=default_km, step=25.0, min_value=10.0, key="tab3_route_km")
             
             country_rates = EUROPE_TRUCK_RATES_CPK.get(dest_country, {"dry": 2.20, "dg_heavy": 2.90})
             active_cpk_rate = country_rates["dg_heavy"] if is_dg else country_rates["dry"]
