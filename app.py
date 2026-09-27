@@ -6,13 +6,36 @@ import base64
 from datetime import date
 
 # ---------------------------------------------------------
-# הגדרת תצורת עמוד ושפה
+# הגדרת תצורת עמוד ולוגו
 # ---------------------------------------------------------
+possible_logo_names = ["logo.png", "logo.png.png", "Logo.png"]
+logo_path = None
+for name in possible_logo_names:
+    full_path = os.path.join(os.path.dirname(__file__), name)
+    if os.path.exists(full_path):
+        logo_path = full_path
+        break
+
 st.set_page_config(
     page_title="Terra Vol",
-    page_icon="⚡",
+    page_icon=logo_path if logo_path else "⚡",
     layout="wide"
 )
+
+def get_base64_of_bin_file(bin_file):
+    if not bin_file or not os.path.exists(bin_file):
+        return ""
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+logo_base64 = get_base64_of_bin_file(logo_path) if logo_path else ""
+
+if logo_base64:
+    st.sidebar.markdown(
+        f'<div style="text-align: center; margin-bottom: 1.5rem;"><img src="data:image/png;base64,{logo_base64}" style="width: 100px; height: auto;" /></div>',
+        unsafe_allow_html=True
+    )
 
 st.sidebar.header("🌐 Language / שפה")
 lang = st.sidebar.radio("Select Language / בחר שפה:", ["Hebrew (עברית)", "English"], index=0, key="lang_select")
@@ -35,7 +58,7 @@ T = {
     "scenario_header": "🗂️ Scenario, Incoterm & Market Forecast" if not is_hebrew else "🗂️ הגדרות תרחיש, תנאי סחר ותחזית שוק",
     "incoterm_label": "Commercial Incoterm (Supplier Scope):" if not is_hebrew else "תנאי סחר מסחרי (אחריות ספק):",
     "currency_label": "Dashboard Main Currency:" if not is_hebrew else "מטבע הצגה ראשי בדשבורד:",
-    "tab1": "📋 Multi-Item Project Scope" if not is_hebrew else "📋 סליל ציוד פרויקטלי משולב (Multi-Item)",
+    "tab1": "📋 Multi-Item Project Scope" if not is_hebrew else "📋 תמהיל רכיבי הפרויקט (Multi-Item)",
     "tab2": "⚓ Supply Chain & Incoterms" if not is_hebrew else "⚓ שרשרת אספקה ותנאי סחר",
     "tab3": "📦 Storage & Site Drayage" if not is_hebrew else "📦 אחסנה, השהיות והובלת אתר",
     "tab4": "⚖️ DG Compliance & Regulation" if not is_hebrew else "⚖️ רגולציית חומ\"ס DG ורגולציית מוצר",
@@ -47,7 +70,15 @@ T = {
     "dest_country": "Final Project Country:" if not is_hebrew else "מדינת יעד סופית (אתר הפרויקט):",
 }
 
-st.title("Terra Vol")
+logo_img_tag = f'<img src="data:image/png;base64,{logo_base64}" style="width: 140px; height: auto;" />' if logo_base64 else '⚡'
+
+header_html = f"""
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%; direction: {'rtl' if is_hebrew else 'ltr'}; margin-bottom: 0rem;">
+    <h1 style="margin: 0; font-size: 3rem; font-weight: 700;">Terra Vol</h1>
+    <div>{logo_img_tag}</div>
+</div>
+"""
+st.markdown(header_html, unsafe_allow_html=True)
 st.caption(T["caption"])
 
 ORIGIN_PORTS = ["Shanghai", "Ningbo-Zhoushan", "Shenzhen / Yantian", "Qingdao"]
@@ -74,15 +105,36 @@ CARRIER_FUEL_SURCHARGES = {
     "MSC": {"baf": 750.0}
 }
 
-incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"], key="sidebar_incoterm")
+incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "DAP (Delivered at Place)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"], key="sidebar_incoterm")
 display_currency = st.sidebar.selectbox(T["currency_label"], ["USD ($)", "EUR (€)", "ILS (₪)"], key="sidebar_currency")
 
 forecast_date = st.sidebar.date_input("Target Delivery Date:", value=date(2027, 6, 30), key="sidebar_forecast_date")
 market_scenario = st.sidebar.selectbox("Market Scenario:", ["Conservative (+8.0% p.a.)", "Base Market Trend (+4.5% p.a.)", "Optimistic / Stable (0.0%)"], key="sidebar_market_scenario")
 
-trend_multiplier = 1.03
-trend_pct = 3.0
-usd_to_eur, usd_to_ils = 0.92, 3.70
+today_date = date.today()
+delta_days = (forecast_date - today_date).days
+years_diff = max(0.0, delta_days / 365.25)
+annual_inflation = 0.08 if "Conservative" in market_scenario else (0.045 if "Base" in market_scenario else 0.0)
+trend_multiplier = (1.0 + annual_inflation) ** years_diff
+
+@st.cache_data(ttl=300)
+def fetch_live_exchange_rates():
+    try:
+        response = requests.get("https://api.frankfurter.app/latest?from=USD&to=EUR,ILS", timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            rates = data.get("rates", {})
+            return rates.get("EUR", 0.92), rates.get("ILS", 3.70)
+    except Exception:
+        pass
+    return None, None
+
+live_eur, live_ils = fetch_live_exchange_rates()
+if live_eur is None or live_ils is None:
+    live_eur, live_ils = 0.92, 3.70
+
+usd_to_eur = st.sidebar.number_input("USD to EUR Rate:", value=float(live_eur), step=0.01, min_value=0.0001, key="sidebar_usd_eur")
+usd_to_ils = st.sidebar.number_input("USD to ILS Rate:", value=float(live_ils), step=0.01, min_value=0.0001, key="sidebar_usd_ils")
 
 def convert_from_usd(amount_usd, target_curr):
     if target_curr == "USD ($)": return amount_usd, "$"
@@ -101,8 +153,9 @@ else:
     tab_summary = tab6
 
 with tab1:
-    st.subheader("Multi-Item Project Bill of Materials (BoM)" if not is_hebrew else "הרכב ציוד פרויקטלי משולב (Bill of Materials)")
-    
+    st.subheader("Multi-Item Project Bill of Materials (BoM)" if not is_hebrew else "תמהיל רכיבי הציוד לפרויקט (Multi-Item BoM)")
+    st.info("כעת ניתן להגדיר את כל סוגי המוצרים בפרויקט במקביל, כולל מכולות אביזרים וציוד כללי (Accessories / Dry Containers).")
+
     col_meta1, col_meta2 = st.columns(2)
     with col_meta1:
         origin_port = st.selectbox(T["origin_port"], ORIGIN_PORTS, key="tab1_origin_port")
@@ -119,14 +172,17 @@ with tab1:
     col_q1, col_q2, col_q3 = st.columns(3)
     
     with col_q1:
+        st.markdown("#### BESS & OOG Containers")
         bess_count = st.number_input("BESS Containers Count:", min_value=0, value=20, step=1, key="proj_bess_count")
         bess_exw = st.number_input("BESS Unit EXW ($):", min_value=0.0, value=400000.0, step=10000.0, key="proj_bess_exw")
         bess_freight_unit = 31850.0
-        oog_count = 0
-        oog_exw = 400000.0
+
+        oog_count = st.number_input("OOG Flat Rack Count:", min_value=0, value=0, step=1, key="proj_oog_count")
+        oog_exw = st.number_input("OOG Unit EXW ($):", min_value=0.0, value=400000.0, step=10000.0, key="proj_oog_exw")
         oog_freight_unit = 29900.0
 
     with col_q2:
+        st.markdown("#### MVS & Transformers")
         mvs_count = st.number_input("MVS Stations Count:", min_value=0, value=4, step=1, key="proj_mvs_count")
         mvs_exw = st.number_input("MVS Unit EXW ($):", min_value=0.0, value=250000.0, step=10000.0, key="proj_mvs_exw")
         mvs_freight_unit = 4200.0
@@ -136,19 +192,26 @@ with tab1:
         transformer_freight_unit = 5500.0
 
     with col_q3:
+        st.markdown("#### Accessories & Solar PV")
+        access_count = st.number_input("Accessories / Dry Containers Count:", min_value=0, value=2, step=1, key="proj_access_count")
+        access_exw = st.number_input("Accessories Unit EXW ($):", min_value=0.0, value=50000.0, step=5000.0, key="proj_access_exw")
+        access_freight_unit = 3200.0
+
         solar_count = st.number_input("Solar PV Units Count:", min_value=0, value=0, step=1, key="proj_solar_count")
         solar_exw = st.number_input("Solar Unit EXW ($):", min_value=0.0, value=300000.0, step=10000.0, key="proj_solar_exw")
         solar_freight_unit = 3360.0
 
-    total_containers_project = max(1, bess_count + oog_count + mvs_count + transformer_count + solar_count)
-    total_exw_project = (bess_count * bess_exw) + (oog_count * oog_exw) + (mvs_count * mvs_exw) + (transformer_count * transformer_exw) + (solar_count * solar_exw)
+    total_containers_project = max(1, bess_count + oog_count + mvs_count + transformer_count + access_count + solar_count)
+    total_exw_project = (
+        (bess_count * bess_exw) + (oog_count * oog_exw) + 
+        (mvs_count * mvs_exw) + (transformer_count * transformer_exw) + 
+        (access_count * access_exw) + (solar_count * solar_exw)
+    )
     
     weighted_freight_total = (
-        (bess_count * bess_freight_unit) +
-        (oog_count * oog_freight_unit) +
-        (mvs_count * mvs_freight_unit) +
-        (transformer_count * transformer_freight_unit) +
-        (solar_count * solar_freight_unit)
+        (bess_count * bess_freight_unit) + (oog_count * oog_freight_unit) +
+        (mvs_count * mvs_freight_unit) + (transformer_count * transformer_freight_unit) +
+        (access_count * access_freight_unit) + (solar_count * solar_freight_unit)
     )
     base_freight_per_unit = weighted_freight_total / total_containers_project
     total_capacity_bess_mwh = float(bess_count + oog_count) * 5.0
@@ -169,7 +232,8 @@ with tab2:
     insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country, 0.15)
 
 with tab3:
-    use_cpk_calc = st.checkbox("Calculate inland drayage based on distance (km) & country rate", value=False, key="tab3_cpk_toggle")
+    cpk_label = "Calculate inland drayage based on distance (km) & country rate" if not is_hebrew else "חשב הובלה יבשתית אוטומטית לפי מרחק (ק\"מ) ותעריף מקומי במדינה"
+    use_cpk_calc = st.checkbox(cpk_label, value=False, key="tab3_cpk_toggle")
     if use_cpk_calc:
         route_km = st.number_input("Estimated Port-to-Site Distance (One-way KM):", value=350.0, step=25.0, key="tab3_route_km")
         country_rates = EUROPE_TRUCK_RATES_CPK.get(dest_country, {"dry": 2.20, "dg_heavy": 2.90})
@@ -217,7 +281,8 @@ destination_thc_total = dest_thc_port_fee * float(total_containers_project)
 
 indicative_vat_base_import_usd = customs_valuation_base_usd + customs_duty_usd + destination_thc_total
 vat_total_usd = indicative_vat_base_import_usd * (applied_vat / 100.0)
-supplier_vat_component = vat_total_usd if (vat_paid_by_supplier and incoterm.startswith("DDP")) else 0.0
+is_delivery_inclusive = incoterm.startswith("DDP") or incoterm.startswith("DAP")
+supplier_vat_component = vat_total_usd if (vat_paid_by_supplier and is_delivery_inclusive) else 0.0
 
 ddp_supplier_scope_ex_vat = (
     trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight + 
@@ -248,15 +313,16 @@ supplier_commercial_price_options = {
     "EXW (Ex Works)": trended_exw,
     "FOB (Free on Board)": trended_exw + china_inland_drayage + china_origin_thc,
     "CIF (Cost, Insurance & Freight)": trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight + insurance_total_usd,
+    "DAP (Delivered at Place)": ddp_supplier_scope_ex_vat,
     "DDP (Delivered Duty Paid)": ddp_supplier_scope_incl_vat
 }
 
 supplier_scope_total = supplier_commercial_price_options.get(incoterm, trended_exw)
 buyer_direct_payment_usd = max(0.0, project_delivery_cost - supplier_scope_total)
 
-effective_vat_cash = 0.0 if (vat_paid_by_supplier and incoterm.startswith("DDP")) else vat_total_usd
+effective_vat_cash = 0.0 if (vat_paid_by_supplier and is_delivery_inclusive) else vat_total_usd
 recoverable_vat = vat_total_usd * (vat_recovery_pct / 100.0)
-effective_non_recoverable_vat = 0.0 if (vat_paid_by_supplier and incoterm.startswith("DDP")) else (vat_total_usd - recoverable_vat)
+effective_non_recoverable_vat = 0.0 if (vat_paid_by_supplier and is_delivery_inclusive) else (vat_total_usd - recoverable_vat)
 
 buyer_supply_chain_total = project_delivery_cost
 contingency_usd = buyer_supply_chain_total * (ddp_contingency_pct / 100.0)
