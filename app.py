@@ -43,12 +43,22 @@ lang = st.sidebar.radio("בחר שפה / Select Language:", ["עברית", "Engl
 is_hebrew = (lang == "עברית")
 current_lang = "he" if is_hebrew else "en"
 
-# מילון תרגום מדויק ונקי לממשק המשתמש בלבד
+# מילון תרגום מקצועי ונקי לחלוטין (ללא כפילויות)
 T = {
     "he": {
         "caption": "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, תנאי סחר, רגולציה ותחזית שוק",
         "incoterm_label": "תנאי סחר מסחרי (אחריות ספק):",
         "currency_label": "מטבע תצוגה ראשי:",
+        "origin_port": "נמל מוצא:",
+        "dest_port": "נמל פריקה (יעד):",
+        "dest_country": "מדינת יעד לפרויקט:",
+        "site_label": "שם אתר הפרויקט:",
+        "site_ph": "אשלים / עמק הירדן (אנלייט)",
+        "vat_label": "שיעור מע\"מ",
+        "vat_rec": "אחוז החזר מע\"מ (%)",
+        "vat_sup": "המע\"מ משולם על ידי הספק במסגרת תנאי המסחר",
+        "eq_header": "הגדרת רכיבי הציוד וכמויות לפרויקט",
+        "eq_info": "הזן את כמויות מכולות הסוללה, הממירים, השנאים ועלויות הייצור במפעל (EXW).",
         "tab1": "📋 תמהיל ציוד וכמויות לפרויקט",
         "tab2": "⚓ שרשרת אספקה ותנאי סחר",
         "tab3": "📦 אחסנה, השהיות והובלת משאיות לאתר",
@@ -56,13 +66,6 @@ T = {
         "tab5_eu": "🗺️ הנחות מסלולים באירופה",
         "tab_projects": "📂 פרויקטי Enlight 2027-2028 (שירה)",
         "tab_summary": "📊 דוח בקרה תקציבית ורגולטורית",
-        "origin_port": "נמל מוצא:",
-        "dest_port": "נמל פריקה (יעד):",
-        "dest_country": "מדינת יעד לפרויקט:",
-        "site_label": "שם אתר הפרויקט:",
-        "site_ph": "אשלים / עמק הירדן (אנלייט)",
-        "eq_header": "הגדרת רכיבי הציוד וכמויות לפרויקט",
-        "eq_info": "הזן את כמויות מכולות הסוללה, הממירים, השנאים ועלויות הייצור במפעל (EXW).",
         "summary_title": "📊 דוח בקרה פיננסית ורגולטורית",
         "breakdown_title": "📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)",
         "excel_btn": "📥 הורד דוח פיננסי מלא לאקסל (Download Excel Report)",
@@ -75,6 +78,16 @@ T = {
         "caption": "Professional Project Calculator for Target Costs, Incoterms, Regulation & Market Forecast",
         "incoterm_label": "Commercial Incoterm (Supplier Scope):",
         "currency_label": "Main Display Currency:",
+        "origin_port": "Origin Port:",
+        "dest_port": "Destination Port:",
+        "dest_country": "Project Destination Country:",
+        "site_label": "Project Site Name:",
+        "site_ph": "Project Site / Site Address",
+        "vat_label": "VAT Rate",
+        "vat_rec": "VAT Recovery Rate (%)",
+        "vat_sup": "VAT paid by supplier under commercial terms",
+        "eq_header": "Equipment Mix & Quantities Configuration",
+        "eq_info": "Enter BESS container quantities, inverters, transformers, and factory EXW production costs.",
         "tab1": "📋 Equipment Mix & Quantities",
         "tab2": "⚓ Supply Chain & Incoterms",
         "tab3": "📦 Storage, Demurrage & Inland Drayage",
@@ -82,13 +95,6 @@ T = {
         "tab5_eu": "🗺️ European Route Options",
         "tab_projects": "📂 Enlight Projects 2027-2028 (Shira)",
         "tab_summary": "📊 Budget & Regulatory Control Report",
-        "origin_port": "Origin Port:",
-        "dest_port": "Destination Port:",
-        "dest_country": "Project Destination Country:",
-        "site_label": "Project Site Name:",
-        "site_ph": "Project Site / Site Address",
-        "eq_header": "Equipment Mix & Quantities Configuration",
-        "eq_info": "Enter BESS container quantities, inverters, transformers, and factory EXW production costs.",
         "summary_title": "📊 Financial & Regulatory Control Report",
         "breakdown_title": "📋 Project Budget Cost Breakdown",
         "excel_btn": "📥 Download Full Excel Report",
@@ -179,7 +185,7 @@ header_html = f"""
 st.markdown(header_html, unsafe_allow_html=True)
 st.caption(txt["caption"])
 
-ORIGIN_PORTS = ["שאנגחאי (Shanghai)", "נינגבו (Ningbo)", "שנג'ן (Shenzhen)", "צ'ינגדאו (Qingdao)"]
+ORIGIN_PORTS = ["שאנגחאי (Shanghai)", "נינגבו (Ningbo)", "שנג'ן (Shenzhen)", "צ'ינגדאו (Qingdao)"] if is_hebrew else ["Shanghai, China", "Ningbo, China", "Shenzhen, China", "Qingdao, China"]
 
 DESTINATION_PORTS = {
     "ישראל": ["נמל חיפה", "נמל אשדוד"],
@@ -208,23 +214,73 @@ DEFAULT_FREE_DAYS = {
     "שוודיה": 7, "יוון": 7, "ספרד": 7, "איטליה": 7, "בולגריה": 7, "הונגריה": 7, "אחר / מותאם": 7
 }
 
-CARRIER_FUEL_SURCHARGES = {
-    "ZIM (שירות מועדף למטעני חומ\"ס וגמישות)": {"bess_multiplier": 1.0, "dthc_mult": 1.0},
-    "MSC (תעריפים מועדפים)": {"bess_multiplier": 0.82, "dthc_mult": 0.90},
-    "Hapag-Lloyd (סטנדרטי)": {"bess_multiplier": 0.95, "dthc_mult": 0.95},
-    "שוק חופשי / ספוט": {"bess_multiplier": 0.90, "dthc_mult": 0.90}
+COUNTRY_EN_NAMES = {
+    "ישראל": "Israel",
+    "רומניה": "Romania",
+    "פולין": "Poland",
+    "גרמניה": "Germany",
+    "שוודיה": "Sweden",
+    "יוון": "Greece",
+    "ספרד": "Spain",
+    "איטליה": "Italy",
+    "בולגריה": "Bulgaria",
+    "הונגריה": "Hungary",
+    "אחר / מותאם": "Other / Custom",
 }
 
-incoterm = st.sidebar.selectbox(txt["incoterm_label"], ["DDP (אחריות מלאה כולל מיסים)", "DAP (מסירה באתר ללא פריקה ומכס)", "CIF (עלות, ביטוח והובלה ימית)", "FOB (מסירה על הסיפון בנמל מוצא)", "EXW (איסוף עצמי ממפעל הספק)"], key="sidebar_incoterm")
+PORTS_EN = {
+    "נמל חיפה": "Haifa Port",
+    "נמל אשדוד": "Ashdod Port",
+    "קונסטנצה, רומניה (Constanța)": "Constanța, Romania",
+    "בורגס, בולגריה (Burgas)": "Burgas, Bulgaria",
+    "גדנסק, פולין (Gdansk)": "Gdansk, Poland",
+    "גדיניה, פולין (Gdynia)": "Gdynia, Poland",
+    "המבורג, גרמניה (Hamburg)": "Hamburg, Germany",
+    "ברמרהאפן, גרמניה (Bremerhaven)": "Bremerhaven, Germany",
+    "גטבורג, שוודיה (Gothenburg)": "Gothenburg, Sweden",
+    "סטוקהולם, שוודיה (Stockholm)": "Stockholm, Sweden",
+    "פיראוס, יוון (Piraeus)": "Piraeus, Greece",
+    "סלוניקי, יוון (Thessaloniki)": "Thessaloniki, Greece",
+    "ולנסיה, ספרד (Valencia)": "Valencia, Spain",
+    "ברצלונה, ספרד (Barcelona)": "Barcelona, Spain",
+    "ג'נואה, איטליה (Genoa)": "Genoa, Italy",
+    "טרייסטה, איטליה (Trieste)": "Trieste, Italy",
+    "וורנה, בולגריה (Varna)": "Varna, Bulgaria",
+    "בודפשט, הונגריה (Budapest - Rail/Multimodal)": "Budapest, Hungary (Rail/Multimodal)",
+    "רוטרדם, הולנד (Rotterdam)": "Rotterdam, Netherlands",
+    "אנטוורפן, בלגיה (Antwerp)": "Antwerp, Belgium",
+}
+
+CARRIER_FUEL_SURCHARGES = {
+    "ZIM (שירות מועדף למטעני חומ\"ס וגמישות)" if is_hebrew else "ZIM (Preferred DG & Flexible Service)": {"bess_multiplier": 1.0, "dthc_mult": 1.0},
+    "MSC (תעריפים מועדפים)" if is_hebrew else "MSC (Preferred Tariffs)": {"bess_multiplier": 0.82, "dthc_mult": 0.90},
+    "Hapag-Lloyd (סטנדרטי)" if is_hebrew else "Hapag-Lloyd (Standard)": {"bess_multiplier": 0.95, "dthc_mult": 0.95},
+    "שוק חופשי / ספוט" if is_hebrew else "Spot Market / Free Carrier": {"bess_multiplier": 0.90, "dthc_mult": 0.90}
+}
+
+incoterm_options = [
+    "DDP (אחריות מלאה כולל מיסים)" if is_hebrew else "DDP (Delivered Duty Paid — Full Scope)",
+    "DAP (מסירה באתר ללא פריקה ומכס)" if is_hebrew else "DAP (Delivered at Place — Excl. Unloading & Customs)",
+    "CIF (עלות, ביטוח והובלה ימית)" if is_hebrew else "CIF (Cost, Insurance and Freight)",
+    "FOB (מסירה על הסיפון בנמל מוצא)" if is_hebrew else "FOB (Free On Board)",
+    "EXW (איסוף עצמי ממפעל הספק)" if is_hebrew else "EXW (Ex Works — Factory Pickup)"
+]
+
+incoterm = st.sidebar.selectbox(txt["incoterm_label"], incoterm_options, key="sidebar_incoterm")
 display_currency = st.sidebar.selectbox(txt["currency_label"], ["USD ($)", "EUR (€)", "ILS (₪)"], key="sidebar_currency")
 
-forecast_date = st.sidebar.date_input("תאריך יעד לאספקה באתר / Delivery Target Date:", value=date(2027, 6, 30), key="sidebar_forecast_date")
-market_scenario = st.sidebar.selectbox("תחזית אינפלציה ומגמת שוק / Market Trend:", ["שמרני (+8.0% לשנה)", "בסיסי (+4.5% לשנה)", "יציב / ללא שינוי (0.0%)"], key="sidebar_market_scenario")
+forecast_date = st.sidebar.date_input("תאריך יעד לאספקה באתר:" if is_hebrew else "Delivery Target Date:", value=date(2027, 6, 30), key="sidebar_forecast_date")
+market_options = [
+    "שמרני (+8.0% לשנה)" if is_hebrew else "Conservative (+8.0% p.a.)",
+    "בסיסי (+4.5% לשנה)" if is_hebrew else "Baseline (+4.5% p.a.)",
+    "יציב / ללא שינוי (0.0%)" if is_hebrew else "Stable / No Change (0.0%)"
+]
+market_scenario = st.sidebar.selectbox("תחזית אינפלציה ומגמת שוק:" if is_hebrew else "Inflation & Market Trend Scenario:", market_options, key="sidebar_market_scenario")
 
 today_date = date.today()
 delta_days = (forecast_date - today_date).days
 years_diff = max(0.0, delta_days / 365.25)
-annual_inflation = 0.08 if "שמרני" in market_scenario else (0.045 if "בסיסי" in market_scenario else 0.0)
+annual_inflation = 0.08 if ("שמרני" in market_scenario or "Conservative" in market_scenario) else (0.045 if ("בסיסי" in market_scenario or "Baseline" in market_scenario) else 0.0)
 trend_multiplier = (1.0 + annual_inflation) ** years_diff
 
 @st.cache_data(ttl=300)
@@ -243,8 +299,8 @@ live_eur, live_ils = fetch_live_exchange_rates()
 if live_eur is None or live_ils is None:
     live_eur, live_ils = 0.92, 3.70
 
-usd_to_eur = st.sidebar.number_input("שער המרה USD ל־EUR / USD-EUR Rate:", value=float(live_eur), step=0.01, min_value=0.0001, key="sidebar_usd_eur")
-usd_to_ils = st.sidebar.number_input("שער המרה USD ל־ILS / USD-ILS Rate:", value=float(live_ils), step=0.01, min_value=0.0001, key="sidebar_usd_ils")
+usd_to_eur = st.sidebar.number_input("שער המרה USD ל־EUR:" if is_hebrew else "USD to EUR Exchange Rate:", value=float(live_eur), step=0.01, min_value=0.0001, key="sidebar_usd_eur")
+usd_to_ils = st.sidebar.number_input("שער המרה USD ל־ILS:" if is_hebrew else "USD to ILS Exchange Rate:", value=float(live_ils), step=0.01, min_value=0.0001, key="sidebar_usd_ils")
 
 def convert_from_usd(amount_usd, target_curr):
     if target_curr == "USD ($)": return amount_usd, "$"
@@ -254,9 +310,15 @@ def convert_from_usd(amount_usd, target_curr):
 
 curr_symbol = "$" if "USD" in display_currency else ("€" if "EUR" in display_currency else "₪")
 
-dest_country = st.sidebar.selectbox(txt["dest_country"], list(VAT_RATES.keys()), index=0, key="sidebar_dest_country")
+dest_country = st.sidebar.selectbox(
+    txt["dest_country"],
+    list(VAT_RATES.keys()),
+    index=0,
+    format_func=lambda k: k if is_hebrew else COUNTRY_EN_NAMES.get(k, k),
+    key="sidebar_dest_country"
+)
 default_site_placeholder = txt["site_ph"]
-is_european_dest = (dest_country != "ישראל")
+is_european_dest = (dest_country != "ישראל" and dest_country != "Israel")
 
 if is_european_dest:
     tab1, tab2, tab3, tab4, tab5_eu, tab_projects, tab_summary = st.tabs([
@@ -277,13 +339,18 @@ with tab1:
     with col_meta1:
         origin_port = st.selectbox(txt["origin_port"], ORIGIN_PORTS, key="tab1_origin_port")
         available_dest_ports = DESTINATION_PORTS.get(dest_country, DESTINATION_PORTS["אחר / מותאם"])
-        dest_port = st.selectbox(txt["dest_port"], available_dest_ports, key=f"tab1_dest_port_{dest_country}")
+        dest_port = st.selectbox(
+            txt["dest_port"],
+            available_dest_ports,
+            format_func=lambda p: p if is_hebrew else PORTS_EN.get(p, p),
+            key=f"tab1_dest_port_{dest_country}"
+        )
         site_address = st.text_input(txt["site_label"], key="site_name_input", placeholder=default_site_placeholder)
 
     with col_meta2:
-        applied_vat = st.number_input(f"שיעור מע\"מ ({dest_country}) % / VAT %:", value=float(VAT_RATES[dest_country]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country}")
-        vat_recovery_pct = st.number_input("אחוז החזר מע\"מ (%) / VAT Recovery %", value=100.0, min_value=0.0, max_value=100.0, step=1.0, key="tab1_vat_rec")
-        vat_paid_by_supplier = st.checkbox("המע\"מ משולם על ידי הספק / VAT paid by supplier", value=False, key="tab1_vat_supplier")
+        applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country if is_hebrew else COUNTRY_EN_NAMES.get(dest_country, dest_country)}) %:", value=float(VAT_RATES[dest_country]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country}")
+        vat_recovery_pct = st.number_input(txt["vat_rec"], value=100.0, min_value=0.0, max_value=100.0, step=1.0, key="tab1_vat_rec")
+        vat_paid_by_supplier = st.checkbox(txt["vat_sup"], value=False, key="tab1_vat_supplier")
 
     st.markdown("---")
     col_q1, col_q2, col_q3 = st.columns(3)
@@ -321,10 +388,11 @@ with tab1:
     is_bess = (bess_count > 0 or oog_count > 0)
     is_dg = is_bess
 
+    exw_display_val, _ = convert_from_usd(total_exw_project, display_currency)
     if is_hebrew:
-        st.success(f"📊 סה\"כ יחידות לפרויקט: {total_containers_project} | סה\"כ ערך ציוד במפעל (EXW): **${total_exw_project:,.2f}**")
+        st.success(f"📊 סה\"כ יחידות לפרויקט: {total_containers_project} | סה\"כ ערך ציוד במפעל (EXW): **{curr_symbol} {exw_display_val:,.2f}**")
     else:
-        st.success(f"📊 Total Project Units: {total_containers_project} | Total Factory EXW Value: **${total_exw_project:,.2f}**")
+        st.success(f"📊 Total Project Units: {total_containers_project} | Total Factory EXW Value: **{curr_symbol} {exw_display_val:,.2f}**")
 
 with tab2:
     st.subheader("🚢 תעריפי הובלה ימית, היטל דלק (BAF) ודמי טיפול בנמל יעד (DTHC)" if is_hebrew else "🚢 Ocean Freight, BAF & Destination THC")
@@ -395,7 +463,13 @@ with tab2:
     china_origin_thc = 1300.0 * (total_containers_project / 10)
     heavy_lift_survey = 2500.0
     
-    customs_duty_pct = 0.0 if dest_country == "ישראל" else 2.7
+    customs_duty_pct_default = 0.0 if (dest_country == "ישראל" or dest_country == "Israel") else 2.7
+    customs_duty_pct = st.number_input(
+        "שיעור מכס יבוא (%) — לוודא מול קוד TARIC/HS הרלוונטי באתר Access2Markets:" if is_hebrew else
+        "Import Customs Duty Rate (%) — verify against the relevant TARIC/HS code on Access2Markets:",
+        value=float(customs_duty_pct_default), min_value=0.0, max_value=100.0, step=0.1,
+        key=f"customs_duty_input_{dest_country}"
+    )
     insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country, 0.15)
 
 with tab3:
@@ -432,14 +506,32 @@ with tab3:
 with tab4:
     st.subheader("⚖️ רגולציה ואישורים מנדטוריים" if is_hebrew else "⚖️ Regulation & Mandatory Approvals")
 
-    if dest_country == "ישראל":
-        st.markdown("### 🇮🇱 רגולציית חומ\"ס ואישורי הובלה שוטפים (ישראל)")
-        st.error("🚨 **חובה חוקית בישראל:** אישור הובלה פרטני מאגף הפיקוח והרכב במשרד התחבורה לכל מכולת BESS.")
-        mot_fee_per_bess = st.number_input("עלות אגרת אישור הובלה ממשרד התחבורה ליחידת BESS ($):", value=350.0, step=50.0, key="mot_fee_input")
+    if dest_country == "ישראל" or dest_country == "Israel":
+        st.markdown(
+            "### 🇮🇱 רגולציית חומ\"ס ואישורי הובלה שוטפים (ישראל)" if is_hebrew else
+            "### 🇮🇱 Hazmat Regulation & Transport Approvals (Israel)"
+        )
+        st.error(
+            "🚨 **חובה חוקית בישראל:** אישור הובלה פרטני מאגף הפיקוח והרכב במשרד התחבורה לכל מכולת BESS." if is_hebrew else
+            "🚨 **Legal requirement in Israel:** an individual transport approval from the Ministry of "
+            "Transport's Vehicle Inspection Division is required for every BESS container."
+        )
+        mot_fee_per_bess = st.number_input(
+            "עלות אגרת אישור הובלה ממשרד התחבורה ליחידת BESS ($):" if is_hebrew else
+            "Ministry of Transport approval fee per BESS unit ($):",
+            value=350.0, step=50.0, key="mot_fee_input"
+        )
         mot_total_approval_cost = mot_fee_per_bess * float(bess_count + oog_count)
 
-        st.warning("⚠️ **דרישה נמלית:** אגרות בדיקה, פיקוח חומ\"ס ואישורי כבאות בנמלי הים.")
-        local_regulatory_permits = st.number_input("עלות כוללת להיתרי חומ\"ס נמלים ($):", value=1500.0, step=100.0, key="reg_cost_input")
+        st.warning(
+            "⚠️ **דרישה נמלית:** אגרות בדיקה, פיקוח חומ\"ס ואישורי כבאות בנמלי הים." if is_hebrew else
+            "⚠️ **Port requirement:** inspection fees, hazmat oversight and fire-authority approvals at sea ports."
+        )
+        local_regulatory_permits = st.number_input(
+            "עלות כוללת להיתרי חומ\"ס נמלים ($):" if is_hebrew else
+            "Total cost of port hazmat permits ($):",
+            value=1500.0, step=100.0, key="reg_cost_input"
+        )
         
         epr_recycling_total_usd = 0.0
         battery_passport_total_usd = 0.0
@@ -448,7 +540,7 @@ with tab4:
         include_regulatory = True
 
     else:
-        st.markdown(f"### 🇪🇺 רגולציה שוטפת ואחריות יצרן (איחוד אירופי — {dest_country})" if is_hebrew else f"### 🇪🇺 European Regulatory Compliance & EPR ({dest_country})")
+        st.markdown(f"### 🇪🇺 רגולציה שוטפת ואחריות יצרן (איחוד אירופי — {dest_country})" if is_hebrew else f"### 🇪🇺 European Regulatory Compliance & EPR ({COUNTRY_EN_NAMES.get(dest_country, dest_country)})")
         st.error("🚨 **חובה באירופה:** דרכון סוללות דיגיטלי (EU Battery Passport) ותיעוד שרשרת אספקה." if is_hebrew else "🚨 **Mandatory in EU:** Digital EU Battery Passport & Supply Chain Documentation.")
         battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):" if is_hebrew else "Total Battery Passport & Documentation Cost ($):", value=1200.0, step=100.0, key="bp_cost_input")
         battery_passport_total_usd = battery_passport_flat
@@ -482,7 +574,8 @@ with tab4:
             if include_decommissioning_provision:
                 decom_cost_per_bess = st.number_input("עלות מוערכת לפירוק ומחזור ליחידת BESS ($):" if is_hebrew else "Estimated Decommissioning Cost per BESS ($):", value=2200.0, step=200.0, key="decom_unit_input")
                 decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
-                st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **${decommissioning_total_usd:,.2f}**" if is_hebrew else f"💡 Total planned decommissioning provision for {int(bess_count + oog_count)} BESS/OOG units: **${decommissioning_total_usd:,.2f}**")
+                decom_display_val, _ = convert_from_usd(decommissioning_total_usd, display_currency)
+                st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **{curr_symbol} {decom_display_val:,.2f}**" if is_hebrew else f"💡 Total planned decommissioning provision for {int(bess_count + oog_count)} BESS/OOG units: **{curr_symbol} {decom_display_val:,.2f}**")
             else:
                 decommissioning_total_usd = 0.0
 
@@ -557,15 +650,17 @@ project_delivery_cost = (
     decommissioning_total_usd
 )
 
+incoterm_code = incoterm.split(" ")[0]
+
 supplier_commercial_price_options = {
-    "EXW (איסוף עצמי ממפעל הספק)": trended_exw,
-    "FOB (מסירה על הסיפון בנמל מוצא)": trended_exw + china_inland_drayage + china_origin_thc,
-    "CIF (עלות, ביטוח והובלה ימית)": trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight + insurance_total_usd,
-    "DAP (מסירה באתר ללא פריקה ומכס)": ddp_supplier_scope_ex_vat,
-    "DDP (אחריות מלאה כולל מיסים)": ddp_supplier_scope_incl_vat
+    "EXW": trended_exw,
+    "FOB": trended_exw + china_inland_drayage + china_origin_thc,
+    "CIF": trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight + insurance_total_usd,
+    "DAP": ddp_supplier_scope_ex_vat,
+    "DDP": ddp_supplier_scope_incl_vat,
 }
 
-supplier_scope_total = supplier_commercial_price_options.get(incoterm, trended_exw)
+supplier_scope_total = supplier_commercial_price_options.get(incoterm_code, trended_exw)
 buyer_direct_payment_usd = max(0.0, project_delivery_cost - supplier_scope_total)
 
 effective_vat_cash = 0.0 if (vat_paid_by_supplier and is_delivery_inclusive) else vat_total_usd
@@ -756,7 +851,7 @@ with tab_summary:
     st.markdown(html_table, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.subheader("📥 ייצוא נתונים לדוח אקסל (Excel Export)" if is_hebrew else "📥 Excel Export")
+    st.subheader(txt["excel_btn"])
     
     excel_summary_data = [
         [
