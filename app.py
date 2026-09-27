@@ -203,17 +203,19 @@ curr_symbol = "$" if "USD" in display_currency else ("€" if "EUR" in display_c
 
 dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), index=0, key="sidebar_dest_country")
 default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "ישראל" else "Iepurești / Project Site"
-show_route_optimization = (dest_country != "ישראל")
+is_european_dest = (dest_country != "ישראל")
 
-if show_route_optimization:
+# הגדרת הטאבים באופן דינמי: טאב פרויקטי אירופה יוצג אך ורק כאשר נבחרת מדינה אירופאית
+if is_european_dest:
     tab1, tab2, tab3, tab4, tab5_eu, tab_projects, tab_summary = st.tabs([
         T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab5_eu"], T["tab_projects"], T["tab_summary"]
     ])
 else:
-    tab1, tab2, tab3, tab4, tab_projects, tab_summary = st.tabs([
-        T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab_projects"], T["tab_summary"]
+    tab1, tab2, tab3, tab4, tab_summary = st.tabs([
+        T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab_summary"]
     ])
     tab5_eu = None
+    tab_projects = None
 
 with tab1:
     st.subheader("הגדרת רכיבי הציוד וכמויות לפרויקט")
@@ -427,28 +429,31 @@ with tab4:
     requires_heavy_lift = st.checkbox("נדרש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)", value=is_bess, key="hl_survey_toggle")
     heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
 
-if show_route_optimization and tab5_eu is not None:
+# טאב 5 האירופאי מוצג אך ורק אם נבחרה מדינה אירופאית
+if is_european_dest and tab5_eu is not None:
     with tab5_eu:
         st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה")
         st.info("ניתוח חלופות נמלי פריקה והובלה יבשתית לאתר הפרויקט.")
 
-with tab_projects:
-    st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
-    st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה בשנים 2027–2028 (על בסיס נתוני האקסל של שירה).")
-    
-    enlight_project_type = st.selectbox("בחר פרויקט אירופאי של שירה לטעינת נתונים אוטומטית:", [
-        "פרויקט Iepurești (רומניה)", 
-        "פרויקט Ghimpați (רומניה)", 
-        "פרויקט Mosciska / Czerwona Woda (פולין)",
-        "פרויקט Genzano (איטליה)"
-    ], key="enlight_proj_sel")
-    
-    if "Iepurești" in enlight_project_type or "Ghimpați" in enlight_project_type:
-        st.markdown("📌 **מאפייני פרויקט רומניה (שירה):** פריקה דרך נמל קונסטנצה, הובלה יבשתית לאתר, עמידה בתקן UN3536 ודרכון סוללות אירופאי.")
-    elif "Mosciska" in enlight_project_type:
-        st.markdown("📌 **מאפייני פרויקט פולין (שירה):** פרויקט BESS GEN2 ו־MVS, דרישות EPR ודרכון סוללות מנדטורי.")
-    else:
-        st.markdown("📌 **מאפייני פרויקט אירופאי (שירה):** ניהול שרשרת אספקה אזורית, עמידה בדרישות EPR ודרכון סוללות דיגיטלי.")
+# טאב פרויקטי אנלייט מוצג אך ורק אם נבחרה מדינה אירופאית
+if is_european_dest and tab_projects is not None:
+    with tab_projects:
+        st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
+        st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה בשנים 2027–2028 (על בסיס נתוני האקסל של שירה).")
+        
+        enlight_project_type = st.selectbox("בחר פרויקט אירופאי של שירה לטעינת נתונים אוטומטית:", [
+            "פרויקט Iepurești (רומניה)", 
+            "פרויקט Ghimpați (רומניה)", 
+            "פרויקט Mosciska / Czerwona Woda (פולין)",
+            "פרויקט Genzano (איטליה)"
+        ], key="enlight_proj_sel")
+        
+        if "Iepurești" in enlight_project_type or "Ghimpați" in enlight_project_type:
+            st.markdown("📌 **מאפייני פרויקט רומניה (שירה):** פריקה דרך נמל קונסטנצה, הובלה יבשתית לאתר, עמידה בתקן UN3536 ודרכון סוללות אירופאי.")
+        elif "Mosciska" in enlight_project_type:
+            st.markdown("📌 **מאפייני פרויקט פולין (שירה):** פרויקט BESS GEN2 ו־MVS, דרישות EPR ודרכון סוללות מנדטורי.")
+        else:
+            st.markdown("📌 **מאפייני פרויקט אירופאי (שירה):** ניהול שרשרת אספקה אזורית, עמידה בדרישות EPR ודרכון סוללות דיגיטלי.")
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
@@ -525,7 +530,6 @@ econ_val, _ = convert_from_usd(economic_cost_ex_vat, display_currency)
 with tab_summary:
     st.subheader(f"📊 דוח בקרה פיננסית ורגולטורית — {incoterm} ({display_currency})")
     
-    # תצוגת מדדים באמצעות HTML מותאם אישית כדי שסימן המטבע יהיה משמאל למספר בפורמט פיננסי תקני
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     with m_col1:
         st.markdown(f"""
