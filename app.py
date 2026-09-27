@@ -306,35 +306,16 @@ with tab3:
     include_delay_scenario = False
 
 with tab4:
-    # בחירת מנהל פרויקט להכללת עלות פירוק ומחזור סוף חיים (Decommissioning & End-of-Life)
-    st.subheader("⚖️ רגולציה, אישורים מנדטוריים ותחזית תקציבית למחזור סוף חיים (Decommissioning)")
-    
-    with st.expander("📌 ניהול תחזית תקציבית: פירוק ומחזור סוף חיים (End-of-Life Recycling Provision)", expanded=True):
-        st.markdown("""
-        כלי זה מאפשר למנהל הפרויקט להכליל **הפרשה תקציבית עתידית (צפי לרישום בלבד או לתקציב כולל)** הכוללת:
-        * **פירוק פיזי של מודולי הסוללות** מהמכולה/אתר.
-        * **נטרול ופריקת מתח** ובדיקות בטיחות מקדימות.
-        * **הפרדת תאי האנרגיה** וחומרים מסוכנים טרם תהליך ההתכה/מחזור הסופי.
-        """)
-        include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision) [בחירת מנהל פרויקט]", value=False, key="decom_toggle")
-        
-        if include_decommissioning_provision:
-            decom_cost_per_bess = st.number_input("עלות מוערכת לפירוק ומחזור ליחידת BESS ($):", value=2200.0, step=200.0, key="decom_unit_input")
-            decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
-            st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **${decommissioning_total_usd:,.2f}**")
-        else:
-            decommissioning_total_usd = 0.0
-
-    st.markdown("---")
-
     if dest_country == "Israel":
-        st.subheader("🇮🇱 דרישות מנדטוריות למדינת ישראל")
+        st.subheader("🇮🇱 רגולציית חומ\"ס, אישורי משרד התחבורה ודרישות חובה בישראל")
+        st.markdown("> **שים לב:** הסעיפים הבאים מסומנים כ**מנדטוריים (חובה חוקית)** עבור פרויקטים בישראל.")
+        
         st.error("🚨 **מנדטורי (חובה):** אישור הובלה פרטני מאגף הפיקוח במשרד התחבורה לכל מכולת BESS.")
         mot_fee_per_bess = st.number_input("עלות אגרת אישור הובלה ממשרד התחבורה ליחידה ($): [ניתן לעריכה]", value=350.0, step=50.0, key="mot_fee_input")
         mot_total_approval_cost = mot_fee_per_bess * float(bess_count + oog_count)
 
-        st.warning("⚠️ **מנדטורי (חובה):** אגרות בדיקה ואישור חומ\"ס נמלים (כבאות, המשרד להגנת הסביבה).")
-        local_regulatory_permits = st.number_input("עלות כוללת להיתרי חומ\"ס נמלים ($): [ניתן לעריכה]", value=1500.0, step=100.0, key="reg_cost_input")
+        st.warning("⚠️ **מנדטורי (חובה):** אגרות בדיקה, היתרי חומ\"ס נמלים ואישורי כבאות והצלה לשחרור הציוד.")
+        local_regulatory_permits = st.number_input("עלות כוללת להיתרי חומ\"ס ואישורי נמל ($): [ניתן לעריכה]", value=1500.0, step=100.0, key="reg_cost_input")
         
         epr_recycling_total_usd = 0.0
         battery_passport_total_usd = 0.0
@@ -342,7 +323,9 @@ with tab4:
         include_regulatory = True
 
     else:
-        st.subheader(f"🇪🇺 דרישות מנדטוריות לאיחוד האירופי — {dest_country}")
+        st.subheader(f"🇪🇺 רגולציית איחוד אירופי (EU Regulation & Compliance) — {dest_country}")
+        st.markdown("> **שים לב:** הדרישות הבאות מותאמות לפרויקטים באירופה וכוללות תקני איחוד אירופי מנדטוריים.")
+
         st.error("🚨 **מנדטורי (חובה באירופה):** דרכון סוללות דיגיטלי (EU Battery Passport) ותיעוד שרשרת אספקה.")
         battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($): [ניתן לעריכה]", value=1200.0, step=100.0, key="bp_cost_input")
         battery_passport_total_usd = battery_passport_flat
@@ -360,6 +343,23 @@ with tab4:
     st.markdown("---")
     requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey) [בחירה]", value=is_bess, key="hl_survey_toggle")
     heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
+
+    st.markdown("---")
+    with st.expander("📌 ניהול תחזית תקציבית אופציונלית: פירוק ומחזור סוף חיים (Decommissioning Provision)", expanded=False):
+        st.markdown("""
+        כלי ניהול אופציונלי למנהל הפרויקט להוספת **הפרשה תקציבית עתידית (צפי לרישום או לתקציב כולל)** הכוללת:
+        * פירוק פיזי של מודולי הסוללות מהמכולה/אתר.
+        * נטרול ופריקת מתח ובדיקות בטיחות מקדימות.
+        * הפרדת תאי האנרגיה וחומרים מסוכנים טרם תהליך ההתכה/מחזור הסופי.
+        """)
+        include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision) [בחירת מנהל פרויקט]", value=False, key="decom_toggle")
+        
+        if include_decommissioning_provision:
+            decom_cost_per_bess = st.number_input("עלות מוערכת לפירוק ומחזור ליחידת BESS ($):", value=2200.0, step=200.0, key="decom_unit_input")
+            decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
+            st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **${decommissioning_total_usd:,.2f}**")
+        else:
+            decommissioning_total_usd = 0.0
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
@@ -403,7 +403,7 @@ project_delivery_cost = (
     battery_passport_total_usd + 
     active_heavy_lift + 
     effective_delay_cost +
-    decommissioning_total_usd  # משוקלל בתקציב (ניתן לרישום או להפרשה)
+    decommissioning_total_usd
 )
 
 supplier_commercial_price_options = {
