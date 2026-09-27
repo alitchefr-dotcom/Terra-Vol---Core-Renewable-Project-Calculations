@@ -58,7 +58,7 @@ T = {
     "scenario_header": "🗂️ Scenario, Incoterm & Market Forecast" if not is_hebrew else "🗂️ הגדרות תרחיש, תנאי סחר ותחזית שוק",
     "incoterm_label": "Commercial Incoterm (Supplier Scope):" if not is_hebrew else "תנאי סחר מסחרי (אחריות ספק):",
     "currency_label": "Dashboard Main Currency:" if not is_hebrew else "מטבע הצגה ראשי בדשבורד:",
-    "tab1": "📋 Multi-Item Project Scope" if not is_hebrew else "📋 תמהיל רכיבי הציוד לפרויקט (Multi-Item)",
+    "tab1": "📋 Multi-Item Project Scope" if not is_hebrew else "📋 תמהיל רכיבי הפרויקט (Multi-Item)",
     "tab2": "⚓ Supply Chain & Incoterms" if not is_hebrew else "⚓ שרשרת אספקה ותנאי סחר",
     "tab3": "📦 Storage & Site Drayage" if not is_hebrew else "📦 אחסנה, השהיות והובלת אתר",
     "tab4": "⚖️ DG Compliance & Regulation" if not is_hebrew else "⚖️ רגולציית חומ\"ס DG ורגולציית מוצר",
@@ -100,9 +100,10 @@ EUROPE_TRUCK_RATES_CPK = {
 }
 DRAYAGE_PORT_MATRIX = {"Hamburg, Germany": 950.0, "Gdansk, Poland": 750.0, "Constanța, Romania": 900.0}
 CARRIER_FUEL_SURCHARGES = {
-    "ZIM (Integrated Shipping)": {"baf": 843.0},
-    "Hapag-Lloyd": {"baf": 780.0},
-    "MSC": {"baf": 750.0}
+    "ZIM (Premium DG & Flexibility)": {"baf": 843.0, "bess_multiplier": 1.0},
+    "MSC (Discounted Rates)": {"baf": 750.0, "bess_multiplier": 0.82}, # MSC ~18% cheaper on Heavy DG
+    "Hapag-Lloyd (Standard)": {"baf": 780.0, "bess_multiplier": 0.95},
+    "Other / Spot Market": {"baf": 750.0, "bess_multiplier": 0.90}
 }
 
 incoterm = st.sidebar.selectbox(T["incoterm_label"], ["DDP (Delivered Duty Paid)", "DAP (Delivered at Place)", "CIF (Cost, Insurance & Freight)", "FOB (Free on Board)", "EXW (Ex Works)"], key="sidebar_incoterm")
@@ -116,6 +117,7 @@ delta_days = (forecast_date - today_date).days
 years_diff = max(0.0, delta_days / 365.25)
 annual_inflation = 0.08 if "Conservative" in market_scenario else (0.045 if "Base" in market_scenario else 0.0)
 trend_multiplier = (1.0 + annual_inflation) ** years_diff
+trend_pct = (trend_multiplier - 1.0) * 100.0
 
 @st.cache_data(ttl=300)
 def fetch_live_exchange_rates():
@@ -144,9 +146,7 @@ def convert_from_usd(amount_usd, target_curr):
 
 dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), index=0, key="sidebar_dest_country")
 
-# התאמה דינמית של דוגמת שם האתר לפי מדינת היעד (אשלים בישראל, איפוטשט ברומניה/אירופה)
-default_site_placeholder = "אשלים / מתחם אגירה (אנלייט)" if dest_country == "Israel" else "Iepurești / Project Site"
-
+default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "Israel" else "Iepurești / Project Site"
 show_route_optimization = (dest_country != "Israel")
 
 if show_route_optimization:
@@ -157,8 +157,8 @@ else:
     tab_summary = tab6
 
 with tab1:
-    st.subheader("Multi-Item Project Bill of Materials (BoM)" if not is_hebrew else "תמהיל רכיבי הציוד לפרויקט (Multi-Item BoM)")
-    st.info("כעת ניתן להגדיר את כל סוגי המוצרים בפרויקט במקביל, כולל מכולות אביזרים וציוד כללי (Accessories / Dry Containers).")
+    st.subheader("Multi-Item Project Scope" if not is_hebrew else "תמהיל רכיבי הציוד לפרויקט (Multi-Item Scope)")
+    st.info("כאן מגדירים את הציוד. ההובלה תחושב באופן חכם לכל סוג מכולה בנפרד (חומ\"ס כבד לעומת מטען רגיל).")
 
     col_meta1, col_meta2 = st.columns(2)
     with col_meta1:
@@ -176,17 +176,25 @@ with tab1:
     col_q1, col_q2, col_q3 = st.columns(3)
     
     with col_q1:
-        st.markdown("#### BESS & OOG Containers")
+        st.markdown("#### BESS & OOG Containers (Heavy / DG)")
         bess_count = st.number_input("BESS Containers Count:", min_value=0, value=20, step=1, key="proj_bess_count")
         bess_exw = st.number_input("BESS Unit EXW ($):", min_value=0.0, value=400000.0, step=10000.0, key="proj_bess_exw")
-        bess_freight_unit = 31850.0
+        
+        weight_options = ["Below 27 MTS", "27.0 - 34.9 MTS", "35.0 - 44.9 MTS", "40 MTS", "42 MTS", "43 MTS", "45 MTS", "48 MTS", "50 MTS", "55 MTS"]
+        selected_weight = st.selectbox("BESS Weight Tier:", weight_options, index=6, key="proj_bess_weight")
+        freight_by_weight = {
+            "Below 27 MTS": 8190.0, "27.0 - 34.9 MTS": 16380.0, "35.0 - 44.9 MTS": 23887.5,
+            "40 MTS": 23887.5, "42 MTS": 27300.0, "43 MTS": 27300.0,
+            "45 MTS": 31850.0, "48 MTS": 31850.0, "50 MTS": 36400.0, "55 MTS": 42000.0
+        }
+        bess_base_freight = freight_by_weight.get(selected_weight, 31850.0)
 
         oog_count = st.number_input("OOG Flat Rack Count:", min_value=0, value=0, step=1, key="proj_oog_count")
         oog_exw = st.number_input("OOG Unit EXW ($):", min_value=0.0, value=400000.0, step=10000.0, key="proj_oog_exw")
         oog_freight_unit = 29900.0
 
     with col_q2:
-        st.markdown("#### MVS & Transformers")
+        st.markdown("#### MVS & Transformers (Standard)")
         mvs_count = st.number_input("MVS Stations Count:", min_value=0, value=4, step=1, key="proj_mvs_count")
         mvs_exw = st.number_input("MVS Unit EXW ($):", min_value=0.0, value=250000.0, step=10000.0, key="proj_mvs_exw")
         mvs_freight_unit = 4200.0
@@ -196,7 +204,7 @@ with tab1:
         transformer_freight_unit = 5500.0
 
     with col_q3:
-        st.markdown("#### Accessories & Solar PV")
+        st.markdown("#### Accessories (Dry / SOC)")
         access_count = st.number_input("Accessories / Dry Containers Count:", min_value=0, value=2, step=1, key="proj_access_count")
         access_exw = st.number_input("Accessories Unit EXW ($):", min_value=0.0, value=50000.0, step=5000.0, key="proj_access_exw")
         access_freight_unit = 3200.0
@@ -205,56 +213,87 @@ with tab1:
         solar_exw = st.number_input("Solar Unit EXW ($):", min_value=0.0, value=300000.0, step=10000.0, key="proj_solar_exw")
         solar_freight_unit = 3360.0
 
-    total_containers_project = max(1, bess_count + oog_count + mvs_count + transformer_count + access_count + solar_count)
+    # חלוקה לקטגוריות (חומ"ס/כבד לעומת רגיל)
+    heavy_dg_containers = bess_count + oog_count
+    standard_containers = mvs_count + transformer_count + access_count + solar_count
+    total_containers_project = max(1, heavy_dg_containers + standard_containers)
+    
     total_exw_project = (
         (bess_count * bess_exw) + (oog_count * oog_exw) + 
         (mvs_count * mvs_exw) + (transformer_count * transformer_exw) + 
         (access_count * access_exw) + (solar_count * solar_exw)
     )
-    
-    weighted_freight_total = (
-        (bess_count * bess_freight_unit) + (oog_count * oog_freight_unit) +
-        (mvs_count * mvs_freight_unit) + (transformer_count * transformer_freight_unit) +
-        (access_count * access_freight_unit) + (solar_count * solar_freight_unit)
-    )
-    base_freight_per_unit = weighted_freight_total / total_containers_project
-    total_capacity_bess_mwh = float(bess_count + oog_count) * 5.0
-    is_bess = (bess_count > 0 or oog_count > 0)
-    is_dg = is_bess
 
-    st.success(f"📊 סה״כ מכולות/יחידות בפרויקט: {total_containers_project} | סה״כ ערך EXW: ${total_exw_project:,.2f}")
+    st.success(f"📊 תמהיל סופי: {heavy_dg_containers} מכולות כבדות/חומ\"ס | {standard_containers} מכולות רגילות | סה\"כ ערך ציוד EXW: **${total_exw_project:,.2f}**")
 
 with tab2:
-    selected_carrier = st.selectbox("Shipping Carrier:", list(CARRIER_FUEL_SURCHARGES.keys()), key="tab2_carrier")
-    base_freight_input = st.number_input("Average Base Ocean Freight per Container ($):", value=float(base_freight_per_unit), step=500.0, key="tab2_freight_weighted")
-    baf_surcharge = st.number_input("Bunker Surcharge ($):", value=float(CARRIER_FUEL_SURCHARGES[selected_carrier]["baf"]), step=50.0, key="tab2_baf")
+    st.subheader("🚢 הובלה ימית מופרדת לפי סוג מטען (Ocean Freight by Category)" if is_hebrew else "🚢 Ocean Freight by Category")
+    
+    selected_carrier = st.selectbox("בחירת חברת ספנות (השפעה על מחיר חומ\"ס כבד):" if is_hebrew else "Select Carrier:", list(CARRIER_FUEL_SURCHARGES.keys()), key="tab2_carrier")
+    
+    # הפעלת מקדם הוזלה/ייקור של חברת הספנות (משפיע רק על מכולות ה-BESS הכבדות)
+    carrier_bess_multiplier = CARRIER_FUEL_SURCHARGES[selected_carrier]["bess_multiplier"]
+    active_bess_freight = bess_base_freight * carrier_bess_multiplier
+    
+    baf_val = CARRIER_FUEL_SURCHARGES[selected_carrier]["baf"]
+    baf_surcharge = st.number_input("תוספת דלק ליחידה - Bunker Surcharge ($):" if is_hebrew else "BAF Surcharge ($):", value=float(baf_val), step=50.0, key="tab2_baf")
+    
+    st.markdown(f"*(**BESS Heavy Container Rate**: ZIM Base = ${bess_base_freight:,.0f} | Adjusted for **{selected_carrier.split(' ')[0]}** = **${active_bess_freight:,.0f}**)*")
+
+    # חישוב הובלה ימית נפרד! אין יותר ממוצע. 
+    base_freight_heavy = (bess_count * active_bess_freight) + (oog_count * oog_freight_unit)
+    base_freight_standard = (
+        (mvs_count * mvs_freight_unit) + 
+        (transformer_count * transformer_freight_unit) + 
+        (access_count * access_freight_unit) + 
+        (solar_count * solar_freight_unit)
+    )
+    total_base_ocean_freight = base_freight_heavy + base_freight_standard
+    total_baf_ocean = baf_surcharge * float(total_containers_project)
+    
     dest_thc_port_fee = st.number_input("Destination THC per Container ($):", value=380.0, step=20.0, key="tab2_dest_thc")
     china_inland_drayage = 2200.0 * (total_containers_project / 10)
     china_origin_thc = 1300.0 * (total_containers_project / 10)
     heavy_lift_survey = 2500.0
-    customs_duty_pct = 2.7 if is_bess else 0.0
+    customs_duty_pct = 2.7 if (bess_count > 0 or oog_count > 0) else 0.0
     insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country, 0.15)
 
 with tab3:
-    cpk_label = "Calculate inland drayage based on distance (km) & country rate" if not is_hebrew else "חשב הובלה יבשתית אוטומטית לפי מרחק (ק\"מ) ותעריף מקומי במדינה"
+    st.subheader("🚚 הובלה יבשתית מופרדת (Inland Drayage: Heavy vs. Standard)" if is_hebrew else "🚚 Inland Drayage: Heavy vs. Standard")
+    
+    cpk_label = "Calculate inland drayage based on distance (km) & separate country CPK rates" if not is_hebrew else "חשב הובלה יבשתית אוטומטית לפי מרחק (ק\"מ) והפרדה לתעריפי מדינה"
     use_cpk_calc = st.checkbox(cpk_label, value=False, key="tab3_cpk_toggle")
+    
     if use_cpk_calc:
         route_km = st.number_input("Estimated Port-to-Site Distance (One-way KM):", value=350.0, step=25.0, key="tab3_route_km")
         country_rates = EUROPE_TRUCK_RATES_CPK.get(dest_country, {"dry": 2.20, "dg_heavy": 2.90})
-        active_cpk_rate = country_rates["dg_heavy"] if is_dg else country_rates["dry"]
-        cpk_rate_input = st.number_input("Applicable Truck Rate per KM:", value=float(active_cpk_rate), step=0.05, key="tab3_cpk_rate")
-        calculated_inland_drayage = route_km * cpk_rate_input * 1.55
-        st.info("ℹ️ הערה: חישוב זה מהווה הערכה תקציבית בלבד המבוססת על ממוצעי שוק.")
+        
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+            active_heavy_cpk = st.number_input(f"תעריף לק\"מ למשאיות חומ\"ס/כבדות ({dest_country}):", value=float(country_rates["dg_heavy"]), step=0.05, key="tab3_cpk_heavy")
+        with col_c2:
+            active_dry_cpk = st.number_input(f"תעריף לק\"מ למשאיות סטנדרטיות ({dest_country}):", value=float(country_rates["dry"]), step=0.05, key="tab3_cpk_dry")
+        
+        # חישוב נפרד! כבד בנפרד, רגיל בנפרד
+        drayage_heavy_total = heavy_dg_containers * route_km * active_heavy_cpk * 1.55
+        drayage_standard_total = standard_containers * route_km * active_dry_cpk * 1.55
+        calculated_inland_drayage_total = drayage_heavy_total + drayage_standard_total
+        
+        st.success(f"🚚 סה\"כ הובלת חומ\"ס כבד: ${drayage_heavy_total:,.0f} | הובלת ציוד רגיל/SOC: ${drayage_standard_total:,.0f}")
     else:
-        calculated_inland_drayage = DRAYAGE_PORT_MATRIX.get(dest_port, 600.0)
+        base_flat_rate = DRAYAGE_PORT_MATRIX.get(dest_port, 600.0)
+        # בהובלה שטוחה נעשה פרמיה של 50% על משאיות חומ"ס כבדות
+        calculated_inland_drayage_total = (heavy_dg_containers * (base_flat_rate * 1.5)) + (standard_containers * base_flat_rate)
 
-    inland_drayage_per_unit = calculated_inland_drayage
+    inland_drayage_total_base = calculated_inland_drayage_total
+    
+    st.markdown("---")
     free_days = DEFAULT_FREE_DAYS.get(dest_country, 7)
     actual_port_days = 12
-    demurrage_daily_rate = 250.0 if is_dg else 150.0
+    demurrage_daily_rate = 250.0 if (heavy_dg_containers > 0) else 150.0
     use_external_storage = True
     ext_storage_days = 15
-    ext_storage_daily_rate = 65.0 if is_dg else 45.0
+    ext_storage_daily_rate = 65.0 if (heavy_dg_containers > 0) else 45.0
     include_site_crane = True
     site_crane_unloading = 8500.0
     ddp_contingency_pct = 5.0
@@ -262,16 +301,17 @@ with tab3:
 
 with tab4:
     include_regulatory = True
-    local_regulatory_permits = 1500.0 if is_dg else 400.0
+    local_regulatory_permits = 1500.0 if (heavy_dg_containers > 0) else 400.0
     include_epr = True
     include_battery_passport = True
     epr_recycling_total_usd = (450.0 * float(bess_count + oog_count)) if include_epr else 0.0
     battery_passport_total_usd = 1200.0 if include_battery_passport else 0.0
-    requires_heavy_lift = is_bess
+    requires_heavy_lift = (heavy_dg_containers > 0)
 
+# החלת מגמות השוק (Inflation / Trend) על הסכומים המופרדים
 trended_exw = total_exw_project * trend_multiplier
-trended_ocean_freight = ((base_freight_input + baf_surcharge) * float(total_containers_project)) * trend_multiplier
-trended_drayage = (inland_drayage_per_unit * float(total_containers_project)) * trend_multiplier
+trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
+trended_drayage = inland_drayage_total_base * trend_multiplier
 
 total_ocean_freight = trended_ocean_freight
 inland_drayage_total_usd = trended_drayage
