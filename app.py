@@ -462,7 +462,7 @@ with tab2:
     china_inland_drayage = 2200.0 * (total_containers_project / 10)
     china_origin_thc = 1300.0 * (total_containers_project / 10)
     heavy_lift_survey = 2500.0
-    
+
     customs_duty_pct_default = 0.0 if (dest_country == "ישראל" or dest_country == "Israel") else 2.7
     customs_duty_pct = st.number_input(
         "שיעור מכס יבוא (%) — לוודא מול קוד TARIC/HS הרלוונטי באתר Access2Markets:" if is_hebrew else
@@ -572,10 +572,35 @@ with tab4:
             include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)" if is_hebrew else "Add Decommissioning & End-of-Life Financial Provision", value=False, key="decom_toggle")
             
             if include_decommissioning_provision:
-                decom_cost_per_bess = st.number_input("עלות מוערכת לפירוק ומחזור ליחידת BESS ($):" if is_hebrew else "Estimated Decommissioning Cost per BESS ($):", value=2200.0, step=200.0, key="decom_unit_input")
+                st.caption(
+                    "עלות פירוק ומחזור תלויה מאוד בכימיית הסוללה, במרחק להובלה ובמחירי השוק למתכות מוחזרות (Li/Ni/Co). "
+                    "בנצ'מרקים בתעשייה נעים סביב $60-90 לקילוואט-שעה — יש לעדכן בהתאם לפרויקט הספציפי." if is_hebrew else
+                    "Decommissioning & recycling cost is highly sensitive to battery chemistry, transport distance, "
+                    "and recovered-metal (Li/Ni/Co) market prices. Industry benchmarks cluster around $60-90/kWh — "
+                    "adjust to fit the specific project."
+                )
+                decom_col1, decom_col2 = st.columns(2)
+                with decom_col1:
+                    bess_capacity_mwh = st.number_input(
+                        "קיבולת ממוצעת למכולת BESS (MWh):" if is_hebrew else "Average BESS Container Capacity (MWh):",
+                        min_value=0.1, value=4.0, step=0.5, key="decom_capacity_mwh"
+                    )
+                with decom_col2:
+                    decom_cost_per_kwh = st.number_input(
+                        "עלות פירוק ומחזור ל-kWh ($):" if is_hebrew else "Decommissioning & Recycling Cost per kWh ($):",
+                        min_value=0.0, value=75.0, step=5.0, key="decom_cost_per_kwh"
+                    )
+                decom_cost_per_bess = bess_capacity_mwh * 1000.0 * decom_cost_per_kwh
                 decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
+                decom_per_unit_display, _ = convert_from_usd(decom_cost_per_bess, display_currency)
                 decom_display_val, _ = convert_from_usd(decommissioning_total_usd, display_currency)
-                st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **{curr_symbol} {decom_display_val:,.2f}**" if is_hebrew else f"💡 Total planned decommissioning provision for {int(bess_count + oog_count)} BESS/OOG units: **{curr_symbol} {decom_display_val:,.2f}**")
+                st.info(
+                    f"💡 עלות מוערכת ליחידה: **{curr_symbol} {decom_per_unit_display:,.2f}** ({bess_capacity_mwh:.1f} MWh × {curr_symbol}{decom_cost_per_kwh:,.0f}/kWh) | "
+                    f"סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **{curr_symbol} {decom_display_val:,.2f}**"
+                    if is_hebrew else
+                    f"💡 Estimated cost per unit: **{curr_symbol} {decom_per_unit_display:,.2f}** ({bess_capacity_mwh:.1f} MWh × {curr_symbol}{decom_cost_per_kwh:,.0f}/kWh) | "
+                    f"Total planned decommissioning provision for {int(bess_count + oog_count)} BESS/OOG units: **{curr_symbol} {decom_display_val:,.2f}**"
+                )
             else:
                 decommissioning_total_usd = 0.0
 
