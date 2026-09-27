@@ -42,7 +42,7 @@ st.sidebar.header("🌐 שפה / Language")
 lang = st.sidebar.radio("בחר שפה / Select Language:", ["עברית", "English"], index=0, key="lang_select")
 is_hebrew = (lang == "עברית")
 
-# עיצוב מתקדם לטבלאות — מניעת חסימת עמודות ויישור מדויק
+# עיצוב גלובלי וטבלה פיננסית מותאמת אישית ללא חיתוכי טקסט
 st.markdown(
     """
     <style>
@@ -50,12 +50,44 @@ st.markdown(
     h1, h2, h3, h4, h5, h6, p, label, div, span { direction: rtl; text-align: right; }
     .stTextInput label, .stSelectbox label, .stNumberInput label { direction: rtl; text-align: right; width: 100%; font-weight: 600; }
     
-    /* עיצוב רחב וברור לטבלאות התקציב */
-    [data-testid="stDataFrame"] { width: 100%; }
-    [data-testid="stDataFrame"] table { width: 100% !important; direction: rtl; }
-    [data-testid="stDataFrame"] th { background-color: #f1f5f9 !important; color: #1e3d59 !important; font-weight: 700 !important; padding: 12px !important; text-align: center !important; }
-    [data-testid="stDataFrame"] td { padding: 10px !important; text-align: center !important; }
-    [data-testid="stDataFrame"] td:nth-child(1) { text-align: right !important; font-weight: 600; }
+    /* עיצוב טבלה פיננסית מותאמת אישית */
+    .custom-finance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+        background-color: white;
+        color: #1e293b;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .custom-finance-table th {
+        background-color: #f1f5f9;
+        color: #1e3d59;
+        font-weight: 700;
+        padding: 12px 16px;
+        text-align: right;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .custom-finance-table th.center, .custom-finance-table td.center {
+        text-align: center;
+    }
+    .custom-finance-table th.left, .custom-finance-table td.left {
+        text-align: left;
+        direction: ltr;
+    }
+    .custom-finance-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: right;
+    }
+    .custom-finance-table tr.total-row {
+        background-color: #f8fafc;
+        font-weight: 700;
+        border-top: 2px solid #cbd5e1;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -143,6 +175,8 @@ def convert_from_usd(amount_usd, target_curr):
     if target_curr == "EUR (€)": return amount_usd * usd_to_eur, "€"
     if target_curr == "ILS (₪)": return amount_usd * usd_to_ils, "₪"
     return amount_usd, "$"
+
+curr_symbol = "$" if "USD" in display_currency else ("€" if "EUR" in display_currency else "₪")
 
 dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), index=0, key="sidebar_dest_country")
 default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "ישראל" else "Iepurești / Project Site"
@@ -477,44 +511,148 @@ with tab_summary:
     st.markdown("---")
     st.subheader("📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)")
 
-    # יצירת טבלה מרווחת ומאורגנת עם 4 עמודות ברורות לחלוטין
-    summary_data = [
-        ["ערך ציוד במפעל (Equipment EXW)", f"{int(total_containers_project)} יחידות", f"${total_exw_project/max(1, total_containers_project):,.2f}", trended_exw],
-        ["הובלה יבשתית ונמלית במוצא", f"{int(total_containers_project)} יחידות", f"${(china_inland_drayage + china_origin_thc)/max(1, total_containers_project):,.2f}", china_inland_drayage + china_origin_thc],
-        ["הובלה ימית בסיסית", f"{int(total_containers_project)} מכולות", f"${(total_base_ocean_freight)/max(1, total_containers_project):,.2f}", total_base_ocean_freight * trend_multiplier],
-        ["היטל דלק ימי לפי TEU (BAF)", f"{int(total_containers_project)} יחידות", f"${(total_baf_ocean)/max(1, total_containers_project):,.2f}", total_baf_ocean * trend_multiplier],
-        ["דמי טיפול בנמל יעד (Destination THC)", f"{int(total_containers_project)} יחידות", f"${(total_destination_thc)/max(1, total_containers_project):,.2f}", destination_thc_total],
-        ["ביטוח ימי", "אחוז מערך CIF", "-", insurance_total_usd],
-        ["מכס יבוא", f"על פי סיווג ({customs_duty_pct}%)", "-", customs_duty_usd],
-        ["הובלה יבשתית מנמל לאתר", f"{int(total_containers_project)} משאיות", f"${inland_drayage_total_base/max(1, total_containers_project):,.2f}", inland_drayage_total_usd],
-        ["רגולציה מקומית ואישורי חומ\"ס / משרד התחבורה", "הוצאה כוללת", "-", active_regulatory_permits],
-        ["עגורן מנוף ופריקה באתר", "הוצאה כוללת", "-", active_site_crane],
-        ["הפרשת מחזור סוף חיים (Decommissioning)", f"{int(bess_count + oog_count)} יחידות BESS", "-", decommissioning_total_usd],
-        ["בלת״ם פרויקטי", "5% מסך שרשרת האספקה", "-", contingency_usd],
-        ["סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)", "-", "-", total_landed_cost_ex_vat]
-    ]
+    # המרת נתונים למטבע הנבחר לצורך הצגה מושלמת בטבלה
+    ex_exw, _ = convert_from_usd(trended_exw, display_currency)
+    ex_ch_inland, _ = convert_from_usd(china_inland_drayage + china_origin_thc, display_currency)
+    ex_ocean, _ = convert_from_usd(total_base_ocean_freight * trend_multiplier, display_currency)
+    ex_baf, _ = convert_from_usd(total_baf_ocean * trend_multiplier, display_currency)
+    ex_dthc, _ = convert_from_usd(destination_thc_total, display_currency)
+    ex_insur, _ = convert_from_usd(insurance_total_usd, display_currency)
+    ex_customs, _ = convert_from_usd(customs_duty_usd, display_currency)
+    ex_drayage, _ = convert_from_usd(inland_drayage_total_usd, display_currency)
+    ex_reg, _ = convert_from_usd(active_regulatory_permits, display_currency)
+    ex_crane, _ = convert_from_usd(active_site_crane, display_currency)
+    ex_decom, _ = convert_from_usd(decommissioning_total_usd, display_currency)
+    ex_cont, _ = convert_from_usd(contingency_usd, display_currency)
+    ex_total, _ = convert_from_usd(total_landed_cost_ex_vat, display_currency)
 
-    summary_df = pd.DataFrame(summary_data, columns=["רכיב עלות בפרויקט", "כמות / בסיס חישוב", "עלות ליחידה (USD)", "סה\"כ סעיף ב־USD ($)"])
+    unit_exw, _ = convert_from_usd(trended_exw / max(1, total_containers_project), display_currency)
+    unit_ch_inland, _ = convert_from_usd((china_inland_drayage + china_origin_thc) / max(1, total_containers_project), display_currency)
+    unit_ocean, _ = convert_from_usd((total_base_ocean_freight) / max(1, total_containers_project), display_currency)
+    unit_baf, _ = convert_from_usd((total_baf_ocean) / max(1, total_containers_project), display_currency)
+    unit_dthc, _ = convert_from_usd((total_destination_thc) / max(1, total_containers_project), display_currency)
+    unit_drayage, _ = convert_from_usd(inland_drayage_total_base / max(1, total_containers_project), display_currency)
+
+    # בניית טבלת HTML נקייה המציגה את סימן המטבע משמאל למספר
+    html_table = f"""
+    <table class="custom-finance-table">
+        <thead>
+            <tr>
+                <th style="width: 40%;">רכיב עלות בפרויקט</th>
+                <th class="center" style="width: 20%;">כמות / בסיס חישוב</th>
+                <th class="left" style="width: 20%;">עלות ליחידה</th>
+                <th class="left" style="width: 20%;">סה\"כ סעיף</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>ערך ציוד במפעל (Equipment EXW)</td>
+                <td class="center">{int(total_containers_project)} יחידות</td>
+                <td class="left">{curr_symbol} {unit_exw:,.2f}</td>
+                <td class="left"><b>{curr_symbol} {ex_exw:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>הובלה יבשתית ונמלית במוצא</td>
+                <td class="center">{int(total_containers_project)} יחידות</td>
+                <td class="left">{curr_symbol} {unit_ch_inland:,.2f}</td>
+                <td class="left"><b>{curr_symbol} {ex_ch_inland:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>הובלה ימית בסיסית</td>
+                <td class="center">{int(total_containers_project)} מכולות</td>
+                <td class="left">{curr_symbol} {unit_ocean:,.2f}</td>
+                <td class="left"><b>{curr_symbol} {ex_ocean:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>היטל דלק ימי לפי TEU (BAF)</td>
+                <td class="center">{int(total_containers_project)} יחידות</td>
+                <td class="left">{curr_symbol} {unit_baf:,.2f}</td>
+                <td class="left"><b>{curr_symbol} {ex_baf:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>דמי טיפול בנמל יעד (Destination THC)</td>
+                <td class="center">{int(total_containers_project)} יחידות</td>
+                <td class="left">{curr_symbol} {unit_dthc:,.2f}</td>
+                <td class="left"><b>{curr_symbol} {ex_dthc:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>ביטוח ימי</td>
+                <td class="center">אחוז מערך CIF</td>
+                <td class="left">-</td>
+                <td class="left"><b>{curr_symbol} {ex_insur:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>מכס יבוא</td>
+                <td class="center">על פי סיווג ({customs_duty_pct}%)</td>
+                <td class="left">-</td>
+                <td class="left"><b>{curr_symbol} {ex_customs:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>הובלה יבשתית מנמל לאתר</td>
+                <td class="center">{int(total_containers_project)} משאיות</td>
+                <td class="left">{curr_symbol} {unit_drayage:,.2f}</td>
+                <td class="left"><b>{curr_symbol} {ex_drayage:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>רגולציה מקומית ואישורי חומ\"ס / משרד התחבורה</td>
+                <td class="center">הוצאה כוללת</td>
+                <td class="left">-</td>
+                <td class="left"><b>{curr_symbol} {ex_reg:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>עגורן מנוף ופריקה באתר</td>
+                <td class="center">הוצאה כוללת</td>
+                <td class="left">-</td>
+                <td class="left"><b>{curr_symbol} {ex_crane:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>הפרשת מחזור סוף חיים (Decommissioning)</td>
+                <td class="center">{int(bess_count + oog_count)} יחידות BESS</td>
+                <td class="left">-</td>
+                <td class="left"><b>{curr_symbol} {ex_decom:,.2f}</b></td>
+            </tr>
+            <tr>
+                <td>בלת״ם פרויקטי</td>
+                <td class="center">5% מסך שרשרת האספקה</td>
+                <td class="left">-</td>
+                <td class="left"><b>{curr_symbol} {ex_cont:,.2f}</b></td>
+            </tr>
+            <tr class="total-row">
+                <td>סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)</td>
+                <td class="center">-</td>
+                <td class="left">-</td>
+                <td class="left" style="font-size: 1.05rem; color: #1e3d59;"><b>{curr_symbol} {ex_total:,.2f}</b></td>
+            </tr>
+        </tbody>
+    </table>
+    """
     
-    # הצגת טבלה באמצעות st.dataframe עם הגדרת רוחב עמודות אוטומטית / מרווחת
-    st.dataframe(
-        summary_df.style.format({"סה\"כ סעיף ב־USD ($)": "${:,.2f}"}),
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "רכיב עלות בפרויקט": st.column_config.TextColumn("רכיב עלות בפרויקט", width="medium"),
-            "כמות / בסיס חישוב": st.column_config.TextColumn("כמות / בסיס חישוב", width="small"),
-            "עלות ליחידה (USD)": st.column_config.TextColumn("עלות ליחידה (USD)", width="small"),
-            "סה\"כ סעיף ב־USD ($)": st.column_config.TextColumn("סה\"כ סעיף ב־USD ($)", width="medium")
-        }
-    )
+    st.markdown(html_table, unsafe_allow_html=True)
 
     st.markdown("---")
     st.subheader("📥 ייצוא נתונים לדוח אקסל (Excel Export)")
     
+    # הכנת DataFrame נקי עבור קובץ האקסל
+    excel_summary_data = [
+        ["ערך ציוד במפעל (Equipment EXW)", f"{int(total_containers_project)} יחידות", trended_exw / max(1, total_containers_project), trended_exw],
+        ["הובלה יבשתית ונמלית במוצא", f"{int(total_containers_project)} יחידות", (china_inland_drayage + china_origin_thc) / max(1, total_containers_project), china_inland_drayage + china_origin_thc],
+        ["הובלה ימית בסיסית", f"{int(total_containers_project)} מכולות", total_base_ocean_freight / max(1, total_containers_project), total_base_ocean_freight * trend_multiplier],
+        ["היטל דלק ימי לפי TEU (BAF)", f"{int(total_containers_project)} יחידות", total_baf_ocean / max(1, total_containers_project), total_baf_ocean * trend_multiplier],
+        ["דמי טיפול בנמל יעד (Destination THC)", f"{int(total_containers_project)} יחידות", total_destination_thc / max(1, total_containers_project), destination_thc_total],
+        ["ביטוח ימי", "אחוז מערך CIF", 0, insurance_total_usd],
+        ["מכס יבוא", f"על פי סיווג ({customs_duty_pct}%)", 0, customs_duty_usd],
+        ["הובלה יבשתית מנמל לאתר", f"{int(total_containers_project)} משאיות", inland_drayage_total_base / max(1, total_containers_project), inland_drayage_total_usd],
+        ["רגולציה מקומית ואישורי חומ\"ס / משרד התחבורה", "הוצאה כוללת", 0, active_regulatory_permits],
+        ["עגורן מנוף ופריקה באתר", "הוצאה כוללת", 0, active_site_crane],
+        ["הפרשת מחזור סוף חיים (Decommissioning)", f"{int(bess_count + oog_count)} יחידות BESS", 0, decommissioning_total_usd],
+        ["בלת״ם פרויקטי", "5% מסך שרשרת האספקה", 0, contingency_usd],
+        ["סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)", "-", 0, total_landed_cost_ex_vat]
+    ]
+    excel_summary_df = pd.DataFrame(excel_summary_data, columns=["רכיב עלות בפרויקט", "כמות / בסיס חישוב", "עלות ליחידה (USD)", "סה\"כ סעיף ב־USD ($)"])
+
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        summary_df.to_excel(writer, sheet_name='Cost Summary', index=False)
+        excel_summary_df.to_excel(writer, sheet_name='Cost Summary', index=False)
     excel_data = output.getvalue()
 
     st.download_button(
