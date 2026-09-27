@@ -511,7 +511,6 @@ with tab_summary:
     st.markdown("---")
     st.subheader("📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)")
 
-    # המרת נתונים למטבע הנבחר לצורך הצגה מושלמת בטבלה
     ex_exw, _ = convert_from_usd(trended_exw, display_currency)
     ex_ch_inland, _ = convert_from_usd(china_inland_drayage + china_origin_thc, display_currency)
     ex_ocean, _ = convert_from_usd(total_base_ocean_freight * trend_multiplier, display_currency)
@@ -533,7 +532,6 @@ with tab_summary:
     unit_dthc, _ = convert_from_usd((total_destination_thc) / max(1, total_containers_project), display_currency)
     unit_drayage, _ = convert_from_usd(inland_drayage_total_base / max(1, total_containers_project), display_currency)
 
-    # בניית טבלת HTML נקייה המציגה את סימן המטבע משמאל למספר
     html_table = f"""
     <table class="custom-finance-table">
         <thead>
@@ -632,8 +630,14 @@ with tab_summary:
     st.markdown("---")
     st.subheader("📥 ייצוא נתונים לדוח אקסל (Excel Export)")
     
-    # הכנת DataFrame נקי עבור קובץ האקסל
+    # סידור העמודות באקסל כך ששם הרכיב נמצא מימין (עמודה A) והסיכום משמאל (RTL מוגדר באופן אוטומטי)
     excel_summary_data = [
+        [
+            "רכיב עלות בפרויקט",
+            "כמות / בסיס חישוב",
+            f"עלות ליחידה ({curr_symbol})",
+            f"סה\"כ סעיף ({curr_symbol})"
+        ],
         ["ערך ציוד במפעל (Equipment EXW)", f"{int(total_containers_project)} יחידות", trended_exw / max(1, total_containers_project), trended_exw],
         ["הובלה יבשתית ונמלית במוצא", f"{int(total_containers_project)} יחידות", (china_inland_drayage + china_origin_thc) / max(1, total_containers_project), china_inland_drayage + china_origin_thc],
         ["הובלה ימית בסיסית", f"{int(total_containers_project)} מכולות", total_base_ocean_freight / max(1, total_containers_project), total_base_ocean_freight * trend_multiplier],
@@ -648,11 +652,17 @@ with tab_summary:
         ["בלת״ם פרויקטי", "5% מסך שרשרת האספקה", 0, contingency_usd],
         ["סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)", "-", 0, total_landed_cost_ex_vat]
     ]
-    excel_summary_df = pd.DataFrame(excel_summary_data, columns=["רכיב עלות בפרויקט", "כמות / בסיס חישוב", "עלות ליחידה (USD)", "סה\"כ סעיף ב־USD ($)"])
 
+    # יצירת קובץ אקסל והגדרת הגיליון כ־RTL (מימין לשמאל) בצורה מפורשת
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        excel_summary_df.to_excel(writer, sheet_name='Cost Summary', index=False)
+        df_export = pd.DataFrame(excel_summary_data[1:], columns=excel_summary_data[0])
+        df_export.to_excel(writer, sheet_name='Cost Summary', index=False)
+        
+        # הגדרת כיוון גיליון האקסל ל־RTL כך שעמודה A תופיע מימין
+        ws = writer.sheets['Cost Summary']
+        ws.views.sheetView[0].rightToLeft = True
+
     excel_data = output.getvalue()
 
     st.download_button(
