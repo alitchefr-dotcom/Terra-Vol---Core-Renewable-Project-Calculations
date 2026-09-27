@@ -4,6 +4,7 @@ import os
 import requests
 import base64
 from datetime import date
+from io import BytesIO
 
 # ---------------------------------------------------------
 # הגדרת תצורת עמוד ולוגו
@@ -306,16 +307,16 @@ with tab3:
     include_delay_scenario = False
 
 with tab4:
+    st.subheader("⚖️ רגולציה, אישורים מנדטוריים שוטפים ותחזית סוף חיים" if is_hebrew else "Regulatory Compliance & Decommissioning")
+
     if dest_country == "Israel":
-        st.subheader("🇮🇱 רגולציית חומ\"ס, אישורי משרד התחבורה ודרישות חובה בישראל")
-        st.markdown("> **שים לב:** הסעיפים הבאים מסומנים כ**מנדטוריים (חובה חוקית)** עבור פרויקטים בישראל.")
-        
-        st.error("🚨 **מנדטורי (חובה):** אישור הובלה פרטני מאגף הפיקוח במשרד התחבורה לכל מכולת BESS.")
-        mot_fee_per_bess = st.number_input("עלות אגרת אישור הובלה ממשרד התחבורה ליחידה ($): [ניתן לעריכה]", value=350.0, step=50.0, key="mot_fee_input")
+        st.markdown("### 🇮🇱 רגולציית חומ\"ס ואישורי הובלה שוטפים (ישראל)")
+        st.error("🚨 **מנדטורי (חובה חוקית בישראל):** אישור הובלה פרטני מאגף הפיקוח והרכב במשרד התחבורה לכל מכולת BESS.")
+        mot_fee_per_bess = st.number_input("עלות אגרת אישור הובלה ממשרד התחבורה ליחידת BESS ($):", value=350.0, step=50.0, key="mot_fee_input")
         mot_total_approval_cost = mot_fee_per_bess * float(bess_count + oog_count)
 
-        st.warning("⚠️ **מנדטורי (חובה):** אגרות בדיקה, היתרי חומ\"ס נמלים ואישורי כבאות והצלה לשחרור הציוד.")
-        local_regulatory_permits = st.number_input("עלות כוללת להיתרי חומ\"ס ואישורי נמל ($): [ניתן לעריכה]", value=1500.0, step=100.0, key="reg_cost_input")
+        st.warning("⚠️ **מנדטורי (חובה נמלית):** אגרות בדיקה, פיקוח חומ\"ס ואישורי כבאות בנמלי הים.")
+        local_regulatory_permits = st.number_input("עלות כוללת להיתרי חומ\"ס נמלים ($):", value=1500.0, step=100.0, key="reg_cost_input")
         
         epr_recycling_total_usd = 0.0
         battery_passport_total_usd = 0.0
@@ -323,15 +324,13 @@ with tab4:
         include_regulatory = True
 
     else:
-        st.subheader(f"🇪🇺 רגולציית איחוד אירופי (EU Regulation & Compliance) — {dest_country}")
-        st.markdown("> **שים לב:** הדרישות הבאות מותאמות לפרויקטים באירופה וכוללות תקני איחוד אירופי מנדטוריים.")
-
+        st.markdown(f"### 🇪🇺 רגולציה שוטפת ואחריות יצרן (איחוד אירופי — {dest_country})")
         st.error("🚨 **מנדטורי (חובה באירופה):** דרכון סוללות דיגיטלי (EU Battery Passport) ותיעוד שרשרת אספקה.")
-        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($): [ניתן לעריכה]", value=1200.0, step=100.0, key="bp_cost_input")
+        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):", value=1200.0, step=100.0, key="bp_cost_input")
         battery_passport_total_usd = battery_passport_flat
 
         st.warning("⚠️ **מנדטורי (חובה באירופה):** דמי טיפול באחריות יצרן מורחבת (EPR / Recycling שוטף).")
-        epr_fee_per_unit = st.number_input("עלות EPR שוטף ליחידת BESS ($): [ניתן לעריכה]", value=450.0, step=50.0, key="epr_unit_input")
+        epr_fee_per_unit = st.number_input("עלות EPR שוטף ליחידת BESS ($):", value=450.0, step=50.0, key="epr_unit_input")
         epr_recycling_total_usd = epr_fee_per_unit * float(bess_count + oog_count)
 
         include_regulatory = st.checkbox("כלול אגרות היתרי כניסה והיערכות אתר מקומיים באירופה [בחירה]", value=True, key="reg_permits_toggle")
@@ -341,18 +340,15 @@ with tab4:
         include_mot_approval = False
 
     st.markdown("---")
-    requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey) [בחירה]", value=is_bess, key="hl_survey_toggle")
-    heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
-
-    st.markdown("---")
-    with st.expander("📌 ניהול תחזית תקציבית אופציונלית: פירוק ומחזור סוף חיים (Decommissioning Provision)", expanded=False):
+    st.markdown("### 🔄 תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)")
+    with st.expander("📌 ניהול והפרשה לעתיד (אופציונלי למנהל הפרויקט)", expanded=False):
         st.markdown("""
-        כלי ניהול אופציונלי למנהל הפרויקט להוספת **הפרשה תקציבית עתידית (צפי לרישום או לתקציב כולל)** הכוללת:
-        * פירוק פיזי של מודולי הסוללות מהמכולה/אתר.
-        * נטרול ופריקת מתח ובדיקות בטיחות מקדימות.
-        * הפרדת תאי האנרגיה וחומרים מסוכנים טרם תהליך ההתכה/מחזור הסופי.
+        כלי ניהול המאפשר להוסיף הפרשה תקציבית צופה פני עתיד עבור:
+        * פירוק פיזי של מודולי הסוללות והמכולה.
+        * נטרול מתח ובדיקות בטיחות מקדימות.
+        * הפרדת תאי אנרגיה וחומרים מסוכנים לפני מחזור סופי.
         """)
-        include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision) [בחירת מנהל פרויקט]", value=False, key="decom_toggle")
+        include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)", value=False, key="decom_toggle")
         
         if include_decommissioning_provision:
             decom_cost_per_bess = st.number_input("עלות מוערכת לפירוק ומחזור ליחידת BESS ($):", value=2200.0, step=200.0, key="decom_unit_input")
@@ -360,6 +356,38 @@ with tab4:
             st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **${decommissioning_total_usd:,.2f}**")
         else:
             decommissioning_total_usd = 0.0
+
+    st.markdown("---")
+    requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey) [בחירה]", value=is_bess, key="hl_survey_toggle")
+    heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
+
+# ---------------------------------------------------------
+# טאב 5 (או 5_eu) - הנחות מסלולים אינדיקטיביות
+# ---------------------------------------------------------
+if show_route_optimization:
+    with tab5:
+        st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Romania / Poland / Germany)")
+        st.info("ניתוח חלופות נמלי פריקה (לדוגמה Constanța מול Burgas) והובלה יבשתית לאתר הפרויקט.")
+        st.markdown("""
+        * **קונסטנצה (רומניה):** מתאים לפרויקטים בדרום/מרכז רומניה (כגון Iepurești ו־Ghimpați).
+        * **בורגס (בולגריה):** שער כניסה חלופי לבלקן עם גישה למשאיות כבדות.
+        * **גדנסק/גדיניה (פולין):** מתאים לפרויקטי צפון/מרכז אירופה.
+        """)
+
+# ---------------------------------------------------------
+# טאב פרויקטי אנלייט (שירה)
+# ---------------------------------------------------------
+with tab_projects:
+    st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
+    st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט בשנים 2027–2028.")
+    
+    enlight_project_type = st.selectbox("בחר פרויקט לטעינת נתונים אוטומטית:", [proj for proj in ["פרויקט אשלים / צאלים (ישראל)", "פרויקט Iepurești (רומניה)", "פרויקט Stk. Ned (מזרח אירופה)"]], key="enlight_proj_sel")
+    if "אשלים" in enlight_project_type:
+        st.markdown("📌 **מאפייני פרויקט ישראל:** 20 יחידות BESS, הובלה דרך נמל חיפה, אישורי משרד התחבורה חובה.")
+    elif "Iepurești" in enlight_project_type:
+        st.markdown("📌 **מאפייני פרויקט רומניה:** פרויקט סולארי + BESS, פריקה בקונסטנצה, רגולציית איחוד אירופי.")
+    else:
+        st.markdown("📌 **מאפייני פרויקט אירופאי כללי:** עמידה בדרכון סוללות ותקן UN3536.")
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
@@ -433,10 +461,65 @@ buyer_direct_val, _ = convert_from_usd(buyer_direct_payment_usd, display_currenc
 cash_val, _ = convert_from_usd(total_cash_requirement_incl_vat, display_currency)
 econ_val, _ = convert_from_usd(economic_cost_ex_vat, display_currency)
 
+# ---------------------------------------------------------
+# טאב הסיכום הפיננסי ויצוא לאקסל
+# ---------------------------------------------------------
 with tab_summary:
-    st.subheader(f"📊 Financial Dashboard - {incoterm} ({display_currency})")
+    st.subheader(f"📊 Financial & Regulatory Summary — {incoterm} ({display_currency})")
+    
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Landed Cost (ex-VAT)", f"{curr_symbol} {display_val:,.2f}")
     m2.metric("Economic Cost", f"{curr_symbol} {econ_val:,.2f}")
     m3.metric("Total Cash Requirement", f"{curr_symbol} {cash_val:,.2f}")
     m4.metric("Paid to Supplier", f"{curr_symbol} {supplier_val:,.2f}")
+
+    st.markdown("---")
+    st.subheader("📋 פירוט רכיבי העלויות לפרויקט (Cost Breakdown Table)")
+
+    summary_df = pd.DataFrame({
+        "Cost Component (רכיב עלות)": [
+            "Equipment EXW (ערך ציוד במפעל)",
+            "China Inland Drayage & THC",
+            "Ocean Freight (הובלה ימית בסיסית)",
+            "BAF (היטל דלק ימי לפי TEU)",
+            "Destination THC (DTHC)",
+            "Marine Insurance (ביטוח ימי)",
+            "Customs Duty (מכס)",
+            "Inland Drayage (הובלה יבשתית לאתר)",
+            "Regulatory & MOT Approvals (רגולציה ומשרד התחבורה)",
+            "Site Crane & Unloading (עגורן ופריקה)",
+            "Decommissioning Provision (הפרשת סוף חיים)",
+            "Contingency (בלת״ם)"
+        ],
+        "Amount (USD $)": [
+            trended_exw,
+            china_inland_drayage + china_origin_thc,
+            total_base_ocean_freight * trend_multiplier,
+            total_baf_ocean * trend_multiplier,
+            destination_thc_total,
+            insurance_total_usd,
+            customs_duty_usd,
+            inland_drayage_total_usd,
+            active_regulatory_permits,
+            active_site_crane,
+            decommissioning_total_usd,
+            contingency_usd
+        ]
+    })
+    
+    st.dataframe(summary_df.style.format({"Amount (USD $)": "${:,.2f}"}), use_container_width=True)
+
+    st.markdown("---")
+    st.subheader("📥 ייצוא נתונים לאקסל (Excel Export)")
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        summary_df.to_excel(writer, sheet_name='Cost Summary', index=False)
+    excel_data = output.getvalue()
+
+    st.download_button(
+        label="📥 הורד דוח פיננסי מלא לאקסל (Download Excel Report)",
+        data=excel_data,
+        file_name=f"TerraVol_Project_Report_{dest_country}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
