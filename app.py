@@ -169,6 +169,11 @@ st.markdown(
         font-weight: 700;
         border-top: 2px solid #cbd5e1;
     }}
+    .ltr-val {{
+        direction: ltr;
+        unicode-bidi: embed;
+        display: inline-block;
+    }}
     </style>
     """,
     unsafe_allow_html=True
@@ -404,9 +409,9 @@ with tab1:
 
     exw_display_val, _ = convert_from_usd(total_exw_project, display_currency)
     if is_hebrew:
-        st.success(f"📊 סה\"כ יחידות לפרויקט: {total_containers_project:,} | סה\"כ ערך ציוד במפעל (EXW): **{curr_symbol} {exw_display_val:,.2f}**")
+        st.success(f'📊 סה"כ יחידות לפרויקט: {total_containers_project:,} | סה"כ ערך ציוד במפעל (EXW): <span class="ltr-val"><b>{curr_symbol} {exw_display_val:,.2f}</b></span>', unsafe_allow_html=True)
     else:
-        st.success(f"📊 Total Project Units: {total_containers_project:,} | Total Factory EXW Value: **{curr_symbol} {exw_display_val:,.2f}**")
+        st.success(f'📊 Total Project Units: {total_containers_project:,} | Total Factory EXW Value: <span class="ltr-val"><b>{curr_symbol} {exw_display_val:,.2f}</b></span>', unsafe_allow_html=True)
 
 with tab2:
     st.subheader("🚢 תעריפי הובלה ימית, היטל דלק (BAF) ודמי טיפול בנמל יעד (DTHC)" if is_hebrew else "🚢 Ocean Freight, BAF & Destination THC")
@@ -609,11 +614,12 @@ with tab4:
                 decom_per_unit_display, _ = convert_from_usd(decom_cost_per_bess, display_currency)
                 decom_display_val, _ = convert_from_usd(decommissioning_total_usd, display_currency)
                 st.info(
-                    f"💡 עלות מוערכת ליחידה: **{curr_symbol} {decom_per_unit_display:,.2f}** ({bess_capacity_mwh:.1f} MWh × {curr_symbol}{decom_cost_per_kwh:,.0f}/kWh) | "
-                    f"סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **{curr_symbol} {decom_display_val:,.2f}**"
+                    f'💡 עלות מוערכת ליחידה: <span class="ltr-val"><b>{curr_symbol} {decom_per_unit_display:,.2f}</b></span> ({bess_capacity_mwh:.1f} MWh × <span class="ltr-val">{curr_symbol}{decom_cost_per_kwh:,.0f}</span>/kWh) | '
+                    f'סה"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: <span class="ltr-val"><b>{curr_symbol} {decom_display_val:,.2f}</b></span>'
                     if is_hebrew else
-                    f"💡 Estimated cost per unit: **{curr_symbol} {decom_per_unit_display:,.2f}** ({bess_capacity_mwh:.1f} MWh × {curr_symbol}{decom_cost_per_kwh:,.0f}/kWh) | "
-                    f"Total planned decommissioning provision for {int(bess_count + oog_count)} BESS/OOG units: **{curr_symbol} {decom_display_val:,.2f}**"
+                    f'💡 Estimated cost per unit: <span class="ltr-val"><b>{curr_symbol} {decom_per_unit_display:,.2f}</b></span> ({bess_capacity_mwh:.1f} MWh × <span class="ltr-val">{curr_symbol}{decom_cost_per_kwh:,.0f}</span>/kWh) | '
+                    f'Total planned decommissioning provision for {int(bess_count + oog_count)} BESS/OOG units: <span class="ltr-val"><b>{curr_symbol} {decom_display_val:,.2f}</b></span>',
+                    unsafe_allow_html=True
                 )
             else:
                 decommissioning_total_usd = 0.0
@@ -722,7 +728,7 @@ if is_european_dest and tab_projects is not None:
                     row["Recycling"] = "לא ידוע (כמות חסרה)" if is_hebrew else "N/A (qty missing)"
                 else:
                     row_recycling_usd = SHIRA_EPR_FEE_PER_BESS_UNIT_USD * float(cont_raw)
-                    row["Recycling"] = f"${row_recycling_usd:,.0f}"
+                    row["Recycling"] = f'<span class="ltr-val">${row_recycling_usd:,.0f}</span>'
             else:
                 row["Recycling"] = "לא רלוונטי (לא BESS)" if is_hebrew else "N/A (non-BESS)"
 
@@ -826,28 +832,28 @@ with tab_summary:
         st.markdown(f"""
         <div class="metric-container">
             <div class="metric-title">{m1_title}</div>
-            <div class="metric-value">{curr_symbol} {display_val:,.2f}</div>
+            <div class="metric-value"><span class="ltr-val">{curr_symbol} {display_val:,.2f}</span></div>
         </div>
         """, unsafe_allow_html=True)
     with m_col2:
         st.markdown(f"""
         <div class="metric-container">
             <div class="metric-title">{m2_title}</div>
-            <div class="metric-value">{curr_symbol} {econ_val:,.2f}</div>
+            <div class="metric-value"><span class="ltr-val">{curr_symbol} {econ_val:,.2f}</span></div>
         </div>
         """, unsafe_allow_html=True)
     with m_col3:
         st.markdown(f"""
         <div class="metric-container">
             <div class="metric-title">{m3_title}</div>
-            <div class="metric-value">{curr_symbol} {cash_val:,.2f}</div>
+            <div class="metric-value"><span class="ltr-val">{curr_symbol} {cash_val:,.2f}</span></div>
         </div>
         """, unsafe_allow_html=True)
     with m_col4:
         st.markdown(f"""
         <div class="metric-container">
             <div class="metric-title">{m4_title}</div>
-            <div class="metric-value">{curr_symbol} {supplier_val:,.2f}</div>
+            <div class="metric-value"><span class="ltr-val">{curr_symbol} {supplier_val:,.2f}</span></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -903,80 +909,80 @@ with tab_summary:
             <tr>
                 <td>{item_exw}</td>
                 <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
-                <td class="left">{curr_symbol} {unit_exw:,.2f}</td>
-                <td class="left"><b>{curr_symbol} {ex_exw:,.2f}</b></td>
+                <td class="left"><span class="ltr-val">{curr_symbol} {unit_exw:,.2f}</span></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_exw:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_china}</td>
                 <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
-                <td class="left">{curr_symbol} {unit_ch_inland:,.2f}</td>
-                <td class="left"><b>{curr_symbol} {ex_ch_inland:,.2f}</b></td>
+                <td class="left"><span class="ltr-val">{curr_symbol} {unit_ch_inland:,.2f}</span></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ch_inland:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_ocean}</td>
                 <td class="center">{int(total_containers_project):,} {'מכולות' if is_hebrew else 'containers'}</td>
-                <td class="left">{curr_symbol} {unit_ocean:,.2f}</td>
-                <td class="left"><b>{curr_symbol} {ex_ocean:,.2f}</b></td>
+                <td class="left"><span class="ltr-val">{curr_symbol} {unit_ocean:,.2f}</span></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ocean:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_baf}</td>
                 <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
-                <td class="left">{curr_symbol} {unit_baf:,.2f}</td>
-                <td class="left"><b>{curr_symbol} {ex_baf:,.2f}</b></td>
+                <td class="left"><span class="ltr-val">{curr_symbol} {unit_baf:,.2f}</span></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_baf:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_dthc}</td>
                 <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
-                <td class="left">{curr_symbol} {unit_dthc:,.2f}</td>
-                <td class="left"><b>{curr_symbol} {ex_dthc:,.2f}</b></td>
+                <td class="left"><span class="ltr-val">{curr_symbol} {unit_dthc:,.2f}</span></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_dthc:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_insur}</td>
                 <td class="center">{'אחוז מערך CIF' if is_hebrew else '% of CIF'}</td>
                 <td class="left">-</td>
-                <td class="left"><b>{curr_symbol} {ex_insur:,.2f}</b></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_insur:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_customs}</td>
                 <td class="center">{'על פי סיווג' if is_hebrew else 'Classification'}</td>
                 <td class="left">-</td>
-                <td class="left"><b>{curr_symbol} {ex_customs:,.2f}</b></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_customs:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_drayage}</td>
                 <td class="center">{int(total_containers_project):,} {'משאיות' if is_hebrew else 'trucks'}</td>
-                <td class="left">{curr_symbol} {unit_drayage:,.2f}</td>
-                <td class="left"><b>{curr_symbol} {ex_drayage:,.2f}</b></td>
+                <td class="left"><span class="ltr-val">{curr_symbol} {unit_drayage:,.2f}</span></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_drayage:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_reg}</td>
                 <td class="center">{'הוצאה כוללת' if is_hebrew else 'Total Expense'}</td>
                 <td class="left">-</td>
-                <td class="left"><b>{curr_symbol} {ex_reg:,.2f}</b></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_reg:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_crane}</td>
                 <td class="center">{'הוצאה כוללת' if is_hebrew else 'Total Expense'}</td>
                 <td class="left">-</td>
-                <td class="left"><b>{curr_symbol} {ex_crane:,.2f}</b></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_crane:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_decom}</td>
                 <td class="center">{int(bess_count + oog_count):,} BESS</td>
                 <td class="left">-</td>
-                <td class="left"><b>{curr_symbol} {ex_decom:,.2f}</b></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_decom:,.2f}</span></b></td>
             </tr>
             <tr>
                 <td>{item_cont}</td>
                 <td class="center">5% Supply Chain</td>
                 <td class="left">-</td>
-                <td class="left"><b>{curr_symbol} {ex_cont:,.2f}</b></td>
+                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_cont:,.2f}</span></b></td>
             </tr>
             <tr class="total-row">
                 <td>{item_tot}</td>
                 <td class="center">-</td>
                 <td class="left">-</td>
-                <td class="left" style="font-size: 1.05rem; color: #1e3d59;"><b>{curr_symbol} {ex_total:,.2f}</b></td>
+                <td class="left" style="font-size: 1.05rem; color: #1e3d59;"><b><span class="ltr-val">{curr_symbol} {ex_total:,.2f}</span></b></td>
             </tr>
         </tbody>
     </table>
