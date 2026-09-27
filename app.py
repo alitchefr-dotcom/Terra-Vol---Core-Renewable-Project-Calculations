@@ -313,8 +313,8 @@ live_eur, live_ils = fetch_live_exchange_rates()
 if live_eur is None or live_ils is None:
     live_eur, live_ils = 0.92, 3.70
 
-usd_to_eur = st.sidebar.number_input("שער המרה USD ל־EUR:" if is_hebrew else "USD to EUR Exchange Rate:", value=float(live_eur), step=0.01, min_value=0.0001, key="sidebar_usd_eur")
-usd_to_ils = st.sidebar.number_input("שער המרה USD ל־ILS:" if is_hebrew else "USD to ILS Exchange Rate:", value=float(live_ils), step=0.01, min_value=0.0001, key="sidebar_usd_ils")
+usd_to_eur = st.sidebar.number_input("שער המרה USD ל־EUR:" if is_hebrew else "USD to EUR Exchange Rate:", value=float(live_eur), format="%.4f", step=0.01, min_value=0.0001, key="sidebar_usd_eur")
+usd_to_ils = st.sidebar.number_input("שער המרה USD ל־ILS:" if is_hebrew else "USD to ILS Exchange Rate:", value=float(live_ils), format="%.4f", step=0.01, min_value=0.0001, key="sidebar_usd_ils")
 
 def convert_from_usd(amount_usd, target_curr):
     if target_curr == "USD ($)": return amount_usd, "$"
@@ -362,8 +362,8 @@ with tab1:
         site_address = st.text_input(txt["site_label"], key="site_name_input", placeholder=default_site_placeholder)
 
     with col_meta2:
-        applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country if is_hebrew else COUNTRY_EN_NAMES.get(dest_country, dest_country)}) %:", value=float(VAT_RATES[dest_country]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country}")
-        vat_recovery_pct = st.number_input(txt["vat_rec"], value=100.0, min_value=0.0, max_value=100.0, step=1.0, key="tab1_vat_rec")
+        applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country if is_hebrew else COUNTRY_EN_NAMES.get(dest_country, dest_country)}) %:", value=float(VAT_RATES[dest_country]), format="%.1f", step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country}")
+        vat_recovery_pct = st.number_input(txt["vat_rec"], value=100.0, format="%.1f", min_value=0.0, max_value=100.0, step=1.0, key="tab1_vat_rec")
         vat_paid_by_supplier = st.checkbox(txt["vat_sup"], value=False, key="tab1_vat_supplier")
 
     st.markdown("---")
@@ -372,26 +372,26 @@ with tab1:
     with col_q1:
         st.markdown("#### מכולות סוללה (BESS)" if is_hebrew else "#### BESS Containers")
         bess_count = st.number_input("כמות מכולות BESS (40' HC DG):" if is_hebrew else "BESS Containers (40' HC DG):", min_value=0, value=20, step=1, key="proj_bess_count")
-        bess_exw = st.number_input("עלות EXW ליחידת BESS ($):" if is_hebrew else "EXW Unit Cost per BESS ($):", min_value=0.0, value=400000.0, step=10000.0, key="proj_bess_exw")
+        bess_exw = st.number_input("עלות EXW ליחידת BESS ($):" if is_hebrew else "EXW Unit Cost per BESS ($):", min_value=0.0, value=400000.0, format="%,.0f", step=10000.0, key="proj_bess_exw")
 
         oog_count = st.number_input("כמות מכולות חריגות (OOG):" if is_hebrew else "OOG Containers:", min_value=0, value=0, step=1, key="proj_oog_count")
-        oog_exw = st.number_input("עלות EXW ליחידת OOG ($):" if is_hebrew else "EXW Unit Cost per OOG ($):", min_value=0.0, value=400000.0, step=10000.0, key="proj_oog_exw")
+        oog_exw = st.number_input("עלות EXW ליחידת OOG ($):" if is_hebrew else "EXW Unit Cost per OOG ($):", min_value=0.0, value=400000.0, format="%,.0f", step=10000.0, key="proj_oog_exw")
 
     with col_q2:
         st.markdown("#### תחנות המרה ושנאים" if is_hebrew else "#### MVS & Transformers")
         mvs_count = st.number_input("כמות תחנות מתח גבוה (MVS):" if is_hebrew else "MVS Stations:", min_value=0, value=4, step=1, key="proj_mvs_count")
-        mvs_exw = st.number_input("עלות EXW ליחידת MVS ($):" if is_hebrew else "EXW Unit Cost per MVS ($):", min_value=0.0, value=250000.0, step=10000.0, key="proj_mvs_exw")
+        mvs_exw = st.number_input("עלות EXW ליחידת MVS ($):" if is_hebrew else "EXW Unit Cost per MVS ($):", min_value=0.0, value=250000.0, format="%,.0f", step=10000.0, key="proj_mvs_exw")
 
         transformer_count = st.number_input("כמות שנאים ראשיים:" if is_hebrew else "Main Transformers:", min_value=0, value=2, step=1, key="proj_trans_count")
-        transformer_exw = st.number_input("עלות EXW ליחידת שנאי ($):" if is_hebrew else "EXW Unit Cost per Transformer ($):", min_value=0.0, value=120000.0, step=10000.0, key="proj_trans_exw")
+        transformer_exw = st.number_input("עלות EXW ליחידת שנאי ($):" if is_hebrew else "EXW Unit Cost per Transformer ($):", min_value=0.0, value=120000.0, format="%,.0f", step=10000.0, key="proj_trans_exw")
 
     with col_q3:
         st.markdown("#### ציוד נלווה וסולארי" if is_hebrew else "#### Accessories & PV")
         access_count = st.number_input("מכולות ציוד נלווה / יבש:" if is_hebrew else "Accessory Containers:", min_value=0, value=2, step=1, key="proj_access_count")
-        access_exw = st.number_input("עלות EXW ליחידת ציוד נלווה ($):" if is_hebrew else "EXW Unit Cost per Accessory Container ($):", min_value=0.0, value=50000.0, step=5000.0, key="proj_access_exw")
+        access_exw = st.number_input("עלות EXW ליחידת ציוד נלווה ($):" if is_hebrew else "EXW Unit Cost per Accessory Container ($):", min_value=0.0, value=50000.0, format="%,.0f", step=5000.0, key="proj_access_exw")
 
         solar_count = st.number_input("יחידות פאנלים סולאריים (PV):" if is_hebrew else "Solar PV Units:", min_value=0, value=0, step=1, key="proj_solar_count")
-        solar_exw = st.number_input("עלות EXW ליחידה סולארית ($):" if is_hebrew else "EXW Unit Cost per Solar Unit ($):", min_value=0.0, value=300000.0, step=10000.0, key="proj_solar_exw")
+        solar_exw = st.number_input("עלות EXW ליחידה סולארית ($):" if is_hebrew else "EXW Unit Cost per Solar Unit ($):", min_value=0.0, value=300000.0, format="%,.0f", step=10000.0, key="proj_solar_exw")
 
     total_containers_project = max(1, bess_count + oog_count + mvs_count + transformer_count + access_count + solar_count)
     total_exw_project = (
@@ -404,9 +404,9 @@ with tab1:
 
     exw_display_val, _ = convert_from_usd(total_exw_project, display_currency)
     if is_hebrew:
-        st.success(f"📊 סה\"כ יחידות לפרויקט: {total_containers_project} | סה\"כ ערך ציוד במפעל (EXW): **{curr_symbol} {exw_display_val:,.2f}**")
+        st.success(f"📊 סה\"כ יחידות לפרויקט: {total_containers_project:,} | סה\"כ ערך ציוד במפעל (EXW): **{curr_symbol} {exw_display_val:,.2f}**")
     else:
-        st.success(f"📊 Total Project Units: {total_containers_project} | Total Factory EXW Value: **{curr_symbol} {exw_display_val:,.2f}**")
+        st.success(f"📊 Total Project Units: {total_containers_project:,} | Total Factory EXW Value: **{curr_symbol} {exw_display_val:,.2f}**")
 
 with tab2:
     st.subheader("🚢 תעריפי הובלה ימית, היטל דלק (BAF) ודמי טיפול בנמל יעד (DTHC)" if is_hebrew else "🚢 Ocean Freight, BAF & Destination THC")
@@ -419,19 +419,19 @@ with tab2:
     st.markdown("##### 1. עלות הובלה ימית ליחידה:" if is_hebrew else "##### 1. Ocean Freight per Unit:")
     oc_col1, oc_col2, oc_col3 = st.columns(3)
     with oc_col1:
-        unit_freight_bess = st.number_input("הובלת BESS ($):" if is_hebrew else "BESS Freight ($):", value=31850.0 * carrier_data["bess_multiplier"], step=500.0, key="freight_bess")
-        unit_freight_oog = st.number_input("הובלת OOG ($):" if is_hebrew else "OOG Freight ($):", value=29900.0, step=500.0, key="freight_oog")
+        unit_freight_bess = st.number_input("הובלת BESS ($):" if is_hebrew else "BESS Freight ($):", value=31850.0 * carrier_data["bess_multiplier"], format="%,.2f", step=500.0, key="freight_bess")
+        unit_freight_oog = st.number_input("הובלת OOG ($):" if is_hebrew else "OOG Freight ($):", value=29900.0, format="%,.2f", step=500.0, key="freight_oog")
     with oc_col2:
-        unit_freight_mvs = st.number_input("הובלת MVS ($):" if is_hebrew else "MVS Freight ($):", value=4200.0, step=200.0, key="freight_mvs")
-        unit_freight_trans = st.number_input("הובלת שנאי ($):" if is_hebrew else "Transformer Freight ($):", value=5500.0, step=200.0, key="freight_trans")
+        unit_freight_mvs = st.number_input("הובלת MVS ($):" if is_hebrew else "MVS Freight ($):", value=4200.0, format="%,.2f", step=200.0, key="freight_mvs")
+        unit_freight_trans = st.number_input("הובלת שנאי ($):" if is_hebrew else "Transformer Freight ($):", value=5500.0, format="%,.2f", step=200.0, key="freight_trans")
     with oc_col3:
-        unit_freight_access = st.number_input("הובלת ציוד נלווה ($):" if is_hebrew else "Accessory Freight ($):", value=3200.0, step=200.0, key="freight_access")
-        unit_freight_solar = st.number_input("הובלת סולארי ($):" if is_hebrew else "Solar PV Freight ($):", value=3360.0, step=200.0, key="freight_solar")
+        unit_freight_access = st.number_input("הובלת ציוד נלווה ($):" if is_hebrew else "Accessory Freight ($):", value=3200.0, format="%,.2f", step=200.0, key="freight_access")
+        unit_freight_solar = st.number_input("הובלת סולארי ($):" if is_hebrew else "Solar PV Freight ($):", value=3360.0, format="%,.2f", step=200.0, key="freight_solar")
 
     st.markdown("---")
     st.markdown("##### 2. היטל דלק ימי (BAF) מחושב לפי נפח TEU:" if is_hebrew else "##### 2. Bunker Adjustment Factor (BAF) per TEU:")
     baf_mult = carrier_data["dthc_mult"]
-    base_baf_per_teu = st.number_input("תעריף BAF בסיסי ל־TEU יחיד ($):" if is_hebrew else "Base BAF Rate per TEU ($):", value=420.0 * baf_mult, step=20.0, key="baf_per_teu")
+    base_baf_per_teu = st.number_input("תעריף BAF בסיסי ל־TEU יחיד ($):" if is_hebrew else "Base BAF Rate per TEU ($):", value=420.0 * baf_mult, format="%,.2f", step=20.0, key="baf_per_teu")
 
     teu_bess, teu_oog, teu_mvs, teu_trans, teu_access, teu_solar = 2.0, 2.0, 1.0, 1.0, 1.0, 1.0
 
@@ -448,14 +448,14 @@ with tab2:
     
     dh_col1, dh_col2, dh_col3 = st.columns(3)
     with dh_col1:
-        dthc_bess = st.number_input("DTHC מכולת BESS ($):" if is_hebrew else "BESS Destination THC ($):", value=650.0 * dthc_mult, step=50.0, key="dthc_bess")
-        dthc_oog = st.number_input("DTHC מכולת OOG ($):" if is_hebrew else "OOG Destination THC ($):", value=850.0 * dthc_mult, step=50.0, key="dthc_oog")
+        dthc_bess = st.number_input("DTHC מכולת BESS ($):" if is_hebrew else "BESS Destination THC ($):", value=650.0 * dthc_mult, format="%,.2f", step=50.0, key="dthc_bess")
+        dthc_oog = st.number_input("DTHC מכולת OOG ($):" if is_hebrew else "OOG Destination THC ($):", value=850.0 * dthc_mult, format="%,.2f", step=50.0, key="dthc_oog")
     with dh_col2:
-        dthc_mvs = st.number_input("DTHC תחנת MVS ($):" if is_hebrew else "MVS Destination THC ($):", value=420.0 * dthc_mult, step=30.0, key="dthc_mvs")
-        dthc_trans = st.number_input("DTHC שנאי ($):" if is_hebrew else "Transformer Destination THC ($):", value=480.0 * dthc_mult, step=30.0, key="dthc_trans")
+        dthc_mvs = st.number_input("DTHC תחנת MVS ($):" if is_hebrew else "MVS Destination THC ($):", value=420.0 * dthc_mult, format="%,.2f", step=30.0, key="dthc_mvs")
+        dthc_trans = st.number_input("DTHC שנאי ($):" if is_hebrew else "Transformer Destination THC ($):", value=480.0 * dthc_mult, format="%,.2f", step=30.0, key="dthc_trans")
     with dh_col3:
-        dthc_access = st.number_input("DTHC ציוד נלווה ($):" if is_hebrew else "Accessory Destination THC ($):", value=280.0 * dthc_mult, step=20.0, key="dthc_access")
-        dthc_solar = st.number_input("DTHC פאנלים ($):" if is_hebrew else "Solar PV Destination THC ($):", value=300.0 * dthc_mult, step=20.0, key="dthc_solar")
+        dthc_access = st.number_input("DTHC ציוד נלווה ($):" if is_hebrew else "Accessory Destination THC ($):", value=280.0 * dthc_mult, format="%,.2f", step=20.0, key="dthc_access")
+        dthc_solar = st.number_input("DTHC פאנלים ($):" if is_hebrew else "Solar PV Destination THC ($):", value=300.0 * dthc_mult, format="%,.2f", step=20.0, key="dthc_solar")
 
     total_base_ocean_freight = (
         (bess_count * unit_freight_bess) + (oog_count * unit_freight_oog) +
@@ -481,7 +481,7 @@ with tab2:
     customs_duty_pct = st.number_input(
         "שיעור מכס יבוא (%) — לוודא מול קוד TARIC/HS הרלוונטי באתר Access2Markets:" if is_hebrew else
         "Import Customs Duty Rate (%) — verify against the relevant TARIC/HS code on Access2Markets:",
-        value=float(customs_duty_pct_default), min_value=0.0, max_value=100.0, step=0.1,
+        value=float(customs_duty_pct_default), format="%.1f", min_value=0.0, max_value=100.0, step=0.1,
         key=f"customs_duty_input_{dest_country}"
     )
     insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country, 0.15)
@@ -491,14 +491,14 @@ with tab3:
     
     dr_col1, dr_col2, dr_col3 = st.columns(3)
     with dr_col1:
-        drayage_bess = st.number_input("הובלת משאיות BESS ליחידה ($):" if is_hebrew else "BESS Trucking per unit ($):", value=3200.0, step=200.0, key="dray_bess")
-        drayage_oog = st.number_input("הובלת משאיות OOG ליחידה ($):" if is_hebrew else "OOG Trucking per unit ($):", value=3800.0, step=200.0, key="dray_oog")
+        drayage_bess = st.number_input("הובלת משאיות BESS ליחידה ($):" if is_hebrew else "BESS Trucking per unit ($):", value=3200.0, format="%,.2f", step=200.0, key="dray_bess")
+        drayage_oog = st.number_input("הובלת משאיות OOG ליחידה ($):" if is_hebrew else "OOG Trucking per unit ($):", value=3800.0, format="%,.2f", step=200.0, key="dray_oog")
     with dr_col2:
-        drayage_mvs = st.number_input("הובלת משאיות MVS ליחידה ($):" if is_hebrew else "MVS Trucking per unit ($):", value=1400.0, step=100.0, key="dray_mvs")
-        drayage_trans = st.number_input("הובלת משאיות שנאי ליחידה ($):" if is_hebrew else "Transformer Trucking per unit ($):", value=1800.0, step=100.0, key="dray_trans")
+        drayage_mvs = st.number_input("הובלת משאיות MVS ליחידה ($):" if is_hebrew else "MVS Trucking per unit ($):", value=1400.0, format="%,.2f", step=100.0, key="dray_mvs")
+        drayage_trans = st.number_input("הובלת משאיות שנאי ליחידה ($):" if is_hebrew else "Transformer Trucking per unit ($):", value=1800.0, format="%,.2f", step=100.0, key="dray_trans")
     with dr_col3:
-        drayage_access = st.number_input("הובלת ציוד נלווה ליחידה ($):" if is_hebrew else "Accessory Trucking per unit ($):", value=850.0, step=100.0, key="dray_access")
-        drayage_solar = st.number_input("הובלת ציוד סולארי ליחידה ($):" if is_hebrew else "Solar PV Trucking per unit ($):", value=950.0, step=100.0, key="dray_solar")
+        drayage_access = st.number_input("הובלת ציוד נלווה ליחידה ($):" if is_hebrew else "Accessory Trucking per unit ($):", value=850.0, format="%,.2f", step=100.0, key="dray_access")
+        drayage_solar = st.number_input("הובלת ציוד סולארי ליחידה ($):" if is_hebrew else "Solar PV Trucking per unit ($):", value=950.0, format="%,.2f", step=100.0, key="dray_solar")
 
     inland_drayage_total_base = (
         (bess_count * drayage_bess) + (oog_count * drayage_oog) +
@@ -533,7 +533,7 @@ with tab4:
         mot_fee_per_bess = st.number_input(
             "עלות אגרת אישור הובלה ממשרד התחבורה ליחידת BESS ($):" if is_hebrew else
             "Ministry of Transport approval fee per BESS unit ($):",
-            value=350.0, step=50.0, key="mot_fee_input"
+            value=350.0, format="%,.2f", step=50.0, key="mot_fee_input"
         )
         mot_total_approval_cost = mot_fee_per_bess * float(bess_count + oog_count)
 
@@ -544,7 +544,7 @@ with tab4:
         local_regulatory_permits = st.number_input(
             "עלות כוללת להיתרי חומ\"ס נמלים ($):" if is_hebrew else
             "Total cost of port hazmat permits ($):",
-            value=1500.0, step=100.0, key="reg_cost_input"
+            value=1500.0, format="%,.2f", step=100.0, key="reg_cost_input"
         )
         
         epr_recycling_total_usd = 0.0
@@ -556,15 +556,15 @@ with tab4:
     else:
         st.markdown(f"### 🇪🇺 רגולציה שוטפת ואחריות יצרן (איחוד אירופי — {dest_country})" if is_hebrew else f"### 🇪🇺 European Regulatory Compliance & EPR ({COUNTRY_EN_NAMES.get(dest_country, dest_country)})")
         st.error("🚨 **חובה באירופה:** דרכון סוללות דיגיטלי (EU Battery Passport) ותיעוד שרשרת אספקה." if is_hebrew else "🚨 **Mandatory in EU:** Digital EU Battery Passport & Supply Chain Documentation.")
-        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):" if is_hebrew else "Total Battery Passport & Documentation Cost ($):", value=1200.0, step=100.0, key="bp_cost_input")
+        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):" if is_hebrew else "Total Battery Passport & Documentation Cost ($):", value=1200.0, format="%,.2f", step=100.0, key="bp_cost_input")
         battery_passport_total_usd = battery_passport_flat
 
         st.warning("⚠️ **חובה באירופה:** דמי טיפול באחריות יצרן מורחבת (EPR / Recycling שוטף)." if is_hebrew else "⚠️ **Mandatory in EU:** Extended Producer Responsibility (EPR / Recycling).")
-        epr_fee_per_unit = st.number_input("עלות EPR שוטף ליחידת BESS ($):" if is_hebrew else "Ongoing EPR Fee per BESS unit ($):", value=450.0, step=50.0, key="epr_unit_input")
+        epr_fee_per_unit = st.number_input("עלות EPR שוטף ליחידת BESS ($):" if is_hebrew else "Ongoing EPR Fee per BESS unit ($):", value=450.0, format="%,.2f", step=50.0, key="epr_unit_input")
         epr_recycling_total_usd = epr_fee_per_unit * float(bess_count + oog_count)
 
         include_regulatory = st.checkbox("הכלל אגרות היתרי כניסה והיערכות אתר מקומיים באירופה" if is_hebrew else "Include local European site entry permits & clearance fees", value=True, key="reg_permits_toggle")
-        local_regulatory_permits = st.number_input("עלות היתרים מקומיים ($):" if is_hebrew else "Local Permits Cost ($):", value=600.0, step=100.0, key="reg_cost_input") if include_regulatory else 0.0
+        local_regulatory_permits = st.number_input("עלות היתרים מקומיים ($):" if is_hebrew else "Local Permits Cost ($):", value=600.0, format="%,.2f", step=100.0, key="reg_cost_input") if include_regulatory else 0.0
 
         mot_total_approval_cost = 0.0
         include_mot_approval = False
@@ -597,12 +597,12 @@ with tab4:
                 with decom_col1:
                     bess_capacity_mwh = st.number_input(
                         "קיבולת ממוצעת למכולת BESS (MWh):" if is_hebrew else "Average BESS Container Capacity (MWh):",
-                        min_value=0.1, value=4.0, step=0.5, key="decom_capacity_mwh"
+                        min_value=0.1, value=4.0, format="%.1f", step=0.5, key="decom_capacity_mwh"
                     )
                 with decom_col2:
                     decom_cost_per_kwh = st.number_input(
                         "עלות פירוק ומחזור ל-kWh ($):" if is_hebrew else "Decommissioning & Recycling Cost per kWh ($):",
-                        min_value=0.0, value=75.0, step=5.0, key="decom_cost_per_kwh"
+                        min_value=0.0, value=75.0, format="%,.2f", step=5.0, key="decom_cost_per_kwh"
                     )
                 decom_cost_per_bess = bess_capacity_mwh * 1000.0 * decom_cost_per_kwh
                 decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
@@ -620,7 +620,7 @@ with tab4:
 
     st.markdown("---")
     requires_heavy_lift = st.checkbox("נדרש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)" if is_hebrew else "Heavy-Lift Survey / Anchor Crane Required", value=is_bess, key="hl_survey_toggle")
-    heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):" if is_hebrew else "Heavy-Lift Survey Cost ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
+    heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):" if is_hebrew else "Heavy-Lift Survey Cost ($):", value=2500.0, format="%,.2f", step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
 
 if is_european_dest and tab5_eu is not None:
     with tab5_eu:
@@ -902,31 +902,31 @@ with tab_summary:
         <tbody>
             <tr>
                 <td>{item_exw}</td>
-                <td class="center">{int(total_containers_project)} {'יחידות' if is_hebrew else 'units'}</td>
+                <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
                 <td class="left">{curr_symbol} {unit_exw:,.2f}</td>
                 <td class="left"><b>{curr_symbol} {ex_exw:,.2f}</b></td>
             </tr>
             <tr>
                 <td>{item_china}</td>
-                <td class="center">{int(total_containers_project)} {'יחידות' if is_hebrew else 'units'}</td>
+                <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
                 <td class="left">{curr_symbol} {unit_ch_inland:,.2f}</td>
                 <td class="left"><b>{curr_symbol} {ex_ch_inland:,.2f}</b></td>
             </tr>
             <tr>
                 <td>{item_ocean}</td>
-                <td class="center">{int(total_containers_project)} {'מכולות' if is_hebrew else 'containers'}</td>
+                <td class="center">{int(total_containers_project):,} {'מכולות' if is_hebrew else 'containers'}</td>
                 <td class="left">{curr_symbol} {unit_ocean:,.2f}</td>
                 <td class="left"><b>{curr_symbol} {ex_ocean:,.2f}</b></td>
             </tr>
             <tr>
                 <td>{item_baf}</td>
-                <td class="center">{int(total_containers_project)} {'יחידות' if is_hebrew else 'units'}</td>
+                <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
                 <td class="left">{curr_symbol} {unit_baf:,.2f}</td>
                 <td class="left"><b>{curr_symbol} {ex_baf:,.2f}</b></td>
             </tr>
             <tr>
                 <td>{item_dthc}</td>
-                <td class="center">{int(total_containers_project)} {'יחידות' if is_hebrew else 'units'}</td>
+                <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
                 <td class="left">{curr_symbol} {unit_dthc:,.2f}</td>
                 <td class="left"><b>{curr_symbol} {ex_dthc:,.2f}</b></td>
             </tr>
@@ -944,7 +944,7 @@ with tab_summary:
             </tr>
             <tr>
                 <td>{item_drayage}</td>
-                <td class="center">{int(total_containers_project)} {'משאיות' if is_hebrew else 'trucks'}</td>
+                <td class="center">{int(total_containers_project):,} {'משאיות' if is_hebrew else 'trucks'}</td>
                 <td class="left">{curr_symbol} {unit_drayage:,.2f}</td>
                 <td class="left"><b>{curr_symbol} {ex_drayage:,.2f}</b></td>
             </tr>
@@ -962,7 +962,7 @@ with tab_summary:
             </tr>
             <tr>
                 <td>{item_decom}</td>
-                <td class="center">{int(bess_count + oog_count)} BESS</td>
+                <td class="center">{int(bess_count + oog_count):,} BESS</td>
                 <td class="left">-</td>
                 <td class="left"><b>{curr_symbol} {ex_decom:,.2f}</b></td>
             </tr>
@@ -994,17 +994,17 @@ with tab_summary:
             f"עלות ליחידה ({curr_symbol})" if is_hebrew else f"Unit Cost ({curr_symbol})",
             f"סה\"כ סעיף ({curr_symbol})" if is_hebrew else f"Total Amount ({curr_symbol})"
         ],
-        [item_exw, f"{int(total_containers_project)} units", trended_exw / max(1, total_containers_project), trended_exw],
-        [item_china, f"{int(total_containers_project)} units", (china_inland_drayage + china_origin_thc) / max(1, total_containers_project), china_inland_drayage + china_origin_thc],
-        [item_ocean, f"{int(total_containers_project)} containers", total_base_ocean_freight / max(1, total_containers_project), total_base_ocean_freight * trend_multiplier],
-        [item_baf, f"{int(total_containers_project)} units", total_baf_ocean / max(1, total_containers_project), total_baf_ocean * trend_multiplier],
-        [item_dthc, f"{int(total_containers_project)} units", total_destination_thc / max(1, total_containers_project), destination_thc_total],
+        [item_exw, f"{int(total_containers_project):,} units", trended_exw / max(1, total_containers_project), trended_exw],
+        [item_china, f"{int(total_containers_project):,} units", (china_inland_drayage + china_origin_thc) / max(1, total_containers_project), china_inland_drayage + china_origin_thc],
+        [item_ocean, f"{int(total_containers_project):,} containers", total_base_ocean_freight / max(1, total_containers_project), total_base_ocean_freight * trend_multiplier],
+        [item_baf, f"{int(total_containers_project):,} units", total_baf_ocean / max(1, total_containers_project), total_baf_ocean * trend_multiplier],
+        [item_dthc, f"{int(total_containers_project):,} units", total_destination_thc / max(1, total_containers_project), destination_thc_total],
         [item_insur, "% of CIF", 0, insurance_total_usd],
         [item_customs, f"({customs_duty_pct}%)", 0, customs_duty_usd],
-        [item_drayage, f"{int(total_containers_project)} trucks", inland_drayage_total_base / max(1, total_containers_project), inland_drayage_total_usd],
+        [item_drayage, f"{int(total_containers_project):,} trucks", inland_drayage_total_base / max(1, total_containers_project), inland_drayage_total_usd],
         [item_reg, "Total", 0, active_regulatory_permits],
         [item_crane, "Total", 0, active_site_crane],
-        [item_decom, f"{int(bess_count + oog_count)} BESS", 0, decommissioning_total_usd],
+        [item_decom, f"{int(bess_count + oog_count):,} BESS", 0, decommissioning_total_usd],
         [item_cont, "5%", 0, contingency_usd],
         [item_tot, "-", 0, total_landed_cost_ex_vat]
     ]
