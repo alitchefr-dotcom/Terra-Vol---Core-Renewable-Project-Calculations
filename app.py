@@ -311,7 +311,7 @@ with tab3:
     include_delay_scenario = False
 
 with tab4:
-    st.subheader("⚖️ רגולציה, אישורים מנדטוריים שוטפים ותחזית סוף חיים" if is_hebrew else "Regulatory Compliance & Decommissioning")
+    st.subheader("⚖️ רגולציה ואישורים מנדטוריים" if is_hebrew else "Regulatory Compliance")
 
     if dest_country == "Israel":
         st.markdown("### 🇮🇱 רגולציית חומ\"ס ואישורי הובלה שוטפים (ישראל)")
@@ -324,6 +324,7 @@ with tab4:
         
         epr_recycling_total_usd = 0.0
         battery_passport_total_usd = 0.0
+        decommissioning_total_usd = 0.0  # לא רלוונטי לישראל
         include_mot_approval = True
         include_regulatory = True
 
@@ -343,23 +344,23 @@ with tab4:
         mot_total_approval_cost = 0.0
         include_mot_approval = False
 
-    st.markdown("---")
-    st.markdown("### 🔄 תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)")
-    with st.expander("📌 ניהול והפרשה לעתיד (אופציונלי למנהל הפרויקט)", expanded=False):
-        st.markdown("""
-        כלי ניהול המאפשר להוסיף הפרשה תקציבית צופה פני עתיד עבור:
-        * פירוק פיזי של מודולי הסוללות והמכולה.
-        * נטרול מתח ובדיקות בטיחות מקדימות.
-        * הפרדת תאי אנרגיה וחומרים מסוכנים לפני מחזור סופי.
-        """)
-        include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)", value=False, key="decom_toggle")
-        
-        if include_decommissioning_provision:
-            decom_cost_per_bess = st.number_input("עלות מוערכת לפירוק ומחזור ליחידת BESS ($):", value=2200.0, step=200.0, key="decom_unit_input")
-            decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
-            st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **${decommissioning_total_usd:,.2f}**")
-        else:
-            decommissioning_total_usd = 0.0
+        st.markdown("---")
+        st.markdown("### 🔄 תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)")
+        with st.expander("📌 ניהול והפרשה לעתיד (אופציונלי למנהל הפרויקט באירופה)", expanded=False):
+            st.markdown("""
+            כלי ניהול המאפשר להוסיף הפרשה תקציבית צופה פני עתיד עבור:
+            * פירוק פיזי של מודולי הסוללות והמכולה.
+            * נטרול מתח ובדיקות בטיחות מקדימות.
+            * הפרדת תאי אנרגיה וחומרים מסוכנים לפני מחזור סופי.
+            """)
+            include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)", value=False, key="decom_toggle")
+            
+            if include_decommissioning_provision:
+                decom_cost_per_bess = st.number_input("עלות מוערכת לפירוק ומחזור ליחידת BESS ($):", value=2200.0, step=200.0, key="decom_unit_input")
+                decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
+                st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **${decommissioning_total_usd:,.2f}**")
+            else:
+                decommissioning_total_usd = 0.0
 
     st.markdown("---")
     requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey) [בחירה]", value=is_bess, key="hl_survey_toggle")
@@ -373,18 +374,21 @@ if show_route_optimization and tab5_eu is not None:
 
 with tab_projects:
     st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
-    st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה בשנים 2027–2028.")
+    st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה בשנים 2027–2028 (על בסיס נתוני האקסל של שירה).")
     
     enlight_project_type = st.selectbox("בחר פרויקט אירופאי של שירה לטעינת נתונים אוטומטית:", [
         "פרויקט Iepurești (רומניה)", 
         "פרויקט Ghimpați (רומניה)", 
-        "פרויקט פולין / מרכז אירופה"
+        "פרויקט Mosciska / Czerwona Woda (פולין)",
+        "פרויקט Genzano (איטליה)"
     ], key="enlight_proj_sel")
     
     if "Iepurești" in enlight_project_type or "Ghimpați" in enlight_project_type:
-        st.markdown("📌 **מאפייני פרויקט רומניה:** פריקה דרך נמל קונסטנצה, הובלה יבשתית לאתר, עמידה בתקן UN3536 ודרכון סוללות אירופאי.")
+        st.markdown("📌 **מאפייני פרויקט רומניה (שירה):** פריקה דרך נמל קונסטנצה, הובלה יבשתית לאתר, עמידה בתקן UN3536 ודרכון סוללות אירופאי.")
+    elif "Mosciska" in enlight_project_type:
+        st.markdown("📌 **מאפייני פרויקט פולין (שירה):** פרויקט BESS GEN2 ו־MVS, דרישות EPR ודרכון סוללות מנדטורי.")
     else:
-        st.markdown("📌 **מאפייני פרויקט אירופאי כללי:** ניהול שרשרת אספקה אזורית, עמידה בדרישות EPR ודרכון סוללות דיגיטלי.")
+        st.markdown("📌 **מאפייני פרויקט אירופאי (שירה):** ניהול שרשרת אספקה אזורית, עמידה בדרישות EPR ודרכון סוללות דיגיטלי.")
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
@@ -507,7 +511,7 @@ with tab_summary:
     st.subheader("📥 ייצוא נתונים לאקסל (Excel Export)")
     
     output = BytesIO()
-    with pd.ExcelWriter(output) as writer:
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
         summary_df.to_excel(writer, sheet_name='Cost Summary', index=False)
     excel_data = output.getvalue()
 
