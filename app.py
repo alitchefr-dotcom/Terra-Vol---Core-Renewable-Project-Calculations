@@ -198,20 +198,24 @@ DESTINATION_PORTS = {
     "איטליה": ["ג'נואה, איטליה (Genoa)", "טרייסטה, איטליה (Trieste)"],
     "בולגריה": ["וורנה, בולגריה (Varna)", "בורגס, בולגריה (Burgas)"],
     "הונגריה": ["בודפשט, הונגריה (Budapest - Rail/Multimodal)"],
+    "פינלנד": ["הלסינקי, פינלנד (Helsinki)", "קוטקה, פינלנד (Kotka)"],
     "אחר / מותאם": ["רוטרדם, הולנד (Rotterdam)", "אנטוורפן, בלגיה (Antwerp)"]
 }
 
 VAT_RATES = {
     "ישראל": 18.0, "רומניה": 19.0, "פולין": 23.0, "גרמניה": 19.0, 
-    "שוודיה": 25.0, "יוון": 24.0, "ספרד": 21.0, "איטליה": 22.0, "בולגריה": 20.0, "הונגריה": 27.0, "אחר / מותאם": 0.0
+    "שוודיה": 25.0, "יוון": 24.0, "ספרד": 21.0, "איטליה": 22.0, "בולגריה": 20.0, "הונגריה": 27.0,
+    "פינלנד": 25.5, "אחר / מותאם": 0.0
 }
 DEFAULT_INSURANCE_RATES = {
     "ישראל": 0.08, "רומניה": 0.15, "פולין": 0.15, "גרמניה": 0.15, 
-    "שוודיה": 0.15, "יוון": 0.15, "ספרד": 0.15, "איטליה": 0.15, "בולגריה": 0.15, "הונגריה": 0.15, "אחר / מותאם": 0.15
+    "שוודיה": 0.15, "יוון": 0.15, "ספרד": 0.15, "איטליה": 0.15, "בולגריה": 0.15, "הונגריה": 0.15,
+    "פינלנד": 0.15, "אחר / מותאם": 0.15
 }
 DEFAULT_FREE_DAYS = {
     "ישראל": 4, "רומניה": 7, "פולין": 7, "גרמניה": 7, 
-    "שוודיה": 7, "יוון": 7, "ספרד": 7, "איטליה": 7, "בולגריה": 7, "הונגריה": 7, "אחר / מותאם": 7
+    "שוודיה": 7, "יוון": 7, "ספרד": 7, "איטליה": 7, "בולגריה": 7, "הונגריה": 7,
+    "פינלנד": 7, "אחר / מותאם": 7
 }
 
 COUNTRY_EN_NAMES = {
@@ -225,6 +229,7 @@ COUNTRY_EN_NAMES = {
     "איטליה": "Italy",
     "בולגריה": "Bulgaria",
     "הונגריה": "Hungary",
+    "פינלנד": "Finland",
     "אחר / מותאם": "Other / Custom",
 }
 
@@ -247,6 +252,8 @@ PORTS_EN = {
     "טרייסטה, איטליה (Trieste)": "Trieste, Italy",
     "וורנה, בולגריה (Varna)": "Varna, Bulgaria",
     "בודפשט, הונגריה (Budapest - Rail/Multimodal)": "Budapest, Hungary (Rail/Multimodal)",
+    "הלסינקי, פינלנד (Helsinki)": "Helsinki, Finland",
+    "קוטקה, פינלנד (Kotka)": "Kotka, Finland",
     "רוטרדם, הולנד (Rotterdam)": "Rotterdam, Netherlands",
     "אנטוורפן, בלגיה (Antwerp)": "Antwerp, Belgium",
 }
@@ -318,7 +325,7 @@ dest_country = st.sidebar.selectbox(
     key="sidebar_dest_country"
 )
 default_site_placeholder = txt["site_ph"]
-is_european_dest = (dest_country != "ישראל" and dest_country != "Israel")
+is_european_dest = (dest_country != "ישראל")
 
 if is_european_dest:
     tab1, tab2, tab3, tab4, tab5_eu, tab_projects, tab_summary = st.tabs([
@@ -463,7 +470,7 @@ with tab2:
     china_origin_thc = 1300.0 * (total_containers_project / 10)
     heavy_lift_survey = 2500.0
 
-    customs_duty_pct_default = 0.0 if (dest_country == "ישראל" or dest_country == "Israel") else 2.7
+    customs_duty_pct_default = 0.0 if dest_country == "ישראל" else 2.7
     customs_duty_pct = st.number_input(
         "שיעור מכס יבוא (%) — לוודא מול קוד TARIC/HS הרלוונטי באתר Access2Markets:" if is_hebrew else
         "Import Customs Duty Rate (%) — verify against the relevant TARIC/HS code on Access2Markets:",
@@ -506,7 +513,7 @@ with tab3:
 with tab4:
     st.subheader("⚖️ רגולציה ואישורים מנדטוריים" if is_hebrew else "⚖️ Regulation & Mandatory Approvals")
 
-    if dest_country == "ישראל" or dest_country == "Israel":
+    if dest_country == "ישראל":
         st.markdown(
             "### 🇮🇱 רגולציית חומ\"ס ואישורי הובלה שוטפים (ישראל)" if is_hebrew else
             "### 🇮🇱 Hazmat Regulation & Transport Approvals (Israel)"
@@ -615,79 +622,115 @@ if is_european_dest and tab5_eu is not None:
 
 if is_european_dest and tab_projects is not None:
     with tab_projects:
-        st.subheader("📂 פרויקטי Enlight 2027-2028 (עדכון נתונים אוטומטי — שירה)" if is_hebrew else "📂 Enlight Projects 2027-2028 (Automated Shira Control)")
-        st.info("טבלת מעקב פרויקטי אגירה ואנרגיה מתחדשת המעודכנת אוטומטית לפי נתוני המדינה, המע״מ, הביטוח והמחזור שבחרת באפליקציה." if is_hebrew else "Enlight renewable energy and storage tracking table automatically populated based on selected country, VAT, insurance, and recycling parameters.")
+        st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)" if is_hebrew else "📂 Enlight Projects 2027-2028 (Shira Control)")
+        st.info("טבלת מעקב פרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה עם כל עמודות הבקרה המלאות." if is_hebrew else "Enlight renewable energy and storage tracking table in Europe with full control columns.")
 
-        # יצירת טבלה המעדכנת את ערכי הבקרה באופן אוטומטי לפי פרמטרי המערכת הפעילים
-        shira_base_data = [
-            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules"},
-            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules"},
-            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules"},
-            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules"},
-            {"Name": "no number", "Actual CONT": 11, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules"},
-            {"Name": "no number", "Actual CONT": 32, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 16, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 1, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "TRANSFORMERS"},
-            {"Name": "no number", "Actual CONT": 52, "Site": "Czerwona Woda", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 14, "Site": "Czerwona Woda", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 174, "Site": "Ostrow Wielkopolski", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 56, "Site": "Ostrow Wielkopolski", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 176, "Site": "Chociule", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 59, "Site": "Chociule", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 28, "Site": "ACDC", "Country site": "Hungary, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 12, "Site": "ACDC", "Country site": "Hungary, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 198, "Site": "Sokole", "Country site": "Poland, Europe", "zip code": "זמינות סונגרו" if is_hebrew else "Sungro Ready", "Supplier": "SUNGRO", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 66, "Site": "Sokole", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 47, "Site": "Edison", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 16, "Site": "Edison", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 480, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 60, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 258, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "PV Modules"},
-            {"Name": "no number", "Actual CONT": 45, "Site": "Karpen Alpha", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 89, "Site": "Karpen Gamma", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 20, "Site": "Kapuvar - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 20, "Site": "Kapuvar - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 13, "Site": "Karpen Alpha", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 25, "Site": "Karpen Gamma", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 200, "Site": "Koryta", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 70, "Site": "Koryta", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 25, "Site": "Nadasd - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 176, "Site": "Przęślice", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 59, "Site": "Przęślice", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 88, "Site": "Touvilan", "Country site": "Finland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 22, "Site": "Touvilan", "Country site": "Finland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 30, "Site": "Tuzser - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 41, "Site": "Karpen Theta", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 12, "Site": "Karpen Theta", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 22, "Site": "Bertikow", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS"},
-            {"Name": "no number", "Actual CONT": 156, "Site": "Bertikow", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 22, "Site": "Picasso", "Country site": "Sweden, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS"},
-            {"Name": "no number", "Actual CONT": 44, "Site": "Picasso", "Country site": "Sweden, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2"},
-            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "PV Modules"}
+        shira_full_table_data = [
+            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 11, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 32, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 16, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 1, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "TRANSFORMERS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 52, "Site": "Czerwona Woda", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 14, "Site": "Czerwona Woda", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 174, "Site": "Ostrow Wielkopolski", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 56, "Site": "Ostrow Wielkopolski", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 176, "Site": "Chociule", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 59, "Site": "Chociule", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 28, "Site": "ACDC", "Country site": "Hungary, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 12, "Site": "ACDC", "Country site": "Hungary, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 198, "Site": "Sokole", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 66, "Site": "Sokole", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 47, "Site": "Edison", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 16, "Site": "Edison", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 480, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 60, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 258, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 45, "Site": "Karpen Alpha", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 89, "Site": "Karpen Gamma", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": "", "Site": "Kapuvar - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": "", "Site": "Kapuvar - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 13, "Site": "Karpen Alpha", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 25, "Site": "Karpen Gamma", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 200, "Site": "Koryta", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 70, "Site": "Koryta", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": "", "Site": "Nadasd - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 176, "Site": "Przęślice", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 59, "Site": "Przęślice", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 88, "Site": "Touvilan", "Country site": "Finland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 22, "Site": "Touvilan", "Country site": "Finland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": "", "Site": "Tuzser - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 41, "Site": "Karpen Theta", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 12, "Site": "Karpen Theta", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 22, "Site": "Bertikow", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 156, "Site": "Bertikow", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 22, "Site": "Picasso", "Country site": "Sweden, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 44, "Site": "Picasso", "Country site": "Sweden, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
+            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""}
         ]
 
-        # הזרקת נתונים אוטומטית לעמודות הבקרה בהתאם לבחירות באפליקציה
-        populated_rows = []
-        for row in shira_base_data:
-            r = row.copy()
-            r["TAX"] = f"{applied_vat}%"
-            r["TAX other destination"] = "Standard EU" if is_european_dest else "Local"
-            r["Sea transport"] = f"{curr_symbol} Active"
-            r["Recycling"] = f"{curr_symbol} {epr_recycling_total_usd/max(1, bess_count):,.0f}" if "BESS" in r["Product Category"] else "N/A"
-            r["Land transport"] = f"{curr_symbol} Active"
-            r["Recommended custom agent"] = "Local Broker"
-            r["Insurance"] = f"{insurance_pct}% CIF"
-            r["VAT"] = f"{applied_vat}%"
-            r["SPV ENLIGHT"] = "Enlight Renewable"
-            r["over 50 container"] = "Yes" if isinstance(r["Actual CONT"], (int, float)) and r["Actual CONT"] > 50 else "No"
-            r["Direct or transshipment"] = "Direct Port"
-            populated_rows.append(r)
+        SHIRA_COUNTRY_TO_KEY = {
+            "italy": "איטליה", "poland": "פולין", "germany": "גרמניה", "sweden": "שוודיה",
+            "greece": "יוון", "spain": "ספרד", "bulgaria": "בולגריה", "hungary": "הונגריה",
+            "romania": "רומניה", "israel": "ישראל", "finland": "פינלנד",
+        }
+        SHIRA_EPR_FEE_PER_BESS_UNIT_USD = 450.0
 
-        df_shira_full = pd.DataFrame(populated_rows)
+        def _resolve_shira_country_key(country_site_str):
+            s = (country_site_str or "").lower()
+            for name_en, key_he in SHIRA_COUNTRY_TO_KEY.items():
+                if name_en in s:
+                    return key_he
+            return None
+
+        for row in shira_full_table_data:
+            country_key = _resolve_shira_country_key(row.get("Country site", ""))
+            if country_key is not None:
+                row_vat_pct = VAT_RATES.get(country_key)
+                row_insurance_pct = DEFAULT_INSURANCE_RATES.get(country_key)
+                row_customs_pct = 0.0 if country_key == "ישראל" else 2.7
+                tax_display = (
+                    f"{row_customs_pct:.1f}%" if is_hebrew else f"{row_customs_pct:.1f}% (verify vs. TARIC)"
+                )
+                row["VAT"] = f"{row_vat_pct:.1f}%"
+                row["Insurance"] = f"{row_insurance_pct:.2f}%"
+                row["TAX"] = tax_display
+                row["TAX other destination"] = tax_display
+            else:
+                row["VAT"] = "N/A"
+                row["Insurance"] = "N/A"
+                row["TAX"] = "N/A"
+                row["TAX other destination"] = "N/A"
+
+            category_upper = str(row.get("Product Category", "")).upper()
+            is_bess_row = category_upper.startswith("BESS")
+            cont_raw = row.get("Actual CONT", "")
+            if is_bess_row:
+                if cont_raw == "" or cont_raw is None:
+                    row["Recycling"] = "לא ידוע (כמות חסרה)" if is_hebrew else "N/A (qty missing)"
+                else:
+                    row_recycling_usd = SHIRA_EPR_FEE_PER_BESS_UNIT_USD * float(cont_raw)
+                    row["Recycling"] = f"${row_recycling_usd:,.0f}"
+            else:
+                row["Recycling"] = "לא רלוונטי (לא BESS)" if is_hebrew else "N/A (non-BESS)"
+
+        df_shira_full = pd.DataFrame(shira_full_table_data)
         st.dataframe(df_shira_full, use_container_width=True)
-        st.success("✅ נתוני הטבלה עודכנו אוטומטית בהתאם למדינה ולפרמטרים הנוכחיים!" if is_hebrew else "✅ Table data updated automatically based on current country and parameters!")
+        st.caption(
+            "VAT וביטוח לפי שיעור המדינה; TAX הוא הנחת מכס גנרית (0%/2.7%) לאימות מול TARIC/Access2Markets לכל קוד HS בפועל; "
+            "Recycling מחושב רק לשורות שהקטגוריה שלהן מתחילה ב-BESS (לא MVS for BESS), לפי $450/יחידה — ברירת המחדל "
+            "של EPR בטאב הרגולציה. שורות ה-Attila בהונגריה חסרות כמות מקורית ולכן מסומנות 'כמות חסרה' ולא $0." if is_hebrew else
+            "VAT & Insurance use each country's rate; TAX is a generic customs assumption (0%/2.7%) — verify against "
+            "TARIC/Access2Markets for the actual HS code; Recycling is computed only for rows whose category starts "
+            "with BESS (not \"MVS for BESS\") at $450/unit — the same EPR default used in the Regulation tab. The "
+            "Attila sites in Hungary have no source container count, so they're flagged \"qty missing\" rather than $0."
+        )
+        st.success("✅ טבלת פרויקטי Enlight המלאה נטענה בהצלחה!" if is_hebrew else "✅ Full Enlight project table loaded successfully!")
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
