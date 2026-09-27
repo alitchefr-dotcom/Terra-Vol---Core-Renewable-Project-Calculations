@@ -205,7 +205,6 @@ dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), i
 default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "ישראל" else "Iepurești / Project Site"
 is_european_dest = (dest_country != "ישראל")
 
-# הגדרת הטאבים באופן דינמי: טאב פרויקטי אירופה יוצג אך ורק כאשר נבחרת מדינה אירופאית
 if is_european_dest:
     tab1, tab2, tab3, tab4, tab5_eu, tab_projects, tab_summary = st.tabs([
         T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab5_eu"], T["tab_projects"], T["tab_summary"]
@@ -339,7 +338,9 @@ with tab2:
     china_inland_drayage = 2200.0 * (total_containers_project / 10)
     china_origin_thc = 1300.0 * (total_containers_project / 10)
     heavy_lift_survey = 2500.0
-    customs_duty_pct = 2.7 if is_bess else 0.0
+    
+    # תיקון מכס יבוא: 0% לישראל, 2.7% לאירופה/אחר
+    customs_duty_pct = 0.0 if dest_country == "ישראל" else 2.7
     insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country, 0.15)
 
 with tab3:
@@ -429,13 +430,11 @@ with tab4:
     requires_heavy_lift = st.checkbox("נדרש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)", value=is_bess, key="hl_survey_toggle")
     heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
 
-# טאב 5 האירופאי מוצג אך ורק אם נבחרה מדינה אירופאית
 if is_european_dest and tab5_eu is not None:
     with tab5_eu:
         st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה")
         st.info("ניתוח חלופות נמלי פריקה והובלה יבשתית לאתר הפרויקט.")
 
-# טאב פרויקטי אנלייט מוצג אך ורק אם נבחרה מדינה אירופאית
 if is_european_dest and tab_projects is not None:
     with tab_projects:
         st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
