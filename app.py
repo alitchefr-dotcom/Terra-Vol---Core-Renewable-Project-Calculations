@@ -188,7 +188,12 @@ st.caption(txt["caption"])
 ORIGIN_PORTS = ["שאנגחאי (Shanghai)", "נינגבו (Ningbo)", "שנג'ן (Shenzhen)", "צ'ינגדאו (Qingdao)"] if is_hebrew else ["Shanghai, China", "Ningbo, China", "Shenzhen, China", "Qingdao, China"]
 
 DESTINATION_PORTS = {
-    "ישראל": ["נמל חיפה", "נמל אשדוד"],
+    "ישראל": [
+        "נמל חיפה (קבוצת עדני)", 
+        "נמל המפרץ (SIPG - חיפה)", 
+        "נמל אשדוד (הממשלתי)", 
+        "מסוף TIL (קבוצת MSC - אשדוד)"
+    ],
     "רומניה": ["קונסטנצה, רומניה (Constanța)", "בורגס, בולגריה (Burgas)"],
     "פולין": ["גדנסק, פולין (Gdansk)", "גדיניה, פולין (Gdynia)"],
     "גרמניה": ["המבורג, גרמניה (Hamburg)", "ברמרהאפן, גרמניה (Bremerhaven)"],
@@ -234,8 +239,10 @@ COUNTRY_EN_NAMES = {
 }
 
 PORTS_EN = {
-    "נמל חיפה": "Haifa Port",
-    "נמל אשדוד": "Ashdod Port",
+    "נמל חיפה (קבוצת עדני)": "Haifa Port (Adani Group)",
+    "נמל המפרץ (SIPG - חיפה)": "Bay Port (SIPG — Haifa)",
+    "נמל אשדוד (הממשלתי)": "Ashdod Port (Government)",
+    "מסוף TIL (קבוצת MSC - אשדוד)": "TIL Terminal (MSC Group — Ashdod)",
     "קונסטנצה, רומניה (Constanța)": "Constanța, Romania",
     "בורגס, בולגריה (Burgas)": "Burgas, Bulgaria",
     "גדנסק, פולין (Gdansk)": "Gdansk, Poland",
