@@ -236,8 +236,6 @@ with tab2:
     baf_access = 0.0 if baf_included else (base_baf_per_teu * teu_access)
     baf_solar = 0.0 if baf_included else (base_baf_per_teu * teu_solar)
 
-    st.info(f"ℹ️ חישוב אוטומטי לפי TEU: BESS/OOG (2 TEU) = ${baf_bess:,.0f} | MVS/Accessories (1 TEU) = ${baf_access:,.0f}")
-
     st.markdown("---")
     st.markdown("##### 3. דמי טיפול בנמל יעד (DTHC - Destination THC) לפי סוג מכולה/ציוד:")
     dthc_mult = carrier_data["dthc_mult"]
@@ -308,26 +306,60 @@ with tab3:
     include_delay_scenario = False
 
 with tab4:
-    st.subheader("⚖️ רגולציית חומ\"ס (DG), תקן UN3536 ודרכון סוללות" if is_hebrew else "DG Compliance, UN3536 & Battery Regulation")
-    st.info("הגדרת דרישות סיווג חומ\"ס, היתרים מקומיים, עלויות מחזור (EPR) ודרכון סוללות דיגיטלי למערכות אגירה.")
+    # בחירת מנהל פרויקט להכללת עלות פירוק ומחזור סוף חיים (Decommissioning & End-of-Life)
+    st.subheader("⚖️ רגולציה, אישורים מנדטוריים ותחזית תקציבית למחזור סוף חיים (Decommissioning)")
+    
+    with st.expander("📌 ניהול תחזית תקציבית: פירוק ומחזור סוף חיים (End-of-Life Recycling Provision)", expanded=True):
+        st.markdown("""
+        כלי זה מאפשר למנהל הפרויקט להכליל **הפרשה תקציבית עתידית (צפי לרישום בלבד או לתקציב כולל)** הכוללת:
+        * **פירוק פיזי של מודולי הסוללות** מהמכולה/אתר.
+        * **נטרול ופריקת מתח** ובדיקות בטיחות מקדימות.
+        * **הפרדת תאי האנרגיה** וחומרים מסוכנים טרם תהליך ההתכה/מחזור הסופי.
+        """)
+        include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision) [בחירת מנהל פרויקט]", value=False, key="decom_toggle")
+        
+        if include_decommissioning_provision:
+            decom_cost_per_bess = st.number_input("עלות מוערכת לפירוק ומחזור ליחידת BESS ($):", value=2200.0, step=200.0, key="decom_unit_input")
+            decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
+            st.info(f"💡 סה\"כ הפרשה מתוכננת למחזור סוף חיים עבור {int(bess_count + oog_count)} יחידות BESS/OOG: **${decommissioning_total_usd:,.2f}**")
+        else:
+            decommissioning_total_usd = 0.0
 
-    reg_col1, reg_col2 = st.columns(2)
-    with reg_col1:
-        include_regulatory = st.checkbox("כלול עלויות היתרי רגולציה מקומיים לחומ\"ס (Local Regulatory Permits)", value=True, key="reg_permits_toggle")
-        base_reg_cost = 1500.0 if is_dg else 400.0
-        local_regulatory_permits = st.number_input("עלות כוללת להיתרים ואישורים רגולטוריים ($):", value=base_reg_cost, step=100.0, key="reg_cost_input")
+    st.markdown("---")
 
-        include_epr = st.checkbox("כלול דמי טיפול ומחזור באחריות יצרן מורחבת (EPR / Recycling)", value=True, key="epr_toggle")
-        epr_fee_per_unit = st.number_input("עלות EPR ליחידת BESS ($):", value=450.0, step=50.0, key="epr_unit_input")
-        epr_recycling_total_usd = (epr_fee_per_unit * float(bess_count + oog_count)) if include_epr else 0.0
+    if dest_country == "Israel":
+        st.subheader("🇮🇱 דרישות מנדטוריות למדינת ישראל")
+        st.error("🚨 **מנדטורי (חובה):** אישור הובלה פרטני מאגף הפיקוח במשרד התחבורה לכל מכולת BESS.")
+        mot_fee_per_bess = st.number_input("עלות אגרת אישור הובלה ממשרד התחבורה ליחידה ($): [ניתן לעריכה]", value=350.0, step=50.0, key="mot_fee_input")
+        mot_total_approval_cost = mot_fee_per_bess * float(bess_count + oog_count)
 
-    with reg_col2:
-        include_battery_passport = st.checkbox("כלול דרישות דרכון סוללות דיגיטלי (EU Battery Passport)", value=True, key="bp_toggle")
-        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):", value=1200.0, step=100.0, key="bp_cost_input")
-        battery_passport_total_usd = battery_passport_flat if include_battery_passport else 0.0
+        st.warning("⚠️ **מנדטורי (חובה):** אגרות בדיקה ואישור חומ\"ס נמלים (כבאות, המשרד להגנת הסביבה).")
+        local_regulatory_permits = st.number_input("עלות כוללת להיתרי חומ\"ס נמלים ($): [ניתן לעריכה]", value=1500.0, step=100.0, key="reg_cost_input")
+        
+        epr_recycling_total_usd = 0.0
+        battery_passport_total_usd = 0.0
+        include_mot_approval = True
+        include_regulatory = True
 
-        requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)", value=is_bess, key="hl_survey_toggle")
-        heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input")
+    else:
+        st.subheader(f"🇪🇺 דרישות מנדטוריות לאיחוד האירופי — {dest_country}")
+        st.error("🚨 **מנדטורי (חובה באירופה):** דרכון סוללות דיגיטלי (EU Battery Passport) ותיעוד שרשרת אספקה.")
+        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($): [ניתן לעריכה]", value=1200.0, step=100.0, key="bp_cost_input")
+        battery_passport_total_usd = battery_passport_flat
+
+        st.warning("⚠️ **מנדטורי (חובה באירופה):** דמי טיפול באחריות יצרן מורחבת (EPR / Recycling שוטף).")
+        epr_fee_per_unit = st.number_input("עלות EPR שוטף ליחידת BESS ($): [ניתן לעריכה]", value=450.0, step=50.0, key="epr_unit_input")
+        epr_recycling_total_usd = epr_fee_per_unit * float(bess_count + oog_count)
+
+        include_regulatory = st.checkbox("כלול אגרות היתרי כניסה והיערכות אתר מקומיים באירופה [בחירה]", value=True, key="reg_permits_toggle")
+        local_regulatory_permits = st.number_input("עלות היתרים מקומיים ($):", value=600.0, step=100.0, key="reg_cost_input") if include_regulatory else 0.0
+
+        mot_total_approval_cost = 0.0
+        include_mot_approval = False
+
+    st.markdown("---")
+    requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey) [בחירה]", value=is_bess, key="hl_survey_toggle")
+    heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
 
 trended_exw = total_exw_project * trend_multiplier
 trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
@@ -358,7 +390,7 @@ overdue_days = max(0, actual_port_days - free_days)
 demurrage_total_usd = float(overdue_days) * demurrage_daily_rate * float(total_containers_project)
 external_storage_total_usd = (float(ext_storage_days) * ext_storage_daily_rate * float(total_containers_project)) if use_external_storage else 0.0
 
-active_regulatory_permits = local_regulatory_permits if include_regulatory else 0.0
+active_regulatory_permits = (local_regulatory_permits if include_regulatory else 0.0) + (mot_total_approval_cost if include_mot_approval else 0.0)
 active_site_crane = site_crane_unloading if include_site_crane else 0.0
 active_heavy_lift = heavy_lift_survey_cost if requires_heavy_lift else 0.0
 effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
@@ -370,7 +402,8 @@ project_delivery_cost = (
     epr_recycling_total_usd + 
     battery_passport_total_usd + 
     active_heavy_lift + 
-    effective_delay_cost
+    effective_delay_cost +
+    decommissioning_total_usd  # משוקלל בתקציב (ניתן לרישום או להפרשה)
 )
 
 supplier_commercial_price_options = {
