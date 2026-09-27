@@ -142,12 +142,16 @@ dest_country = st.sidebar.selectbox(T["dest_country"], list(VAT_RATES.keys()), i
 default_site_placeholder = "אשלים / עמק הירדן (אנלייט)" if dest_country == "Israel" else "Iepurești / Project Site"
 show_route_optimization = (dest_country != "Israel")
 
+# הגדרה אחידה ובטוחה של כל הטאבים למניעת שגיאות NameError
 if show_route_optimization:
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab5_eu"], T["tab_projects"], T["tab_summary"]])
-    tab_summary = tab7
+    tab1, tab2, tab3, tab4, tab5_eu, tab_projects, tab_summary = st.tabs([
+        T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab5_eu"], T["tab_projects"], T["tab_summary"]
+    ])
 else:
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab_projects"], T["tab_summary"]])
-    tab_summary = tab6
+    tab1, tab2, tab3, tab4, tab_projects, tab_summary = st.tabs([
+        T["tab1"], T["tab2"], T["tab3"], T["tab4"], T["tab_projects"], T["tab_summary"]
+    ])
+    tab5_eu = None
 
 with tab1:
     st.subheader("הגדרת רכיבי הציוד וכמויות (Project Bill of Materials)" if is_hebrew else "Project Equipment Quantities")
@@ -361,27 +365,17 @@ with tab4:
     requires_heavy_lift = st.checkbox("דורש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey) [בחירה]", value=is_bess, key="hl_survey_toggle")
     heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
 
-# ---------------------------------------------------------
-# טאב 5 (או 5_eu) - הנחות מסלולים אינדיקטיביות
-# ---------------------------------------------------------
-if show_route_optimization:
-    with tab5:
+# טיפול בטאב 5 האירופאי אם קיים
+if show_route_optimization and tab5_eu is not None:
+    with tab5_eu:
         st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Romania / Poland / Germany)")
         st.info("ניתוח חלופות נמלי פריקה (לדוגמה Constanța מול Burgas) והובלה יבשתית לאתר הפרויקט.")
-        st.markdown("""
-        * **קונסטנצה (רומניה):** מתאים לפרויקטים בדרום/מרכז רומניה (כגון Iepurești ו־Ghimpați).
-        * **בורגס (בולגריה):** שער כניסה חלופי לבלקן עם גישה למשאיות כבדות.
-        * **גדנסק/גדיניה (פולין):** מתאים לפרויקטי צפון/מרכז אירופה.
-        """)
 
-# ---------------------------------------------------------
-# טאב פרויקטי אנלייט (שירה)
-# ---------------------------------------------------------
 with tab_projects:
     st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
     st.info("בחינת תרחישים לפרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט בשנים 2027–2028.")
     
-    enlight_project_type = st.selectbox("בחר פרויקט לטעינת נתונים אוטומטית:", [proj for proj in ["פרויקט אשלים / צאלים (ישראל)", "פרויקט Iepurești (רומניה)", "פרויקט Stk. Ned (מזרח אירופה)"]], key="enlight_proj_sel")
+    enlight_project_type = st.selectbox("בחר פרויקט לטעינת נתונים אוטומטית:", ["פרויקט אשלים / צאלים (ישראל)", "פרויקט Iepurești (רומניה)", "פרויקט Stk. Ned (מזרח אירופה)"], key="enlight_proj_sel")
     if "אשלים" in enlight_project_type:
         st.markdown("📌 **מאפייני פרויקט ישראל:** 20 יחידות BESS, הובלה דרך נמל חיפה, אישורי משרד התחבורה חובה.")
     elif "Iepurești" in enlight_project_type:
@@ -461,9 +455,6 @@ buyer_direct_val, _ = convert_from_usd(buyer_direct_payment_usd, display_currenc
 cash_val, _ = convert_from_usd(total_cash_requirement_incl_vat, display_currency)
 econ_val, _ = convert_from_usd(economic_cost_ex_vat, display_currency)
 
-# ---------------------------------------------------------
-# טאב הסיכום הפיננסי ויצוא לאקסל
-# ---------------------------------------------------------
 with tab_summary:
     st.subheader(f"📊 Financial & Regulatory Summary — {incoterm} ({display_currency})")
     
