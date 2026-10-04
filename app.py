@@ -8,6 +8,36 @@ from io import BytesIO
 from calc import calculate_project_costs
 
 # ---------------------------------------------------------
+# מנגנון אבטחה וסיסמה (Authentication)
+# ---------------------------------------------------------
+def check_password():
+    """Returns True if the user entered the correct password."""
+    def password_entered():
+        if (
+            st.session_state["username"] in st.secrets["passwords"]
+            and st.session_state["password"] == st.secrets["passwords"][st.session_state["username"]]
+        ):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store password
+        else:
+            st.session_state["password_correct"] = False
+
+    if st.session_state.get("password_correct", False):
+        return True
+
+    st.markdown("## 🔐 Terra Vol — Secure Login")
+    st.text_input("Username", key="username")
+    st.text_input("Password", type="password", key="password")
+    st.button("Login", on_click=password_entered)
+    
+    if "password_correct" in st.session_state:
+        st.error("😕 User not found or incorrect password")
+    return False
+
+if not check_password():
+    st.stop()
+
+# ---------------------------------------------------------
 # הגדרת תצורת עמוד ולוגו
 # ---------------------------------------------------------
 possible_logo_names = ["logo.png", "logo.png.png", "Logo.png"]
@@ -327,7 +357,7 @@ dest_country_name = COUNTRY_NAMES[dest_country_code]
 is_european_dest = (dest_country_code != "IL")
 
 if dest_country_code == "OTHER":
-    st.sidebar.warning("⚠️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם). נא לוודא אם נדרש חישוב מע\"מ ידני." if is_hebrew else "⚠️ VAT rate is set to 0% (Custom destination). Please verify if manual VAT is required.")
+    st.sidebar.warning("⚠️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם). נא לוודא אם נדרש חישוב מע\"מ ידני." if is_hebrew else "⚠️️ VAT rate is set to 0% (Custom destination). Please verify if manual VAT is required.")
 
 if is_european_dest:
     CARRIER_FUEL_SURCHARGES = {
@@ -536,7 +566,6 @@ with tab4:
     st.subheader("⚖️ רגולציה ואישורים מנדטוריים" if is_hebrew else "⚖️ Regulation & Mandatory Approvals")
 
     bess_capacity_mwh = 4.0
-    # תיקון קלוד: איפוס הפרשת פירוק בישראל
     decom_cost_per_kwh = 0.0 if dest_country_code == "IL" else 75.0
 
     if dest_country_code == "IL":
@@ -591,7 +620,7 @@ with tab4:
 if is_european_dest and tab5_eu is not None:
     with tab5_eu:
         st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Route & Corridor Analysis)")
-        st.warning("⚠️ נתונים אינדיקטיביים בלבד, לאימות מול משלח." if is_hebrew else "⚠️ Indicative data only, subject to freight forwarder verification.")
+        st.warning("⚠️ נתונים אינדיקטיביים בלבד, לאימות מול משלח." if is_hebrew else "⚠️️ Indicative data only, subject to freight forwarder verification.")
         st.markdown(
             "סקירה השוואתית של מסלולי שילוח ימי ויבשתי עיקריים לפרויקטי אנרגיה מתחדשת ואגירה (BESS) באירופה:" if is_hebrew else
             "Comparative overview of primary ocean and multimodal corridors for renewable energy and BESS projects in Europe:"
@@ -620,64 +649,21 @@ if is_european_dest and tab_projects is not None:
             "Management and tracking of BESS & infrastructure project portfolio across official Enlight SPVs and key columns:"
         )
         
-        projects_portfolio = [
-            {"Site": "Genzano", "Country": "Italy, Europe", "CONT": 9, "Supplier": "JINKO", "Category": "PV Modules", "TAX": "0.0% (HS: 8541430000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Genzano Solar Energy S.r.l. (Enlight Italy)", "Transshipment": "Direct"},
-            {"Site": "Genzano", "Country": "Italy, Europe", "CONT": 9, "Supplier": "JINKO", "Category": "PV Modules", "TAX": "0.0% (HS: 8541430000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Genzano Solar Energy S.r.l. (Enlight Italy)", "Transshipment": "Direct"},
-            {"Site": "Genzano", "Country": "Italy, Europe", "CONT": 9, "Supplier": "JINKO", "Category": "PV Modules", "TAX": "0.0% (HS: 8541430000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Genzano Solar Energy S.r.l. (Enlight Italy)", "Transshipment": "Direct"},
-            {"Site": "Genzano", "Country": "Italy, Europe", "CONT": 9, "Supplier": "JINKO", "Category": "PV Modules", "TAX": "0.0% (HS: 8541430000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Genzano Solar Energy S.r.l. (Enlight Italy)", "Transshipment": "Direct"},
-            {"Site": "Genzano", "Country": "Italy, Europe", "CONT": 11, "Supplier": "JINKO", "Category": "PV Modules", "TAX": "0.0% (HS: 8541430000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Genzano Solar Energy S.r.l. (Enlight Italy)", "Transshipment": "Direct"},
-            {"Site": "Mosciska", "Country": "Poland, Europe", "CONT": 32, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Mosciska", "Country": "Poland, Europe", "CONT": 16, "Supplier": "SUNGROW", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Mosciska", "Country": "Poland, Europe", "CONT": 1, "Supplier": "SUNGROW", "Category": "TRANSFORMERS", "TAX": "0.0% (HS: 8504230000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Czerwona Woda", "Country": "Poland, Europe", "CONT": 52, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Czerwona Woda", "Country": "Poland, Europe", "CONT": 14, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Ostrow Wielkopolski", "Country": "Poland, Europe", "CONT": 174, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Ostrow Wielkopolski", "Country": "Poland, Europe", "CONT": 56, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Chociule", "Country": "Poland, Europe", "CONT": 176, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Chociule", "Country": "Poland, Europe", "CONT": 59, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "ACDC", "Country": "Hungary, Europe", "CONT": 28, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Hungarian Agent", "Insurance": "0.15%", "VAT": "27.00%", "SPV": "Enlight Hungary SPV", "Transshipment": "Direct"},
-            {"Site": "ACDC", "Country": "Hungary, Europe", "CONT": 12, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Hungarian Agent", "Insurance": "0.15%", "VAT": "27.00%", "SPV": "Enlight Hungary SPV", "Transshipment": "Direct"},
-            {"Site": "Sokole", "Country": "Poland, Europe", "CONT": 198, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Sokole", "Country": "Poland, Europe", "CONT": 66, "Supplier": "SUNGROW", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Edison", "Country": "Poland, Europe", "CONT": 47, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Edison", "Country": "Poland, Europe", "CONT": 16, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Jupiter", "Country": "Germany, Europe", "CONT": 480, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local German Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Prime Capital / Enlight Germany SPV", "Transshipment": "Direct"},
-            {"Site": "Jupiter", "Country": "Germany, Europe", "CONT": 60, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local German Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Prime Capital / Enlight Germany SPV", "Transshipment": "Direct"},
-            {"Site": "Jupiter", "Country": "Germany, Europe", "CONT": 258, "Supplier": "-", "Category": "PV Modules", "TAX": "0.0% (HS: 8541430000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local German Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Prime Capital / Enlight Germany SPV", "Transshipment": "Direct"},
-            {"Site": "Karpen Alpha", "Country": "Romania, Europe", "CONT": 45, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Romanian Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Enlight Romania SPV", "Transshipment": "Direct"},
-            {"Site": "Karpen Gamma", "Country": "Romania, Europe", "CONT": 89, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Romanian Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Enlight Romania SPV", "Transshipment": "Direct"},
-            {"Site": "Karpen Alpha", "Country": "Romania, Europe", "CONT": 13, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Romanian Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Enlight Romania SPV", "Transshipment": "Direct"},
-            {"Site": "Karpen Gamma", "Country": "Romania, Europe", "CONT": 25, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Romanian Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Enlight Romania SPV", "Transshipment": "Direct"},
-            {"Site": "Koryta", "Country": "Poland, Europe", "CONT": 200, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Koryta", "Country": "Poland, Europe", "CONT": 70, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Przęślice", "Country": "Poland, Europe", "CONT": 176, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Przęślice", "Country": "Poland, Europe", "CONT": 59, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Polish Agent", "Insurance": "0.15%", "VAT": "23.00%", "SPV": "Enlight Poland SPV", "Transshipment": "Direct"},
-            {"Site": "Touvilan", "Country": "Finland, Europe", "CONT": 88, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Finnish Agent", "Insurance": "0.15%", "VAT": "25.50%", "SPV": "Enlight Finland SPV", "Transshipment": "Direct"},
-            {"Site": "Touvilan", "Country": "Finland, Europe", "CONT": 22, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Finnish Agent", "Insurance": "0.15%", "VAT": "25.50%", "SPV": "Enlight Finland SPV", "Transshipment": "Direct"},
-            {"Site": "Karpen Theta", "Country": "Romania, Europe", "CONT": 41, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Romanian Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Enlight Romania SPV", "Transshipment": "Direct"},
-            {"Site": "Karpen Theta", "Country": "Romania, Europe", "CONT": 12, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Romanian Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Enlight Romania SPV", "Transshipment": "Direct"},
-            {"Site": "Bertikow", "Country": "Germany, Europe", "CONT": 22, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local German Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Prime Capital / Enlight Germany SPV", "Transshipment": "Direct"},
-            {"Site": "Bertikow", "Country": "Germany, Europe", "CONT": 156, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local German Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Prime Capital / Enlight Germany SPV", "Transshipment": "Direct"},
-            {"Site": "Picasso", "Country": "Sweden, Europe", "CONT": 22, "Supplier": "SUNGROW", "Category": "MVS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Swedish Agent", "Insurance": "0.15%", "VAT": "25.00%", "SPV": "Enlight Sweden SPV", "Transshipment": "Direct"},
-            {"Site": "Picasso", "Country": "Sweden, Europe", "CONT": 44, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Swedish Agent", "Insurance": "0.15%", "VAT": "25.00%", "SPV": "Enlight Sweden SPV", "Transshipment": "Direct"},
-            {"Site": "Nardo", "Country": "Italy, Europe", "CONT": 15, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Nardò Solar Energy S.r.l. (Enlight Italy)", "Transshipment": "Direct"},
-            {"Site": "Nardo", "Country": "Italy, Europe", "CONT": 15, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Nardò Solar Energy S.r.l. (Enlight Italy)", "Transshipment": "Direct"},
-            {"Site": "Nardo", "Country": "Italy, Europe", "CONT": 15, "Supplier": "JINKO", "Category": "PV Modules", "TAX": "0.0% (HS: 8541430000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Nardò Solar Energy S.r.l. (Enlight Italy)", "Transshipment": "Direct"}
-        ]
+        # טעינה נקייה מתוך קובץ ה־CSV החיצוני המאובטח
+        try:
+            df_projects = pd.read_csv("projects.csv")
+            df_projects["Over 50"] = df_projects["CONT"].gt(50).map({True: "Yes", False: "No"})
+            
+            cols = list(df_projects.columns)
+            if "Over 50" in cols:
+                cols.remove("Over 50")
+                insert_idx = cols.index("SPV") if "SPV" in cols else len(cols)
+                cols.insert(insert_idx, "Over 50")
+                df_projects = df_projects[cols]
 
-        df_projects = pd.DataFrame(projects_portfolio)
-        # חישוב אוטומטי לעמודת Over 50 לפי הערה של קלוד
-        df_projects["Over 50"] = df_projects["CONT"].gt(50).map({True: "Yes", False: "No"})
-        
-        # סידור מחדש של העמודות כך ש־Over 50 תופיע במקום הגיוני
-        cols = list(df_projects.columns)
-        if "Over 50" in cols:
-            cols.remove("Over 50")
-            insert_idx = cols.index("SPV") if "SPV" in cols else len(cols)
-            cols.insert(insert_idx, "Over 50")
-            df_projects = df_projects[cols]
-
-        st.dataframe(df_projects, use_container_width=True, hide_index=True)
+            st.dataframe(df_projects, use_container_width=True, hide_index=True)
+        except FileNotFoundError:
+            st.error("⚠️ קובץ הנתונים `projects.csv` אינו נמצא בתיקייה. אנא ודאי שהוא שמור באותה תיקייה לצד `app.py`.")
 
 calc_results = calculate_project_costs(
     bess_count=bess_count, bess_exw=bess_exw,
@@ -848,7 +834,7 @@ with tab_summary:
     if dest_country_code != "IL":
         excel_summary_data.append([item_decom, f"{int(bess_count + oog_count):,} BESS (Lifecycle)", ex_decom])
 
-    # החזרת בדיקת ההתאמה (Reconciliation check) שהצעת של קלוד
+    # בדיקת התאמה (Reconciliation check)
     main_rows_for_rec = [r for r in excel_summary_data[1:] if r[0] not in (item_tot, item_decom)]
     sum_main_rows = sum(r[2] for r in main_rows_for_rec)
     if abs(sum_main_rows - ex_total) >= 1.0:
