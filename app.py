@@ -834,37 +834,33 @@ with tab_summary:
     decom_row_html = f'<tr style="background-color: #fbf8f0;"><td>{item_decom}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_decom:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_decom:,.2f}</span></b></td></tr>' if dest_country_code != "IL" else ""
     carbon_row_html = f'<tr style="background-color: #f0fdf4;"><td>{item_carbon}</td><td class="center">{int(total_units_for_calc):,} units</td><td class="left"><span class="ltr-val">{(total_carbon_footprint_tons/total_units_for_calc):,.2f} t/unit</span></td><td class="left"><b><span class="ltr-val">{total_carbon_footprint_tons:,.1f} טון CO2</span></b></td></tr>'
 
-    html_table = f"""
-    <table class="custom-finance-table">
-        <thead>
-            <tr>
-                <th style="width: 40%;">{txt["col_item"]}</th>
-                <th class="center" style="width: 20%;">{txt["col_qty"]}</th>
-                <th class="left" style="width: 20%;">{txt["col_unit"]}</th>
-                <th class="left" style="width: 20%;">{txt["col_total"]}</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td>{item_exw}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_bess_exw:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_exw:,.2f}</span></b></td></tr>
-            <tr><td>{item_china}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_ch_inland:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ch_inland:,.2f}</span></b></td></tr>
-            <tr><td>{item_ocean}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_ocean_bess:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ocean:,.2f}</span></b></td></tr>
-            <tr><td>{item_baf}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_baf:,.2f}</span></b></td></tr>
-            <tr><td>{item_dthc}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_dthc:,.2f}</span></b></td></tr>
-            <tr><td>{item_insur}</td><td class="center">% CIF</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_insur:,.2f}</span></b></td></tr>
-            <tr><td>{item_customs}</td><td class="center">{txt["qty_differential"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_customs:,.2f}</span></b></td></tr>
-            <tr><td>{item_drayage}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_drayage_bess:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_drayage:,.2f}</span></b></td></tr>
-            <tr><td>{item_reg}</td><td class="center">{txt["qty_expense"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_reg:,.2f}</span></b></td></tr>
-            <tr><td>{item_crane}</td><td class="center">{txt["qty_expense"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_crane:,.2f}</span></b></td></tr>
-            <tr><td>{item_epr}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_epr:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_epr:,.2f}</span></b></td></tr>
-            <tr><td>{item_bp}</td><td class="center">{txt["qty_global"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_bp:,.2f}</span></b></td></tr>
-            <tr><td>{item_hl}</td><td class="center">{txt["qty_survey"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_hl:,.2f}</span></b></td></tr>
-            <tr><td>{item_cont}</td><td class="center">5%</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_cont:,.2f}</span></b></td></tr>
-            <tr class="total-row"><td>{item_tot}</td><td class="center">-</td><td class="left">-</td><td class="left" style="color: #1e3d59;"><b><span class="ltr-val">{curr_symbol} {ex_total:,.2f}</span></b></td></tr>
-            {decom_row_html}
-            {carbon_row_html}
-        </tbody>
-    </table>
-    """
+    html_table = (
+        '<table class="custom-finance-table">'
+        '<thead><tr>'
+        f'<th style="width: 40%;">{txt["col_item"]}</th>'
+        f'<th class="center" style="width: 20%;">{txt["col_qty"]}</th>'
+        f'<th class="left" style="width: 20%;">{txt["col_unit"]}</th>'
+        f'<th class="left" style="width: 20%;">{txt["col_total"]}</th>'
+        '</tr></thead><tbody>'
+        f'<tr><td>{item_exw}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_bess_exw:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_exw:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_china}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_ch_inland:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ch_inland:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_ocean}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_ocean_bess:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ocean:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_baf}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_baf:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_dthc}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_dthc:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_insur}</td><td class="center">% CIF</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_insur:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_customs}</td><td class="center">{txt["qty_differential"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_customs:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_drayage}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_drayage_bess:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_drayage:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_reg}</td><td class="center">{txt["qty_expense"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_reg:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_crane}</td><td class="center">{txt["qty_expense"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_crane:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_epr}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_epr:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_epr:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_bp}</td><td class="center">{txt["qty_global"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_bp:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_hl}</td><td class="center">{txt["qty_survey"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_hl:,.2f}</span></b></td></tr>'
+        f'<tr><td>{item_cont}</td><td class="center">5%</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_cont:,.2f}</span></b></td></tr>'
+        f'<tr class="total-row"><td>{item_tot}</td><td class="center">-</td><td class="left">-</td><td class="left" style="color: #1e3d59;"><b><span class="ltr-val">{curr_symbol} {ex_total:,.2f}</span></b></td></tr>'
+        f'{decom_row_html}'
+        f'{carbon_row_html}'
+        '</tbody></table>'
+    )
     st.markdown(html_table, unsafe_allow_html=True)
 
     st.markdown("---")
