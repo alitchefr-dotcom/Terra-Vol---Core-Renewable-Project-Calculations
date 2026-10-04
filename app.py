@@ -41,7 +41,7 @@ if logo_base64:
 
 st.sidebar.header("🌐 שפה / Language")
 lang_options = {"עברית": "he", "English": "en"}
-selected_lang_label = st.sidebar.radio("בחר שפה / Select Language:", list(lang_options.keys()), index=0, key="lang_radio_select")
+selected_lang_label = st.sidebar.radio("בחר שפה / Select Language:", list(lang_options.keys()), index=1, key="lang_radio_select")
 current_lang = lang_options[selected_lang_label]
 is_hebrew = (current_lang == "he")
 
@@ -64,7 +64,7 @@ T = {
         "tab2": "⚓ שרשרת אספקה ותנאי סחר",
         "tab3": "📦 אחסנה, השהיות והובלת משאיות לאתר",
         "tab4": "⚖️ רגולציה ואישורים מנדטוריים",
-        "tab5_eu": "🗺️️ הנחות מסלולים באירופה",
+        "tab5_eu": "🗺️ הנחות מסלולים באירופה",
         "tab_projects": "📂 פרויקטי אנרגיה תשתיות ואגירה",
         "tab_summary": "📊 דוח בקרה תקציבית ורגולטורית",
         "summary_title": "📊 דוח בקרה פיננסית ורגולטורית",
@@ -74,6 +74,10 @@ T = {
         "col_qty": "כמות / בסיס חישוב",
         "col_unit": "עלות ליחידה (קטגוריה)",
         "col_total": "סה\"כ סעיף",
+        "qty_differential": "דיפרנציאלי",
+        "qty_expense": "הוצאה",
+        "qty_survey": "סקר",
+        "qty_global": "גלובלי"
     },
     "en": {
         "caption": "Professional Project Calculator for Target Costs, Incoterms, Regulation & Market Forecast",
@@ -103,6 +107,10 @@ T = {
         "col_qty": "Basis / Qty",
         "col_unit": "Unit Cost (Category)",
         "col_total": "Total Amount",
+        "qty_differential": "Differential",
+        "qty_expense": "Expense",
+        "qty_survey": "Survey",
+        "qty_global": "Global"
     }
 }
 
@@ -653,7 +661,7 @@ if is_european_dest and tab_projects is not None:
             {"Site": "Bertikow", "Country": "Germany, Europe", "CONT": 22, "Supplier": "-", "Category": "MVS for BESS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local German Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Prime Capital / Enlight Germany SPV", "Over 50": "No", "Transshipment": "Direct"},
             {"Site": "Bertikow", "Country": "Germany, Europe", "CONT": 156, "Supplier": "-", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local German Agent", "Insurance": "0.15%", "VAT": "19.00%", "SPV": "Prime Capital / Enlight Germany SPV", "Over 50": "Yes", "Transshipment": "Direct"},
             {"Site": "Picasso", "Country": "Sweden, Europe", "CONT": 22, "Supplier": "SUNGROW", "Category": "MVS", "TAX": "0.0% (HS: 8504409000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Swedish Agent", "Insurance": "0.15%", "VAT": "25.00%", "SPV": "Enlight Sweden SPV", "Over 50": "No", "Transshipment": "Direct"},
-            {"Site": "Picasso", "Country": "Sweden, Europe", "CONT": 44, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Swedish Agent", "Insurance": "0.15%", "VAT": "25.00%", "SPV": "Enlight Sweden SPV", "Over 50": "No", "Transshipment": "Direct"},
+            {"Site": "Picasso", "Country": "Sweden, Europe", "CONT": 44, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Swedish Agent", "Insurance": "0.15%", "VAT": "25.00%", "SPV": "Enlight Sweden SPV", "Over 50": "Yes", "Transshipment": "Direct"},
             {"Site": "Nardo", "Country": "Italy, Europe", "CONT": 15, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Nardò Solar Energy S.r.l. (Enlight Italy)", "Over 50": "No", "Transshipment": "Direct"},
             {"Site": "Nardo", "Country": "Italy, Europe", "CONT": 15, "Supplier": "SUNGROW", "Category": "BESS GEN2", "TAX": "2.7% (HS: 8507600000)", "Sea freight": "Required (Battery Passport & EPR)", "Recycling": "Required", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Nardò Solar Energy S.r.l. (Enlight Italy)", "Over 50": "No", "Transshipment": "Direct"},
             {"Site": "Nardo", "Country": "Italy, Europe", "CONT": 15, "Supplier": "SUNGROW", "Category": "PV Modules", "TAX": "0.0% (HS: 8541400000)", "Sea freight": "Standard CE / N/A", "Recycling": "Standard CE", "Land transport": "Included", "Customs agent": "Local Italian Agent", "Insurance": "0.15%", "VAT": "22.00%", "SPV": "Nardò Solar Energy S.r.l. (Enlight Italy)", "Over 50": "No", "Transshipment": "Direct"}
@@ -793,13 +801,13 @@ with tab_summary:
             <tr><td>{item_baf}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_baf:,.2f}</span></b></td></tr>
             <tr><td>{item_dthc}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_dthc:,.2f}</span></b></td></tr>
             <tr><td>{item_insur}</td><td class="center">% CIF</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_insur:,.2f}</span></b></td></tr>
-            <tr><td>{item_customs}</td><td class="center">דיפרנציאלי</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_customs:,.2f}</span></b></td></tr>
+            <tr><td>{item_customs}</td><td class="center">{txt["qty_differential"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_customs:,.2f}</span></b></td></tr>
             <tr><td>{item_drayage}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_drayage_bess:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_drayage:,.2f}</span></b></td></tr>
-            <tr><td>{item_reg}</td><td class="center">הוצאה</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_reg:,.2f}</span></b></td></tr>
-            <tr><td>{item_crane}</td><td class="center">הוצאה</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_crane:,.2f}</span></b></td></tr>
+            <tr><td>{item_reg}</td><td class="center">{txt["qty_expense"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_reg:,.2f}</span></b></td></tr>
+            <tr><td>{item_crane}</td><td class="center">{txt["qty_expense"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_crane:,.2f}</span></b></td></tr>
             <tr><td>{item_epr}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_epr:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_epr:,.2f}</span></b></td></tr>
-            <tr><td>{item_bp}</td><td class="center">גלובלי</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_bp:,.2f}</span></b></td></tr>
-            <tr><td>{item_hl}</td><td class="center">סקר</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_hl:,.2f}</span></b></td></tr>
+            <tr><td>{item_bp}</td><td class="center">{txt["qty_global"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_bp:,.2f}</span></b></td></tr>
+            <tr><td>{item_hl}</td><td class="center">{txt["qty_survey"]}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_hl:,.2f}</span></b></td></tr>
             <tr><td>{item_cont}</td><td class="center">5%</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_cont:,.2f}</span></b></td></tr>
             <tr class="total-row"><td>{item_tot}</td><td class="center">-</td><td class="left">-</td><td class="left" style="color: #1e3d59;"><b><span class="ltr-val">{curr_symbol} {ex_total:,.2f}</span></b></td></tr>
             {decom_row_html}
@@ -818,13 +826,13 @@ with tab_summary:
         [item_baf, f"{int(total_units_for_calc):,} units", ex_baf],
         [item_dthc, f"{int(total_units_for_calc):,} units", ex_dthc],
         [item_insur, "% of CIF", ex_insur],
-        [item_customs, "Differential", ex_customs],
+        [item_customs, txt["qty_differential"], ex_customs],
         [item_drayage, f"{int(total_units_for_calc):,} trucks", ex_drayage],
-        [item_reg, "Total", ex_reg],
-        [item_crane, "Total", ex_crane],
+        [item_reg, txt["qty_expense"], ex_reg],
+        [item_crane, txt["qty_expense"], ex_crane],
         [item_epr, f"{int(bess_count + oog_count):,} BESS", ex_epr],
-        [item_bp, "Global", ex_bp],
-        [item_hl, "Survey", ex_hl],
+        [item_bp, txt["qty_global"], ex_bp],
+        [item_hl, txt["qty_survey"], ex_hl],
         [item_cont, "5%", ex_cont],
         [item_tot, "-", ex_total]
     ]
