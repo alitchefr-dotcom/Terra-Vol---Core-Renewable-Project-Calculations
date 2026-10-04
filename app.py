@@ -6,20 +6,37 @@ import base64
 import math
 from datetime import date
 from io import BytesIO
+
+# ---------------------------------------------------------
+# 1. חוק ברזל בסטרימלייט: st.set_page_config חייב להיות ראשון!
+# ---------------------------------------------------------
+possible_logo_names = ["logo.png", "logo.png.png", "Logo.png"]
+logo_path = None
+for name in possible_logo_names:
+    full_path = os.path.join(os.path.dirname(__file__), name)
+    if os.path.exists(full_path):
+        logo_path = full_path
+        break
+
+st.set_page_config(
+    page_title="Terra Vol - Renewable Energy Budgeting",
+    page_icon=logo_path if logo_path else "⚡",
+    layout="wide"
+)
+
 from calc import calculate_project_costs
 
 # ---------------------------------------------------------
-# מנגנון אבטחה וסיסמה (Authentication)
+# מנגנון אבטחה וסיסמה (Authentication) עם תיקון לוגאוט נקי
 # ---------------------------------------------------------
 def check_password():
-    """Returns True if the user entered the correct password."""
     def password_entered():
         if (
-            st.session_state["username"] in st.secrets["passwords"]
-            and st.session_state["password"] == st.secrets["passwords"][st.session_state["username"]]
+            st.session_state.get("username") in st.secrets.get("passwords", {})
+            and st.session_state.get("password") == st.secrets["passwords"][st.session_state["username"]]
         ):
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Don't store password
+            st.session_state.pop("password", None)
         else:
             st.session_state["password_correct"] = False
 
@@ -31,30 +48,20 @@ def check_password():
     st.text_input("Password", type="password", key="password")
     st.button("Login", on_click=password_entered)
     
-    if "password_correct" in st.session_state:
+    if "password_correct" in st.session_state and not st.session_state["password_correct"]:
         st.error("😕 User not found or incorrect password")
     return False
 
 if not check_password():
     st.stop()
 
-# ---------------------------------------------------------
-# הגדרת תצורת עמוד ולוגו
-# ---------------------------------------------------------
-possible_logo_names = ["logo.png", "logo.png.png", "Logo.png"]
-logo_path = None
-for name in possible_logo_names:
-    full_path = os.path.join(os.path.dirname(__file__), name)
-    if os.path.exists(full_path):
-        logo_path = full_path
-        break
+if st.sidebar.button("התנתק / Logout"):
+    st.session_state.pop("password_correct", None)
+    st.rerun()
 
-st.set_page_config(
-    page_title="Terra Vol",
-    page_icon=logo_path if logo_path else "⚡",
-    layout="wide"
-)
-
+# ---------------------------------------------------------
+# לוגו ושפה
+# ---------------------------------------------------------
 def get_base64_of_bin_file(bin_file):
     if not bin_file or not os.path.exists(bin_file):
         return ""
@@ -72,7 +79,7 @@ if logo_base64:
 
 st.sidebar.header("🌐 שפה / Language")
 lang_options = {"עברית": "he", "English": "en"}
-selected_lang_label = st.sidebar.radio("בחר שפה / Select Language:", list(lang_options.keys()), index=1, key="lang_radio_select")
+selected_lang_label = st.sidebar.radio("בחר שפה / Select Language:", list(lang_options.keys()), index=0, key="lang_radio_select")
 current_lang = lang_options[selected_lang_label]
 is_hebrew = (current_lang == "he")
 
@@ -95,12 +102,12 @@ T = {
         "tab2": "⚓ שרשרת אספקה ותנאי סחר",
         "tab3": "📦 אחסנה, השהיות והובלת משאיות לאתר",
         "tab4": "⚖️ רגולציה ואישורים מנדטוריים",
-        "tab5_eu": "🗺️ הנחות מסלולים באירופה",
+        "tab5_eu": "🗺 הנחות מסלולים באירופה",
         "tab_projects": "📂 פרויקטי אנרגיה תשתיות ואגירה",
         "tab_summary": "📊 דוח בקרה תקציבית ורגולטורית",
         "summary_title": "📊 דוח בקרה פיננסית ורגולטורית",
         "breakdown_title": "📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)",
-        "excel_btn": "📥 הורד דוח פיננסי מלא לאקסל (Download Excel Report)",
+        "excel_btn": "📥 הורד דוח פיננסי מלא לאקסל",
         "col_item": "רכיב עלות בפרויקט",
         "col_qty": "כמות / בסיס חישוב",
         "col_unit": "עלות ליחידה (קטגוריה)",
@@ -260,17 +267,19 @@ DESTINATION_PORTS = {
     "OTHER": [("RTM", "רוטרדם, הולנד (Rotterdam)" if is_hebrew else "Rotterdam, Netherlands"), ("ANR", "אנטוורפן, בלגיה (Antwerp)" if is_hebrew else "Antwerp, Belgium")]
 }
 
-# קואורדינטות לנמלי היים לצורך חישוב מרחק אוטומטי
 PORT_COORDINATES = {
-    "HAIF": (32.8192, 34.9900),
-    "BAY": (32.8250, 35.0100),
-    "ASHD": (31.8333, 34.6500),
-    "TIL": (31.8200, 34.6400),
-    "CT": (44.1792, 28.6500),
-    "BOJ": (42.5048, 27.4626),
-    "PIR": (37.9475, 23.6378),
-    "HAM": (53.5511, 9.9937),
-    "RTM": (51.9244, 4.4777),
+    "HAIF": (32.8192, 34.9900), "BAY": (32.8250, 35.0100),
+    "ASHD": (31.8333, 34.6500), "TIL": (31.8200, 34.6400),
+    "CT": (44.1792, 28.6500), "BOJ": (42.5048, 27.4626),
+    "GDN": (54.3520, 18.6466), "GDY": (54.5189, 18.5305),
+    "HAM": (53.5511, 9.9937), "BRV": (53.5705, 8.5771),
+    "GOT": (57.7089, 11.9746), "STO": (59.3293, 18.0686),
+    "PIR": (37.9475, 23.6378), "THE": (40.6401, 22.9444),
+    "VLC": (39.4699, -0.3763), "BCN": (41.3851, 2.1734),
+    "GOA": (44.4056, 8.9463), "TRS": (45.6495, 13.7768),
+    "VAR": (43.2141, 27.9147), "BUD": (47.4979, 19.0402),
+    "HEL": (60.1699, 24.9384), "KTK": (60.4667, 26.9333),
+    "RTM": (51.9244, 4.4777), "ANR": (51.2194, 4.4025)
 }
 
 def calculate_road_distance_km(lat1, lon1, lat2, lon2):
@@ -279,7 +288,7 @@ def calculate_road_distance_km(lat1, lon1, lat2, lon2):
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
     c = 2 * math.asin(math.sqrt(a))
-    return R * c * 1.3  # מקדם כבישים משוער
+    return R * c * 1.3
 
 VAT_RATES = {
     "IL": 18.0, "RO": 19.0, "PL": 23.0, "DE": 19.0, "SE": 25.0, 
@@ -341,7 +350,7 @@ trend_multiplier = (1.0 + annual_inflation) ** years_diff
 @st.cache_data(ttl=300)
 def fetch_live_exchange_rates():
     try:
-        response = requests.get("https://api.frankfurter.app/latest?from=USD&to=EUR,ILS", timeout=5)
+        response = requests.get("https://api.frankfurter.dev/v1/latest?from=USD&to=EUR,ILS", timeout=5)
         if response.status_code == 200:
             data = response.json()
             rates = data.get("rates", {})
@@ -352,12 +361,25 @@ def fetch_live_exchange_rates():
 
 live_eur, live_ils = fetch_live_exchange_rates()
 if live_eur is None or live_ils is None:
-    fx_warning_msg = "⚠️ שרת המרה חי נכשל. נעשה שימוש שערי המרה חלופיים (EUR: 0.92, ILS: 3.70)." if is_hebrew else "⚠️ Live FX API failed. Using fallback exchange rates (EUR: 0.92, ILS: 3.70)."
-    st.sidebar.warning(fx_warning_msg)
+    st.sidebar.warning("⚠️ שרת המרה חי נכשל. נעשה שימוש שערי המרה חלופיים (EUR: 0.92, ILS: 3.70)." if is_hebrew else "⚠️ Live FX API failed. Using fallback rates.")
     live_eur, live_ils = 0.92, 3.70
 
-usd_to_eur = st.sidebar.number_input("שער המרה USD ל־EUR:" if is_hebrew else "USD to EUR Exchange Rate:", value=float(live_eur), step=0.01, min_value=0.0001, key="sidebar_usd_eur")
-usd_to_ils = st.sidebar.number_input("שער המרה USD ל־ILS:" if is_hebrew else "USD to ILS Exchange Rate:", value=float(live_ils), step=0.01, min_value=0.0001, key="sidebar_usd_ils")
+if "fx_eur" not in st.session_state:
+    st.session_state["fx_eur"] = live_eur
+if "fx_ils" not in st.session_state:
+    st.session_state["fx_ils"] = live_ils
+
+usd_to_eur = st.sidebar.number_input("שער המרה USD ל־EUR:" if is_hebrew else "USD to EUR Exchange Rate:", step=0.01, min_value=0.0001, format="%.4f", key="fx_eur")
+usd_to_ils = st.sidebar.number_input("שער המרה USD ל־ILS:" if is_hebrew else "USD to ILS Exchange Rate:", step=0.01, min_value=0.0001, format="%.4f", key="fx_ils")
+
+def refresh_fx():
+    fetch_live_exchange_rates.clear()
+    ne, ni = fetch_live_exchange_rates()
+    if ne and ni:
+        st.session_state["fx_eur"] = ne
+        st.session_state["fx_ils"] = ni
+
+st.sidebar.button("🔄 רענן שערים" if is_hebrew else "🔄 Refresh Rates", on_click=refresh_fx)
 
 def convert_from_usd(amount_usd, target_curr):
     if target_curr == "USD ($)": return amount_usd, "$"
@@ -367,11 +389,12 @@ def convert_from_usd(amount_usd, target_curr):
 
 curr_symbol = "$" if "USD" in display_currency else ("€" if "EUR" in display_currency else "₪")
 
-default_country_code = "IL" if is_hebrew else "RO"
+if "sidebar_dest_country_code" not in st.session_state:
+    st.session_state["sidebar_dest_country_code"] = "IL" if is_hebrew else "RO"
+
 dest_country_code = st.sidebar.selectbox(
     txt["dest_country"],
     COUNTRY_CODES,
-    index=COUNTRY_CODES.index(default_country_code),
     format_func=lambda k: COUNTRY_NAMES[k],
     key="sidebar_dest_country_code"
 )
@@ -379,7 +402,7 @@ dest_country_name = COUNTRY_NAMES[dest_country_code]
 is_european_dest = (dest_country_code != "IL")
 
 if dest_country_code == "OTHER":
-    st.sidebar.warning("⚠️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם). נא לוודא אם נדרש חישוב מע\"מ ידני." if is_hebrew else "⚠ VAT rate is set to 0% (Custom destination). Please verify if manual VAT is required.")
+    st.sidebar.warning("⚠️️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם)." if is_hebrew else "⚠ VAT rate is set to 0% (Custom destination).")
 
 if is_european_dest:
     CARRIER_FUEL_SURCHARGES = {
@@ -427,13 +450,12 @@ with tab1:
         )
         site_address = st.text_input(txt["site_label"], key="site_name_input", placeholder=txt["site_ph"])
 
-        # שדות מיקום וקואורדינטות עם חישוב מרחק אוטומטי
         st.markdown("##### 📍 פרטי מיקום מדויקים של אתר הפרויקט:" if is_hebrew else "##### 📍 Detailed Project Site Location:")
         site_street_address = st.text_input("כתובת אתר מלאה (רחוב ומספר):" if is_hebrew else "Full Street Address:", key="site_street_address_input")
         site_postal_code = st.text_input("מיקוד (Postal Code):" if is_hebrew else "Postal Code:", key="site_postal_code_input")
         site_coordinates = st.text_input("קואורדינטות GPS (Latitude, Longitude):" if is_hebrew else "GPS Coordinates (Lat, Long):", key="site_coordinates_input", placeholder="32.0853, 34.7818")
 
-        calculated_distance_km = 50.0  # ברירת מחדל
+        calculated_distance_km = 50.0
         if site_coordinates:
             try:
                 lat_str, lon_str = site_coordinates.replace("°", "").split(",")
@@ -442,9 +464,11 @@ with tab1:
                 if dest_port_code in PORT_COORDINATES:
                     p_lat, p_lon = PORT_COORDINATES[dest_port_code]
                     calculated_distance_km = calculate_road_distance_km(p_lat, p_lon, s_lat, s_lon)
-                    st.info(f"📍 **מרחק נסיעה מחושב מהנמל ({dest_port_code}) לאתר:** כ־{calculated_distance_km:,.1f} ק\"מ")
+                    st.info(f"📍 **מרחק נסיעה מחושב מהנמל ({dest_port_code}) לאתר:** כ־{calculated_distance_km:,.1f} ק\"מ" if is_hebrew else f"📍 Calculated road distance: ~{calculated_distance_km:,.1f} km")
+                else:
+                    st.warning("⚠️ נמל היעד אינו במילון הקואורדינטות. מוגדר מרחק ברירת מחדל של 50 ק\"מ." if is_hebrew else "⚠️ Port not in dictionary. Default 50 km applied.")
             except Exception:
-                st.warning("⚠️ נא להזין קואורדינטות בפורמט נכון, לדוגמה: `32.0853, 34.7818`.")
+                st.warning("⚠️ פורמט קואורדינטות שגוי. נא להזין: `32.0853, 34.7818`" if is_hebrew else "⚠️ Invalid coordinates format.")
 
     with col_meta2:
         applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country_name}) %:", value=float(VAT_RATES[dest_country_code]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country_code}")
@@ -498,6 +522,7 @@ with tab2:
     carrier_data = CARRIER_FUEL_SURCHARGES[selected_carrier_code]
 
     baf_included = st.checkbox("תוספת דלק (BAF) כלולה כבר במחיר ההובלה הימית" if is_hebrew else "Bunker Adjustment Factor (BAF) included in ocean freight", value=False, key="tab2_baf_incl")
+    include_baf_calculation = not baf_included
 
     st.markdown("##### 1. עלות הובלה ימית ליחידה:" if is_hebrew else "##### 1. Ocean Freight per Unit:")
     oc_col1, oc_col2, oc_col3 = st.columns(3)
@@ -512,12 +537,6 @@ with tab2:
         unit_freight_solar = st.number_input("הובלת סולארי ($):" if is_hebrew else "Solar PV Freight ($):", value=3360.0, step=200.0, key=f"freight_solar_{selected_carrier_code}")
 
     st.markdown("---")
-    include_baf_calculation = st.checkbox(
-        "חשב היטל דלק ימי (BAF) בנפרד לפי TEU" if is_hebrew else "Calculate Bunker Adjustment Factor (BAF) separately per TEU",
-        value=not baf_included,
-        key="include_baf_calc_toggle"
-    )
-
     if include_baf_calculation:
         st.markdown("##### 2. היטל דלק ימי (BAF) מחושב לפי נפח TEU:" if is_hebrew else "##### 2. Bunker Adjustment Factor (BAF) per TEU:")
         baf_mult = carrier_data["dthc_mult"]
@@ -548,22 +567,6 @@ with tab2:
         dthc_access = st.number_input("DTHC ציוד נלווה ($):" if is_hebrew else "Accessory Destination THC ($):", value=280.0 * dthc_mult, step=20.0, key=f"dthc_access_{selected_carrier_code}")
         dthc_solar = st.number_input("DTHC פאנלים ($):" if is_hebrew else "Solar PV Destination THC ($):", value=300.0 * dthc_mult, step=20.0, key=f"dthc_solar_{selected_carrier_code}")
 
-    total_base_ocean_freight = (
-        (bess_count * unit_freight_bess) + (oog_count * unit_freight_oog) +
-        (mvs_count * unit_freight_mvs) + (transformer_count * unit_freight_trans) +
-        (access_count * unit_freight_access) + (solar_count * unit_freight_solar)
-    )
-    total_baf_ocean = (
-        (bess_count * baf_bess) + (oog_count * baf_oog) +
-        (mvs_count * baf_mvs) + (transformer_count * baf_trans) +
-        (access_count * baf_access) + (solar_count * baf_solar)
-    )
-    total_destination_thc = (
-        (bess_count * dthc_bess) + (oog_count * dthc_oog) +
-        (mvs_count * dthc_mvs) + (transformer_count * dthc_trans) +
-        (access_count * dthc_access) + (solar_count * dthc_solar)
-    )
-
     customs_duty_pct_default = 0.0 if dest_country_code == "IL" else 2.7
     customs_duty_pct = st.number_input(
         "שיעור מכס יבוא כללי לציוד אגירה וציוד נלווה (%) — (פאנלים סולאריים פטורים אוטומטית 0%):" if is_hebrew else
@@ -574,36 +577,43 @@ with tab2:
     insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country_code, 0.15)
 
 with tab3:
-    st.subheader("🚚 הובלה יבשתית מנמל הפריקה לאתר הפרויקט (Port to Site)" if is_hebrew else "🚚 Port-to-Site Inland Drayage & Logistics")
+    st.subheader("📦 אחסנה, השהיות והובלת משאיות לאתר" if is_hebrew else "📦 Storage, Demurrage & Inland Drayage")
     
-    # התאמה דינמית של תעריף המשאיות לפי המרחק המחושב מהקואורדינטות
+    dk = int(calculated_distance_km * 100)
     distance_factor = max(1.0, calculated_distance_km / 50.0)
 
+    st.markdown("##### 1. הובלה יבשתית מנמל הפריקה לאתר הפרויקט (Port to Site)" if is_hebrew else "##### 1. Port-to-Site Inland Drayage")
     dr_col1, dr_col2, dr_col3 = st.columns(3)
     with dr_col1:
-        drayage_bess = st.number_input("הובלת משאיות BESS ליחידה ($):" if is_hebrew else "BESS Trucking per unit ($):", value=4500.0 * distance_factor, step=200.0, key="dray_bess")
-        drayage_oog = st.number_input("הובלת משאיות OOG ליחידה ($):" if is_hebrew else "OOG Trucking per unit ($):", value=4800.0 * distance_factor, step=200.0, key="dray_oog")
+        drayage_bess = st.number_input("הובלת משאיות BESS ליחידה ($):" if is_hebrew else "BESS Trucking per unit ($):", value=4500.0 * distance_factor, step=200.0, key=f"dray_bess_{dk}")
+        drayage_oog = st.number_input("הובלת משאיות OOG ליחידה ($):" if is_hebrew else "OOG Trucking per unit ($):", value=4800.0 * distance_factor, step=200.0, key=f"dray_oog_{dk}")
     with dr_col2:
-        drayage_mvs = st.number_input("הובלת משאיות MVS ליחידה ($):" if is_hebrew else "MVS Trucking per unit ($):", value=1400.0 * distance_factor, step=100.0, key="dray_mvs")
-        drayage_trans = st.number_input("הובלת משאיות שנאי ליחידה ($):" if is_hebrew else "Transformer Trucking per unit ($):", value=1800.0 * distance_factor, step=100.0, key="dray_trans")
+        drayage_mvs = st.number_input("הובלת משאיות MVS ליחידה ($):" if is_hebrew else "MVS Trucking per unit ($):", value=1400.0 * distance_factor, step=100.0, key=f"dray_mvs_{dk}")
+        drayage_trans = st.number_input("הובלת משאיות שנאי ליחידה ($):" if is_hebrew else "Transformer Trucking per unit ($):", value=1800.0 * distance_factor, step=100.0, key=f"dray_trans_{dk}")
     with dr_col3:
-        drayage_access = st.number_input("הובלת ציוד נלווה ליחידה ($):" if is_hebrew else "Accessory Trucking per unit ($):", value=850.0 * distance_factor, step=100.0, key="dray_access")
-        drayage_solar = st.number_input("הובלת ציוד סולארי ליחידה ($):" if is_hebrew else "Solar PV Trucking per unit ($):", value=950.0 * distance_factor, step=100.0, key="dray_solar")
+        drayage_access = st.number_input("הובלת ציוד נלווה ליחידה ($):" if is_hebrew else "Accessory Trucking per unit ($):", value=850.0 * distance_factor, step=100.0, key=f"dray_access_{dk}")
+        drayage_solar = st.number_input("הובלת ציוד סולארי ליחידה ($):" if is_hebrew else "Solar PV Trucking per unit ($):", value=950.0 * distance_factor, step=100.0, key=f"dray_solar_{dk}")
 
-    drayage_note_msg = (
-        f"💡 **הערה מקצועית:** התעריפים עודכנו אוטומטית בהתאם למרחק המחושב מהנמל ({calculated_distance_km:,.1f} ק\"מ)." if is_hebrew else
-        f"💡 **Professional note:** Rates adjusted automatically based on calculated distance ({calculated_distance_km:,.1f} km)."
-    )
-    st.markdown(drayage_note_msg)
+    st.markdown("---")
+    st.markdown("##### 2. דמי השהייה בנמל ואחסנה חיצונית" if is_hebrew else "##### 2. Port Demurrage & External Storage")
+    st_col1, st_col2 = st.columns(2)
+    with st_col1:
+        actual_port_days = st.number_input("ימי שהייה בפועל בנמל:" if is_hebrew else "Actual Port Days:", value=12, min_value=1, step=1, key="tab3_actual_days")
+        free_days = st.number_input("ימי פטור (Free Days):" if is_hebrew else "Free Days:", value=int(DEFAULT_FREE_DAYS.get(dest_country_code, 7)), min_value=0, step=1, key=f"tab3_free_days_{dest_country_code}")
+        demurrage_daily_rate = st.number_input("עלות השהייה יומית בנמל ($):" if is_hebrew else "Demurrage Daily Rate ($):", value=250.0 if is_dg else 150.0, step=25.0, key=f"tab3_dem_rate_{is_dg}")
+    with st_col2:
+        use_external_storage = st.checkbox("השתמש באחסנה חיצונית (External Storage)" if is_hebrew else "Use External Storage", value=True, key="tab3_ext_storage_toggle")
+        ext_storage_days = st.number_input("ימי אחסנה חיצונית:" if is_hebrew else "External Storage Days:", value=15, min_value=0, step=1, key="tab3_ext_days")
+        ext_storage_daily_rate = st.number_input("עלות אחסנה יומית ($):" if is_hebrew else "Daily External Storage Rate ($):", value=65.0 if is_dg else 45.0, step=10.0, key=f"tab3_ext_rate_{is_dg}")
 
-    free_days = DEFAULT_FREE_DAYS.get(dest_country_code, 7)
-    actual_port_days = 12
-    demurrage_daily_rate = 250.0 if is_dg else 150.0
-    use_external_storage = True
-    ext_storage_days = 15
-    ext_storage_daily_rate = 65.0 if is_dg else 45.0
-    include_site_crane = True
-    site_crane_unloading = 8500.0
+    st.markdown("---")
+    st.markdown("##### 3. מנוף ופריקה באתר" if is_hebrew else "##### 3. Site Crane & Unloading")
+    cr_col1, cr_col2 = st.columns(2)
+    with cr_col1:
+        include_site_crane = st.checkbox("הכלל עלות מנוף עוגן / פריקה באתר" if is_hebrew else "Include Site Crane & Unloading", value=True, key="tab3_crane_toggle")
+    with cr_col2:
+        site_crane_unloading = st.number_input("עלות כוללת למנוף ופריקה ($):" if is_hebrew else "Total Crane & Unloading Cost ($):", value=8500.0, step=500.0, key="tab3_crane_cost")
+
     include_delay_scenario = False
 
 with tab4:
@@ -653,8 +663,8 @@ with tab4:
             decom_per_unit_disp, _ = convert_from_usd(decom_cost_per_bess, display_currency)
             decom_total_disp, _ = convert_from_usd(decom_cost_per_bess * float(bess_count + oog_count), display_currency)
             st.info(
-                f'✅ {bess_capacity_mwh:.1f} MWh × ${decom_cost_per_kwh:,.0f}/kWh = **{curr_symbol} {decom_per_unit_disp:,.2f}** למכולה אחת. '
-                f'סה"כ הפרשה ל־{int(bess_count + oog_count)} מכולות BESS: **{curr_symbol} {decom_total_disp:,.2f}**'
+                f'✅ {bess_capacity_mwh:.1f} MWh × ${decom_cost_per_kwh:,.0f}/kWh = **{curr_symbol} {decom_per_unit_disp:,.2f}** ' + ("למכולה אחת" if is_hebrew else "per container") + '. ' +
+                (f'סה"כ הפרשה ל־{int(bess_count + oog_count)} מכולות BESS: **{curr_symbol} {decom_total_disp:,.2f}**' if is_hebrew else f'Total provision for {int(bess_count + oog_count)} BESS containers: **{curr_symbol} {decom_total_disp:,.2f}**')
             )
 
     st.markdown("---")
@@ -665,10 +675,6 @@ if is_european_dest and tab5_eu is not None:
     with tab5_eu:
         st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Route & Corridor Analysis)")
         st.warning("⚠️ נתונים אינדיקטיביים בלבד, לאימות מול משלח." if is_hebrew else "⚠ Indicative data only, subject to freight forwarder verification.")
-        st.markdown(
-            "סקירה השוואתית של מסלולי שילוח ימי ויבשתי עיקריים לפרויקטי אנרגיה מתחדשת ואגירה (BESS) באירופה:" if is_hebrew else
-            "Comparative overview of primary ocean and multimodal corridors for renewable energy and BESS projects in Europe:"
-        )
         if is_hebrew:
             eu_route_data = [
                 {"מסלול": "אסיה דרך קונסטנצה (רומניה)", "זמן מעבר": "32-35 ימים", "יתרון מרכזי": "אופטימלי לפרויקטים במזרח אירופה ובבלקן", "התאמה": "גבוהה לפאנלים ו־BESS"},
@@ -688,25 +694,22 @@ if is_european_dest and tab5_eu is not None:
 if is_european_dest and tab_projects is not None:
     with tab_projects:
         st.subheader("📂 פרויקטי אנרגיה תשתיות ואגירה (ניהול ומעקב מלא באירופה)")
-        st.markdown(
-            "ניהול ומעקב אחר צבר פרויקטי האגירה והתשתיות לפי ישויות SPV רשמיות של אנלייט וכל עמודות המפתח:" if is_hebrew else
-            "Management and tracking of BESS & infrastructure project portfolio across official Enlight SPVs and key columns:"
-        )
-        
+        csv_path = os.path.join(os.path.dirname(__file__), "projects.csv")
         try:
-            df_projects = pd.read_csv("projects.csv")
-            df_projects["Over 50"] = df_projects["CONT"].gt(50).map({True: "Yes", False: "No"})
-            
-            cols = list(df_projects.columns)
-            if "Over 50" in cols:
-                cols.remove("Over 50")
-                insert_idx = cols.index("SPV") if "SPV" in cols else len(cols)
-                cols.insert(insert_idx, "Over 50")
-                df_projects = df_projects[cols]
-
+            df_projects = pd.read_csv(csv_path)
+            if "CONT" in df_projects.columns:
+                df_projects["Over 50"] = (pd.to_numeric(df_projects["CONT"], errors="coerce") > 50).map({True: "Yes", False: "No"})
+                cols = list(df_projects.columns)
+                if "Over 50" in cols:
+                    cols.remove("Over 50")
+                    insert_idx = cols.index("SPV") if "SPV" in cols else len(cols)
+                    cols.insert(insert_idx, "Over 50")
+                    df_projects = df_projects[cols]
             st.dataframe(df_projects, use_container_width=True, hide_index=True)
         except FileNotFoundError:
-            st.error("⚠️ קובץ הנתונים `projects.csv` אינו נמצא בתיקייה. אנא ודאי שהוא שמור באותה תיקייה לצד `app.py`.")
+            st.error("⚠️ קובץ הנתונים `projects.csv` אינו נמצא בתיקייה." if is_hebrew else "⚠️ `projects.csv` file not found.")
+        except Exception as e:
+            st.error(f"⚠ שגיאה בטעינת הקובץ / Error loading file: {e}")
 
 calc_results = calculate_project_costs(
     bess_count=bess_count, bess_exw=bess_exw,
@@ -809,14 +812,14 @@ with tab_summary:
     item_baf = "היטל דלק ימי לפי TEU (BAF)" if is_hebrew else "Bunker Adjustment Factor (BAF)"
     item_dthc = "דמי טיפול בנמל יעד (Destination THC)" if is_hebrew else "Destination THC"
     item_insur = "ביטוח ימי" if is_hebrew else "Marine Insurance"
-    item_customs = f"מכס יבוא לפי קטגוריה ({customs_duty_pct}% לציוד אגירה/ממירים | 0% פטור לפאנלים סולאריים)" if is_hebrew else f"Differential Customs Duty (0% for PV Modules)"
+    item_customs = f"מכס יבוא לפי קטגוריה ({customs_duty_pct}% לציוד אגירה/ממירים | 0% פטור לפאנלים סולאריים)" if is_hebrew else f"Differential Customs Duty ({customs_duty_pct}% for BESS | 0% for PV)"
     item_drayage = "הובלה יבשתית מנמל לאתר" if is_hebrew else "Inland Drayage (Port to Site)"
     item_reg = "רגולציה מקומית ואישורי חומ\"ס / משרד התחבורה" if is_hebrew else "Regulatory & Local Permits"
     item_crane = "עגורן מנוף ופריקה באתר" if is_hebrew else "Site Crane & Unloading"
     item_epr = "דמי EPR שוטפים / מיחזור" if is_hebrew else "EPR / Recycling Fees"
     item_bp = "דרכון סוללות דיגיטלי (EU Battery Passport)" if is_hebrew else "EU Battery Passport"
     item_hl = "סקר מטענים כבדים (Heavy-Lift Survey)" if is_hebrew else "Heavy-Lift Survey"
-    item_decom = f"הפרשת מחזור סוף חיים — {bess_capacity_mwh}MWh @ ${decom_cost_per_kwh}/kWh (מוצג כשורה פיננסית נפרדת)" if is_hebrew else f"Decommissioning Provision ({bess_capacity_mwh}MWh - Lifecycle Item)"
+    item_decom = f"הפרשת מחזור סוף חיים — {bess_capacity_mwh}MWh @ ${decom_cost_per_kwh}/kWh" if is_hebrew else f"Decommissioning Provision ({bess_capacity_mwh}MWh)"
     item_cont = "בלת״ם פרויקטי (5%)" if is_hebrew else "Contingency (5%)"
     item_tot = "סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)" if is_hebrew else "Total Landed Cost (Excl. VAT)"
 
@@ -857,7 +860,7 @@ with tab_summary:
     st.markdown("---")
     
     excel_summary_data = [
-        ["רכיב עלות בפרויקט", "כמות / בסיס חישוב", f"סה\"כ סעיף ({display_currency})"],
+        [txt["col_item"], txt["col_qty"], f'{txt["col_total"]} ({display_currency})'],
         [item_exw, f"{int(total_units_for_calc):,} units", ex_exw],
         [item_china, f"{int(total_units_for_calc):,} units", ex_ch_inland],
         [item_ocean, f"{int(total_units_for_calc):,} containers", ex_ocean],
