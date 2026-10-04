@@ -70,7 +70,6 @@ def calculate_project_costs(
     customs_duty_usd = (customs_valuation_base_usd * non_solar_ratio) * (customs_duty_pct / 100.0)
     destination_thc_total = total_destination_thc  
 
-    # בסיס מע"מ מעודכן: כולל גם את ההובלה היבשתית לאתר ביעדי אירופה
     is_european_dest = (dest_country_code != "IL")
     if is_european_dest:
         indicative_vat_base_import_usd = customs_valuation_base_usd + customs_duty_usd + destination_thc_total + inland_drayage_total_usd
@@ -87,12 +86,10 @@ def calculate_project_costs(
     active_heavy_lift = heavy_lift_survey_cost if requires_heavy_lift else 0.0
 
     overdue_days = max(0, actual_port_days - free_days)
-    is_dg = (bess_count > 0 or oog_count > 0)
     demurrage_total_usd = float(overdue_days) * demurrage_daily_rate * float(total_containers_project)
     external_storage_total_usd = (float(ext_storage_days) * ext_storage_daily_rate * float(total_containers_project)) if use_external_storage else 0.0
     effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
 
-    # הפרשת פירוק סוף חיים הוצאה מעלות הנחיתה התפעולית
     decom_cost_per_bess = bess_capacity_mwh * 1000.0 * decom_cost_per_kwh
     decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
 
@@ -133,7 +130,6 @@ def calculate_project_costs(
     contingency_usd = buyer_supply_chain_total * (ddp_contingency_pct / 100.0)
     total_landed_cost_ex_vat = buyer_supply_chain_total + contingency_usd
     
-    # עלות כלכלית ודרישת מזומנים כוללות כעת גם את הפרשת המחזור הפיננסית מחוץ לעלות הנחיתה הישירה
     economic_cost_ex_vat = total_landed_cost_ex_vat + effective_non_recoverable_vat + decommissioning_total_usd
     total_cash_requirement_incl_vat = total_landed_cost_ex_vat + effective_vat_cash + decommissioning_total_usd
 
