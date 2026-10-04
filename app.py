@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import requests
 import base64
+import math
 from datetime import date
 from io import BytesIO
 from calc import calculate_project_costs
@@ -259,6 +260,27 @@ DESTINATION_PORTS = {
     "OTHER": [("RTM", "רוטרדם, הולנד (Rotterdam)" if is_hebrew else "Rotterdam, Netherlands"), ("ANR", "אנטוורפן, בלגיה (Antwerp)" if is_hebrew else "Antwerp, Belgium")]
 }
 
+# קואורדינטות לנמלי היים לצורך חישוב מרחק אוטומטי
+PORT_COORDINATES = {
+    "HAIF": (32.8192, 34.9900),
+    "BAY": (32.8250, 35.0100),
+    "ASHD": (31.8333, 34.6500),
+    "TIL": (31.8200, 34.6400),
+    "CT": (44.1792, 28.6500),
+    "BOJ": (42.5048, 27.4626),
+    "PIR": (37.9475, 23.6378),
+    "HAM": (53.5511, 9.9937),
+    "RTM": (51.9244, 4.4777),
+}
+
+def calculate_road_distance_km(lat1, lon1, lat2, lon2):
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    return R * c * 1.3  # מקדם כבישים משוער
+
 VAT_RATES = {
     "IL": 18.0, "RO": 19.0, "PL": 23.0, "DE": 19.0, "SE": 25.0, 
     "GR": 24.0, "ES": 21.0, "IT": 22.0, "BG": 20.0, "HU": 27.0,
@@ -405,13 +427,24 @@ with tab1:
         )
         site_address = st.text_input(txt["site_label"], key="site_name_input", placeholder=txt["site_ph"])
 
-        # ---------------------------------------------------------
-        # החזרת שדות המיקום המפורטים שביקשת (כתובת מדויקת, מיקוד, קואורדינטות)
-        # ---------------------------------------------------------
+        # שדות מיקום וקואורדינטות עם חישוב מרחק אוטומטי
         st.markdown("##### 📍 פרטי מיקום מדויקים של אתר הפרויקט:" if is_hebrew else "##### 📍 Detailed Project Site Location:")
-        site_street_address = st.text_input("כתובת אתר מלאה (רוב/רחוב מספר):" if is_hebrew else "Full Street Address:", key="site_street_address_input")
+        site_street_address = st.text_input("כתובת אתר מלאה (רחוב ומספר):" if is_hebrew else "Full Street Address:", key="site_street_address_input")
         site_postal_code = st.text_input("מיקוד (Postal Code):" if is_hebrew else "Postal Code:", key="site_postal_code_input")
-        site_coordinates = st.text_input("קואורדינטות GPS (Latitude, Longitude):" if is_hebrew else "GPS Coordinates (Lat, Long):", key="site_coordinates_input", placeholder="31.0461° N, 34.8516° E")
+        site_coordinates = st.text_input("קואורדינטות GPS (Latitude, Longitude):" if is_hebrew else "GPS Coordinates (Lat, Long):", key="site_coordinates_input", placeholder="32.0853, 34.7818")
+
+        calculated_distance_km = 50.0  # ברירת מחדל
+        if site_coordinates:
+            try:
+                lat_str, lon_str = site_coordinates.replace("°", "").split(",")
+                s_lat = float(lat_str.strip())
+                s_lon = float(lon_str.strip())
+                if dest_port_code in PORT_COORDINATES:
+                    p_lat, p_lon = PORT_COORDINATES[dest_port_code]
+                    calculated_distance_km = calculate_road_distance_km(p_lat, p_lon, s_lat, s_lon)
+                    st.info(f"📍 **מרחק נסיעה מחושב מהנמל ({dest_port_code}) לאתר:** כ־{calculated_distance_km:,.1f} ק\"מ")
+            except Exception:
+                st.warning("⚠️ נא להזין קואורדינטות בפורמט נכון, לדוגמה: `32.0853, 34.7818`.")
 
     with col_meta2:
         applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country_name}) %:", value=float(VAT_RATES[dest_country_code]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country_code}")
@@ -543,20 +576,23 @@ with tab2:
 with tab3:
     st.subheader("🚚 הובלה יבשתית מנמל הפריקה לאתר הפרויקט (Port to Site)" if is_hebrew else "🚚 Port-to-Site Inland Drayage & Logistics")
     
+    # התאמה דינמית של תעריף המשאיות לפי המרחק המחושב מהקואורדינטות
+    distance_factor = max(1.0, calculated_distance_km / 50.0)
+
     dr_col1, dr_col2, dr_col3 = st.columns(3)
     with dr_col1:
-        drayage_bess = st.number_input("הובלת משאיות BESS ליחידה ($):" if is_hebrew else "BESS Trucking per unit ($):", value=4500.0, step=200.0, key="dray_bess")
-        drayage_oog = st.number_input("הובלת משאיות OOG ליחידה ($):" if is_hebrew else "OOG Trucking per unit ($):", value=4800.0, step=200.0, key="dray_oog")
+        drayage_bess = st.number_input("הובלת משאיות BESS ליחידה ($):" if is_hebrew else "BESS Trucking per unit ($):", value=4500.0 * distance_factor, step=200.0, key="dray_bess")
+        drayage_oog = st.number_input("הובלת משאיות OOG ליחידה ($):" if is_hebrew else "OOG Trucking per unit ($):", value=4800.0 * distance_factor, step=200.0, key="dray_oog")
     with dr_col2:
-        drayage_mvs = st.number_input("הובלת משאיות MVS ליחידה ($):" if is_hebrew else "MVS Trucking per unit ($):", value=1400.0, step=100.0, key="dray_mvs")
-        drayage_trans = st.number_input("הובלת משאיות שנאי ליחידה ($):" if is_hebrew else "Transformer Trucking per unit ($):", value=1800.0, step=100.0, key="dray_trans")
+        drayage_mvs = st.number_input("הובלת משאיות MVS ליחידה ($):" if is_hebrew else "MVS Trucking per unit ($):", value=1400.0 * distance_factor, step=100.0, key="dray_mvs")
+        drayage_trans = st.number_input("הובלת משאיות שנאי ליחידה ($):" if is_hebrew else "Transformer Trucking per unit ($):", value=1800.0 * distance_factor, step=100.0, key="dray_trans")
     with dr_col3:
-        drayage_access = st.number_input("הובלת ציוד נלווה ליחידה ($):" if is_hebrew else "Accessory Trucking per unit ($):", value=850.0, step=100.0, key="dray_access")
-        drayage_solar = st.number_input("הובלת ציוד סולארי ליחידה ($):" if is_hebrew else "Solar PV Trucking per unit ($):", value=950.0, step=100.0, key="dray_solar")
+        drayage_access = st.number_input("הובלת ציוד נלווה ליחידה ($):" if is_hebrew else "Accessory Trucking per unit ($):", value=850.0 * distance_factor, step=100.0, key="dray_access")
+        drayage_solar = st.number_input("הובלת ציוד סולארי ליחידה ($):" if is_hebrew else "Solar PV Trucking per unit ($):", value=950.0 * distance_factor, step=100.0, key="dray_solar")
 
     drayage_note_msg = (
-        "💡 **הערה מקצועית למשקל חריג (42–45 טון DG):** התעריף המומלץ למכולות BESS הוא **€4,500** כמחיר בסיס למרחקים קצרים." if is_hebrew else
-        "💡 **Professional note for heavy DG units (42–45 tons):** Baseline of **€4,500** for short distances."
+        f"💡 **הערה מקצועית:** התעריפים עודכנו אוטומטית בהתאם למרחק המחושב מהנמל ({calculated_distance_km:,.1f} ק\"מ)." if is_hebrew else
+        f"💡 **Professional note:** Rates adjusted automatically based on calculated distance ({calculated_distance_km:,.1f} km)."
     )
     st.markdown(drayage_note_msg)
 
@@ -657,7 +693,6 @@ if is_european_dest and tab_projects is not None:
             "Management and tracking of BESS & infrastructure project portfolio across official Enlight SPVs and key columns:"
         )
         
-        # טעינה נקייה מתוך קובץ ה־CSV החיצוני המאובטח
         try:
             df_projects = pd.read_csv("projects.csv")
             df_projects["Over 50"] = df_projects["CONT"].gt(50).map({True: "Yes", False: "No"})
@@ -842,7 +877,6 @@ with tab_summary:
     if dest_country_code != "IL":
         excel_summary_data.append([item_decom, f"{int(bess_count + oog_count):,} BESS (Lifecycle)", ex_decom])
 
-    # בדיקת התאמה (Reconciliation check)
     main_rows_for_rec = [r for r in excel_summary_data[1:] if r[0] not in (item_tot, item_decom)]
     sum_main_rows = sum(r[2] for r in main_rows_for_rec)
     if abs(sum_main_rows - ex_total) >= 1.0:
