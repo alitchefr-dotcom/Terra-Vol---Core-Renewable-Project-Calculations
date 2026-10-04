@@ -85,7 +85,7 @@ is_hebrew = (current_lang == "he")
 
 T = {
     "he": {
-        "caption": "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, תנאי סחר, רגולציה ותחזית שוק",
+        "caption": "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, תנאי סחר, רגולציה וקיימות",
         "incoterm_label": "תנאי סחר מסחרי (אחריות ספק):",
         "currency_label": "מטבע תצוגה ראשי:",
         "origin_port": "נמל מוצא:",
@@ -101,12 +101,12 @@ T = {
         "tab1": "📋 תמהיל ציוד וכמויות לפרויקט",
         "tab2": "⚓ שרשרת אספקה ותנאי סחר",
         "tab3": "📦 אחסנה, השהיות והובלת משאיות לאתר",
-        "tab4": "⚖️ רגולציה ואישורים מנדטוריים",
+        "tab4": "⚖️ רגולציה, קיימות ואישורים",
         "tab5_eu": "🗺 הנחות מסלולים באירופה",
         "tab_projects": "📂 פרויקטי אנרגיה תשתיות ואגירה",
-        "tab_summary": "📊 דוח בקרה תקציבית ורגולטורית",
-        "summary_title": "📊 דוח בקרה פיננסית ורגולטורית",
-        "breakdown_title": "📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)",
+        "tab_summary": "📊 דוח בקרה תקציבית ופחמנית",
+        "summary_title": "📊 דוח בקרה פיננסית וסביבתית (Carbon & Cost)",
+        "breakdown_title": "📋 פירוט רכיבי תקציב וטביעת רגל פחמנית",
         "excel_btn": "📥 הורד דוח פיננסי מלא לאקסל",
         "projects_header": "📂 פרויקטי אנרגיה תשתיות ואגירה (ניהול ומעקב מלא באירופה)",
         "col_item": "רכיב עלות בפרויקט",
@@ -119,7 +119,7 @@ T = {
         "qty_global": "גלובלי"
     },
     "en": {
-        "caption": "Professional Project Calculator for Target Costs, Incoterms, Regulation & Market Forecast",
+        "caption": "Professional Project Calculator for Target Costs, Incoterms, Regulation & Sustainability",
         "incoterm_label": "Commercial Incoterm (Supplier Scope):",
         "currency_label": "Main Display Currency:",
         "origin_port": "Origin Port:",
@@ -135,12 +135,12 @@ T = {
         "tab1": "📋 Equipment Mix & Quantities",
         "tab2": "⚓ Supply Chain & Incoterms",
         "tab3": "📦 Storage, Demurrage & Inland Drayage",
-        "tab4": "⚖️ Regulation & Mandatory Approvals",
+        "tab4": "⚖️ Regulation, Sustainability & Approvals",
         "tab5_eu": "🗺️ European Route Options",
         "tab_projects": "📂 Infrastructure & Energy Projects",
-        "tab_summary": "📊 Budget & Regulatory Control Report",
-        "summary_title": "📊 Financial & Regulatory Control Report",
-        "breakdown_title": "📋 Project Budget Cost Breakdown",
+        "tab_summary": "📊 Budget & Carbon Control Report",
+        "summary_title": "📊 Financial & Environmental Control Report (Carbon & Cost)",
+        "breakdown_title": "📋 Project Budget & Carbon Footprint Breakdown",
         "excel_btn": "📥 Download Full Excel Report",
         "projects_header": "📂 Infrastructure & Energy Projects (Full European Tracking)",
         "col_item": "Project Cost Item",
@@ -470,7 +470,7 @@ with tab1:
                 else:
                     st.warning("⚠️ נמל היעד אינו במילון הקואורדינטות. מוגדר מרחק ברירת מחדל של 50 ק\"מ." if is_hebrew else "⚠️ Port not in dictionary. Default 50 km applied.")
             except Exception:
-                st.warning("⚠️ פורמט קואורדינטות שגוי. נא להזין: `32.0853, 34.7818`" if is_hebrew else "⚠️ Invalid coordinates format.")
+                st.warning("⚠️️ פורמט קואורדינטות שגוי. נא להזין: `32.0853, 34.7818`" if is_hebrew else "⚠️ Invalid coordinates format.")
 
     with col_meta2:
         applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country_name}) %:", value=float(VAT_RATES[dest_country_code]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country_code}")
@@ -619,7 +619,7 @@ with tab3:
     include_delay_scenario = False
 
 with tab4:
-    st.subheader("⚖️ רגולציה ואישורים מנדטוריים" if is_hebrew else "⚖️️ Regulation & Mandatory Approvals")
+    st.subheader("⚖️ רגולציה, קיימות ואישורים מנדטוריים" if is_hebrew else "⚖ Regulation, Sustainability & Approvals")
 
     bess_capacity_mwh = 4.0
     decom_cost_per_kwh = 0.0 if dest_country_code == "IL" else 75.0
@@ -758,7 +758,15 @@ with tab_summary:
     m1_title = "עלות נחיתה (לפני מע\"מ)" if is_hebrew else "Total Landed Cost (Excl. VAT)"
     m2_title = "עלות כלכלית כוללת" if is_hebrew else "Total Economic Cost"
     m3_title = "דרישת מזומנים כוללת" if is_hebrew else "Total Cash Requirement"
-    m4_title = "תשלום ישיר לספק" if is_hebrew else "Direct Supplier Payment"
+    m4_title = "טביעת רגל פחמנית מוערכת" if is_hebrew else "Estimated Carbon Footprint"
+
+    # חישוב טביעת רגל פחמנית (CO2): אומדן ממוצע למכולות בהובלה ימית (כ־0.02 קילו לטון-קילומטר) ומשאיות (כ־0.08 קילו לטון-קילומטר)
+    # בהנחת מרחק ימי ממוצע מסין לאירופה/ישראל של כ־18,000 ק"מ, ומרחק משאית מחושב מהנמל לאתר.
+    total_units_for_calc = calc_results["total_containers_project"]
+    ocean_distance_approx_km = 18000.0
+    carbon_ocean_tons = (total_units_for_calc * 25.0 * ocean_distance_approx_km * 0.02) / 1000.0
+    carbon_road_tons = (total_units_for_calc * 25.0 * calculated_distance_km * 0.08) / 1000.0
+    total_carbon_footprint_tons = carbon_ocean_tons + carbon_road_tons
 
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     with m_col1:
@@ -768,12 +776,11 @@ with tab_summary:
     with m_col3:
         st.markdown(f'<div class="metric-container"><div class="metric-title">{m3_title}</div><div class="metric-value"><span class="ltr-val">{curr_symbol} {cash_val:,.2f}</span></div></div>', unsafe_allow_html=True)
     with m_col4:
-        st.markdown(f'<div class="metric-container"><div class="metric-title">{m4_title}</div><div class="metric-value"><span class="ltr-val">{curr_symbol} {supplier_val:,.2f}</span></div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-container"><div class="metric-title">{m4_title}</div><div class="metric-value"><span class="ltr-val">{total_carbon_footprint_tons:,.1f} טון CO2</span></div></div>', unsafe_allow_html=True)
 
     st.markdown("---")
     st.subheader(txt["breakdown_title"])
 
-    total_units_for_calc = calc_results["total_containers_project"]
     bess_oog_units = max(1.0, float(bess_count + oog_count))
 
     ex_exw, _ = convert_from_usd(calc_results["trended_exw"], display_currency)
@@ -822,10 +829,12 @@ with tab_summary:
     item_bp = "דרכון סוללות דיגיטלי (EU Battery Passport)" if is_hebrew else "EU Battery Passport"
     item_hl = "סקר מטענים כבדים (Heavy-Lift Survey)" if is_hebrew else "Heavy-Lift Survey"
     item_decom = f"הפרשת מחזור סוף חיים — {bess_capacity_mwh}MWh @ ${decom_cost_per_kwh}/kWh" if is_hebrew else f"Decommissioning Provision ({bess_capacity_mwh}MWh)"
+    item_carbon = f"טביעת רגל פחמנית כוללת (הובלה ימית + יבשתית)" if is_hebrew else f"Total Carbon Footprint (Ocean + Road)"
     item_cont = "בלת״ם פרויקטי (5%)" if is_hebrew else "Contingency (5%)"
     item_tot = "סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)" if is_hebrew else "Total Landed Cost (Excl. VAT)"
 
     decom_row_html = f'<tr style="background-color: #fbf8f0;"><td>{item_decom}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_decom:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_decom:,.2f}</span></b></td></tr>' if dest_country_code != "IL" else ""
+    carbon_row_html = f'<tr style="background-color: #f0fdf4;"><td>{item_carbon}</td><td class="center">{int(total_units_for_calc):,} units</td><td class="left"><span class="ltr-val">{(total_carbon_footprint_tons/total_units_for_calc):,.2f} t/unit</span></td><td class="left"><b><span class="ltr-val">{total_carbon_footprint_tons:,.1f} טון CO2</span></b></td></tr>'
 
     html_table = f"""
     <table class="custom-finance-table">
@@ -854,6 +863,7 @@ with tab_summary:
             <tr><td>{item_cont}</td><td class="center">5%</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_cont:,.2f}</span></b></td></tr>
             <tr class="total-row"><td>{item_tot}</td><td class="center">-</td><td class="left">-</td><td class="left" style="color: #1e3d59;"><b><span class="ltr-val">{curr_symbol} {ex_total:,.2f}</span></b></td></tr>
             {decom_row_html}
+            {carbon_row_html}
         </tbody>
     </table>
     """
@@ -881,9 +891,10 @@ with tab_summary:
     ]
     if dest_country_code != "IL":
         excel_summary_data.append([item_decom, f"{int(bess_count + oog_count):,} BESS (Lifecycle)", ex_decom])
+    excel_summary_data.append([item_carbon, f"{int(total_units_for_calc):,} units", f"{total_carbon_footprint_tons:,.1f} tons CO2"])
 
-    main_rows_for_rec = [r for r in excel_summary_data[1:] if r[0] not in (item_tot, item_decom)]
-    sum_main_rows = sum(r[2] for r in main_rows_for_rec)
+    main_rows_for_rec = [r for r in excel_summary_data[1:] if r[0] not in (item_tot, item_decom, item_carbon)]
+    sum_main_rows = sum(r[2] for r in main_rows_for_rec if isinstance(r[2], (int, float)))
     if abs(sum_main_rows - ex_total) >= 1.0:
         st.error(f"Reconciliation mismatch: {sum_main_rows:,.2f} vs {ex_total:,.2f}")
 
@@ -895,7 +906,8 @@ with tab_summary:
         ws.views.sheetView[0].rightToLeft = is_hebrew
 
         for row in ws.iter_rows(min_row=2, min_col=3, max_col=3):
-            row[0].number_format = '#,##0.00'
+            if isinstance(row[0].value, (int, float)):
+                row[0].number_format = '#,##0.00'
 
         for col in ws.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
