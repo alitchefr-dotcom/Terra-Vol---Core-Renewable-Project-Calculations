@@ -470,7 +470,7 @@ with tab1:
                 else:
                     st.warning("⚠️ נמל היעד אינו במילון הקואורדינטות. מוגדר מרחק ברירת מחדל של 50 ק\"מ." if is_hebrew else "⚠️ Port not in dictionary. Default 50 km applied.")
             except Exception:
-                st.warning("⚠️️ פורמט קואורדינטות שגוי. נא להזין: `32.0853, 34.7818`" if is_hebrew else "⚠️ Invalid coordinates format.")
+                st.warning("⚠️ פורמט קואורדינטות שגוי. נא להזין: `32.0853, 34.7818`" if is_hebrew else "⚠️ Invalid coordinates format.")
 
     with col_meta2:
         applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country_name}) %:", value=float(VAT_RATES[dest_country_code]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country_code}")
@@ -760,8 +760,6 @@ with tab_summary:
     m3_title = "דרישת מזומנים כוללת" if is_hebrew else "Total Cash Requirement"
     m4_title = "טביעת רגל פחמנית מוערכת" if is_hebrew else "Estimated Carbon Footprint"
 
-    # חישוב טביעת רגל פחמנית (CO2): אומדן ממוצע למכולות בהובלה ימית (כ־0.02 קילו לטון-קילומטר) ומשאיות (כ־0.08 קילו לטון-קילומטר)
-    # בהנחת מרחק ימי ממוצע מסין לאירופה/ישראל של כ־18,000 ק"מ, ומרחק משאית מחושב מהנמל לאתר.
     total_units_for_calc = calc_results["total_containers_project"]
     ocean_distance_approx_km = 18000.0
     carbon_ocean_tons = (total_units_for_calc * 25.0 * ocean_distance_approx_km * 0.02) / 1000.0
