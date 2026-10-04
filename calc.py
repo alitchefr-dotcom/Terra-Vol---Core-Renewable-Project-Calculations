@@ -90,8 +90,12 @@ def calculate_project_costs(
     external_storage_total_usd = (float(ext_storage_days) * ext_storage_daily_rate * float(total_containers_project)) if use_external_storage else 0.0
     effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
 
-    decom_cost_per_bess = bess_capacity_mwh * 1000.0 * decom_cost_per_kwh
-    decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
+    # תיקון: בישראל אין הפרשת פירוק/מחזור סוף חיים (מוגדר כ־0.0)
+    if dest_country_code == "IL":
+        decommissioning_total_usd = 0.0
+    else:
+        decom_cost_per_bess = bess_capacity_mwh * 1000.0 * decom_cost_per_kwh
+        decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
 
     project_delivery_cost = (
         trended_exw + 
@@ -130,8 +134,9 @@ def calculate_project_costs(
     contingency_usd = buyer_supply_chain_total * (ddp_contingency_pct / 100.0)
     total_landed_cost_ex_vat = buyer_supply_chain_total + contingency_usd
     
+    # תיקון: העלות הכלכלית כוללת את ההפרשה, אך דרישת המזומנים התפעולית אינה כוללת אותה (הפרשה עתידית)
     economic_cost_ex_vat = total_landed_cost_ex_vat + effective_non_recoverable_vat + decommissioning_total_usd
-    total_cash_requirement_incl_vat = total_landed_cost_ex_vat + effective_vat_cash + decommissioning_total_usd
+    total_cash_requirement_incl_vat = total_landed_cost_ex_vat + effective_vat_cash
 
     return {
         "total_containers_project": total_containers_project,
@@ -153,6 +158,8 @@ def calculate_project_costs(
         "contingency_usd": contingency_usd,
         "total_landed_cost_ex_vat": total_landed_cost_ex_vat,
         "supplier_scope_total": supplier_scope_total,
+        "buyer_direct_payment_usd": buyer_direct_payment_usd,
+        "recoverable_vat": recoverable_vat,
         "economic_cost_ex_vat": economic_cost_ex_vat,
         "total_cash_requirement_incl_vat": total_cash_requirement_incl_vat
     }
