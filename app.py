@@ -5,6 +5,7 @@ import requests
 import base64
 from datetime import date
 from io import BytesIO
+from calc import calculate_project_costs
 
 # ---------------------------------------------------------
 # הגדרת תצורת עמוד ולוגו
@@ -39,11 +40,11 @@ if logo_base64:
     )
 
 st.sidebar.header("🌐 שפה / Language")
-lang = st.sidebar.radio("בחר שפה / Select Language:", ["עברית", "English"], index=0, key="lang_select")
-is_hebrew = (lang == "עברית")
-current_lang = "he" if is_hebrew else "en"
+lang_options = {"עברית": "he", "English": "en"}
+selected_lang_label = st.sidebar.radio("בחר שפה / Select Language:", list(lang_options.keys()), index=0, key="lang_radio_select")
+current_lang = lang_options[selected_lang_label]
+is_hebrew = (current_lang == "he")
 
-# מילון תרגום מקצועי ונקי לחלוטין (ללא כפילויות)
 T = {
     "he": {
         "caption": "מחשבון פרויקטלי מקצועי לניהול עלויות יעד, תנאי סחר, רגולציה ותחזית שוק",
@@ -109,12 +110,14 @@ txt = T[current_lang]
 direction_css = "rtl" if is_hebrew else "ltr"
 text_align_css = "right" if is_hebrew else "left"
 
+# תיקון הסלקטור הרחב ב־CSS למניעת פגיעה ברכיבי Streamlit פנימיים
 st.markdown(
     f"""
     <style>
     .stApp {{ direction: {direction_css}; text-align: {text_align_css}; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
-    h1, h2, h3, h4, h5, h6, p, label, div, span {{ direction: {direction_css}; text-align: {text_align_css}; }}
+    h1, h2, h3, h4, h5, h6, p, label {{ direction: {direction_css}; text-align: {text_align_css}; }}
     .stTextInput label, .stSelectbox label, .stNumberInput label {{ direction: {direction_css}; text-align: {text_align_css}; width: 100%; font-weight: 600; }}
+    input[type=number] {{ direction: ltr; text-align: right; }}
     
     .metric-container {{
         background-color: #ffffff;
@@ -169,6 +172,8 @@ st.markdown(
         font-weight: 700;
         border-top: 2px solid #cbd5e1;
     }}
+    .center {{ text-align: center; }}
+    .left {{ text-align: left; }}
     .ltr-val {{
         direction: ltr;
         unicode-bidi: embed;
@@ -190,116 +195,88 @@ header_html = f"""
 st.markdown(header_html, unsafe_allow_html=True)
 st.caption(txt["caption"])
 
-ORIGIN_PORTS = ["שאנגחאי (Shanghai)", "נינגבו (Ningbo)", "שנג'ן (Shenzhen)", "צ'ינגדאו (Qingdao)"] if is_hebrew else ["Shanghai, China", "Ningbo, China", "Shenzhen, China", "Qingdao, China"]
+ORIGIN_PORTS = {
+    "SHA": "שאנגחאי (Shanghai)" if is_hebrew else "Shanghai, China",
+    "NGB": "נינגבו (Ningbo)" if is_hebrew else "Ningbo, China",
+    "SZX": "שנג'ן (Shenzhen)" if is_hebrew else "Shenzhen, China",
+    "TAO": "צ'ינגדאו (Qingdao)" if is_hebrew else "Qingdao, China"
+}
 
 DESTINATION_PORTS = {
-    "ישראל": [
-        "נמל חיפה (קבוצת עדני)", 
-        "נמל המפרץ (SIPG - חיפה)", 
-        "נמל אשדוד (הממשלתי)", 
-        "מסוף TIL (קבוצת MSC - אשדוד)"
+    "IL": [
+        ("HAIF", "נמל חיפה (קבוצת עדני)" if is_hebrew else "Haifa Port (Adani Group)"),
+        ("BAY", "נמל המפרץ (SIPG - חיפה)" if is_hebrew else "Bay Port (SIPG — Haifa)"),
+        ("ASHD", "נמל אשדוד (הממשלתי)" if is_hebrew else "Ashdod Port (Government)"),
+        ("TIL", "מסוף TIL (קבוצת MSC - אשדוד)" if is_hebrew else "TIL Terminal (MSC Group — Ashdod)")
     ],
-    "רומניה": ["קונסטנצה, רומניה (Constanța)", "בורגס, בולגריה (Burgas)"],
-    "פולין": ["גדנסק, פולין (Gdansk)", "גדיניה, פולין (Gdynia)"],
-    "גרמניה": ["המבורג, גרמניה (Hamburg)", "ברמרהאפן, גרמניה (Bremerhaven)"],
-    "שוודיה": ["גטבורג, שוודיה (Gothenburg)", "סטוקהולם, שוודיה (Stockholm)"],
-    "יוון": ["פיראוס, יוון (Piraeus)", "סלוניקי, יוון (Thessaloniki)"],
-    "ספרד": ["ולנסיה, ספרד (Valencia)", "ברצלונה, ספרד (Barcelona)"],
-    "איטליה": ["ג'נואה, איטליה (Genoa)", "טרייסטה, איטליה (Trieste)"],
-    "בולגריה": ["וורנה, בולגריה (Varna)", "בורגס, בולגריה (Burgas)"],
-    "הונגריה": ["בודפשט, הונגריה (Budapest - Rail/Multimodal)"],
-    "פינלנד": ["הלסינקי, פינלנד (Helsinki)", "קוטקה, פינלנד (Kotka)"],
-    "אחר / מותאם": ["רוטרדם, הולנד (Rotterdam)", "אנטוורפן, בלגיה (Antwerp)"]
+    "RO": [("CT", "קונסטנצה, רומניה (Constanța)" if is_hebrew else "Constanța, Romania"), ("BOJ", "בורגס, בולגריה (Burgas)" if is_hebrew else "Burgas, Bulgaria")],
+    "PL": [("GDN", "גדנסק, פולין (Gdansk)" if is_hebrew else "Gdansk, Poland"), ("GDY", "גדיניה, פולין (Gdynia)" if is_hebrew else "Gdynia, Poland")],
+    "DE": [("HAM", "המבורג, גרמניה (Hamburg)" if is_hebrew else "Hamburg, Germany"), ("BRV", "ברמרהאפן, גרמניה (Bremerhaven)" if is_hebrew else "Bremerhaven, Germany")],
+    "SE": [("GOT", "גטבורג, שוודיה (Gothenburg)" if is_hebrew else "Gothenburg, Sweden"), ("STO", "סטוקהולם, שוודיה (Stockholm)" if is_hebrew else "Stockholm, Sweden")],
+    "GR": [("PIR", "פיראוס, יוון (Piraeus)" if is_hebrew else "Piraeus, Greece"), ("THE", "סלוניקי, יוון (Thessaloniki)" if is_hebrew else "Thessaloniki, Greece")],
+    "ES": [("VLC", "ולנסיה, ספרד (Valencia)" if is_hebrew else "Valencia, Spain"), ("BCN", "ברצלונה, ספרד (Barcelona)" if is_hebrew else "Barcelona, Spain")],
+    "IT": [("GOA", "ג'נואה, איטליה (Genoa)" if is_hebrew else "Genoa, Italy"), ("TRS", "טרייסטה, איטליה (Trieste)" if is_hebrew else "Trieste, Italy")],
+    "BG": [("VAR", "וורנה, בולגריה (Varna)" if is_hebrew else "Varna, Bulgaria"), ("BOJ", "בורגס, בולגריה (Burgas)" if is_hebrew else "Burgas, Bulgaria")],
+    "HU": [("BUD", "בודפשט, הונגריה (Budapest - Rail/Multimodal)" if is_hebrew else "Budapest, Hungary (Rail/Multimodal)")],
+    "FI": [("HEL", "הלסינקי, פינלנד (Helsinki)" if is_hebrew else "Helsinki, Finland"), ("KTK", "קוטקה, פינלנד (Kotka)" if is_hebrew else "Kotka, Finland")],
+    "OTHER": [("RTM", "רוטרדם, הולנד (Rotterdam)" if is_hebrew else "Rotterdam, Netherlands"), ("ANR", "אנטוורפן, בלגיה (Antwerp)" if is_hebrew else "Antwerp, Belgium")]
 }
 
 VAT_RATES = {
-    "ישראל": 18.0, "רומניה": 19.0, "פולין": 23.0, "גרמניה": 19.0, 
-    "שוודיה": 25.0, "יוון": 24.0, "ספרד": 21.0, "איטליה": 22.0, "בולגריה": 20.0, "הונגריה": 27.0,
-    "פינלנד": 25.5, "אחר / מותאם": 0.0
+    "IL": 18.0, "RO": 19.0, "PL": 23.0, "DE": 19.0, "SE": 25.0, 
+    "GR": 24.0, "ES": 21.0, "IT": 22.0, "BG": 20.0, "HU": 27.0,
+    "FI": 25.5, "OTHER": 0.0
 }
 DEFAULT_INSURANCE_RATES = {
-    "ישראל": 0.08, "רומניה": 0.15, "פולין": 0.15, "גרמניה": 0.15, 
-    "שוודיה": 0.15, "יוון": 0.15, "ספרד": 0.15, "איטליה": 0.15, "בולגריה": 0.15, "הונגריה": 0.15,
-    "פינלנד": 0.15, "אחר / מותאם": 0.15
+    "IL": 0.08, "RO": 0.15, "PL": 0.15, "DE": 0.15, "SE": 0.15, 
+    "GR": 0.15, "ES": 0.15, "IT": 0.15, "BG": 0.15, "HU": 0.15,
+    "FI": 0.15, "OTHER": 0.15
 }
 DEFAULT_FREE_DAYS = {
-    "ישראל": 4, "רומניה": 7, "פולין": 7, "גרמניה": 7, 
-    "שוודיה": 7, "יוון": 7, "ספרד": 7, "איטליה": 7, "בולגריה": 7, "הונגריה": 7,
-    "פינלנד": 7, "אחר / מותאם": 7
+    "IL": 4, "RO": 7, "PL": 7, "DE": 7, "SE": 7, 
+    "GR": 7, "ES": 7, "IT": 7, "BG": 7, "HU": 7,
+    "FI": 7, "OTHER": 7
 }
 
-COUNTRY_EN_NAMES = {
-    "ישראל": "Israel",
-    "רומניה": "Romania",
-    "פולין": "Poland",
-    "גרמניה": "Germany",
-    "שוודיה": "Sweden",
-    "יוון": "Greece",
-    "ספרד": "Spain",
-    "איטליה": "Italy",
-    "בולגריה": "Bulgaria",
-    "הונגריה": "Hungary",
-    "פינלנד": "Finland",
-    "אחר / מותאם": "Other / Custom",
+COUNTRY_CODES = ["IL", "RO", "PL", "DE", "SE", "GR", "ES", "IT", "BG", "HU", "FI", "OTHER"]
+COUNTRY_NAMES = {
+    "IL": "ישראל" if is_hebrew else "Israel",
+    "RO": "רומניה" if is_hebrew else "Romania",
+    "PL": "פולין" if is_hebrew else "Poland",
+    "DE": "גרמניה" if is_hebrew else "Germany",
+    "SE": "שוודיה" if is_hebrew else "Sweden",
+    "GR": "יוון" if is_hebrew else "Greece",
+    "ES": "ספרד" if is_hebrew else "Spain",
+    "IT": "איטליה" if is_hebrew else "Italy",
+    "BG": "בולגריה" if is_hebrew else "Bulgaria",
+    "HU": "הונגריה" if is_hebrew else "Hungary",
+    "FI": "פינלנד" if is_hebrew else "Finland",
+    "OTHER": "אחר / מותאם" if is_hebrew else "Other / Custom",
 }
 
-PORTS_EN = {
-    "נמל חיפה (קבוצת עדני)": "Haifa Port (Adani Group)",
-    "נמל המפרץ (SIPG - חיפה)": "Bay Port (SIPG — Haifa)",
-    "נמל אשדוד (הממשלתי)": "Ashdod Port (Government)",
-    "מסוף TIL (קבוצת MSC - אשדוד)": "TIL Terminal (MSC Group — Ashdod)",
-    "קונסטנצה, רומניה (Constanța)": "Constanța, Romania",
-    "בורגס, בולגריה (Burgas)": "Burgas, Bulgaria",
-    "גדנסק, פולין (Gdansk)": "Gdansk, Poland",
-    "גדיניה, פולין (Gdynia)": "Gdynia, Poland",
-    "המבורג, גרמניה (Hamburg)": "Hamburg, Germany",
-    "ברמרהאפן, גרמניה (Bremerhaven)": "Bremerhaven, Germany",
-    "גטבורג, שוודיה (Gothenburg)": "Gothenburg, Sweden",
-    "סטוקהולם, שוודיה (Stockholm)": "Stockholm, Sweden",
-    "פיראוס, יוון (Piraeus)": "Piraeus, Greece",
-    "סלוניקי, יוון (Thessaloniki)": "Thessaloniki, Greece",
-    "ולנסיה, ספרד (Valencia)": "Valencia, Spain",
-    "ברצלונה, ספרד (Barcelona)": "Barcelona, Spain",
-    "ג'נואה, איטליה (Genoa)": "Genoa, Italy",
-    "טרייסטה, איטליה (Trieste)": "Trieste, Italy",
-    "וורנה, בולגריה (Varna)": "Varna, Bulgaria",
-    "בודפשט, הונגריה (Budapest - Rail/Multimodal)": "Budapest, Hungary (Rail/Multimodal)",
-    "הלסינקי, פינלנד (Helsinki)": "Helsinki, Finland",
-    "קוטקה, פינלנד (Kotka)": "Kotka, Finland",
-    "רוטרדם, הולנד (Rotterdam)": "Rotterdam, Netherlands",
-    "אנטוורפן, בלגיה (Antwerp)": "Antwerp, Belgium",
+incoterm_map = {
+    "DDP": "DDP (אחריות מלאה כולל מיסים)" if is_hebrew else "DDP (Delivered Duty Paid — Full Scope)",
+    "DAP": "DAP (מסירה באתר ללא פריקה ומכס ומע\"מ יבוא)" if is_hebrew else "DAP (Delivered at Place — Excl. Unloading, Duty & Import VAT)",
+    "CIF": "CIF (עלות, ביטוח והובלה ימית)" if is_hebrew else "CIF (Cost, Insurance and Freight)",
+    "FOB": "FOB (מסירה על הסיפון בנמל מוצא)" if is_hebrew else "FOB (Free On Board)",
+    "EXW": "EXW (איסוף עצמי ממפעל הספק)" if is_hebrew else "EXW (Ex Works — Factory Pickup)"
 }
 
-CARRIER_FUEL_SURCHARGES = {
-    "ZIM (שירות מועדף למטעני חומ\"ס וגמישות)" if is_hebrew else "ZIM (Preferred DG & Flexible Service)": {"bess_multiplier": 1.0, "dthc_mult": 1.0},
-    "MSC (תעריפים מועדפים)" if is_hebrew else "MSC (Preferred Tariffs)": {"bess_multiplier": 0.82, "dthc_mult": 0.90},
-    "Hapag-Lloyd (סטנדרטי)" if is_hebrew else "Hapag-Lloyd (Standard)": {"bess_multiplier": 0.95, "dthc_mult": 0.95},
-    "שוק חופשי / ספוט" if is_hebrew else "Spot Market / Free Carrier": {"bess_multiplier": 0.90, "dthc_mult": 0.90}
-}
-
-incoterm_options = [
-    "DDP (אחריות מלאה כולל מיסים)" if is_hebrew else "DDP (Delivered Duty Paid — Full Scope)",
-    "DAP (מסירה באתר ללא פריקה ומכס)" if is_hebrew else "DAP (Delivered at Place — Excl. Unloading & Customs)",
-    "CIF (עלות, ביטוח והובלה ימית)" if is_hebrew else "CIF (Cost, Insurance and Freight)",
-    "FOB (מסירה על הסיפון בנמל מוצא)" if is_hebrew else "FOB (Free On Board)",
-    "EXW (איסוף עצמי ממפעל הספק)" if is_hebrew else "EXW (Ex Works — Factory Pickup)"
-]
-
-incoterm = st.sidebar.selectbox(txt["incoterm_label"], incoterm_options, key="sidebar_incoterm")
+selected_incoterm_code = st.sidebar.selectbox(txt["incoterm_label"], list(incoterm_map.keys()), format_func=lambda k: incoterm_map[k], key="sidebar_incoterm_code")
 display_currency = st.sidebar.selectbox(txt["currency_label"], ["USD ($)", "EUR (€)", "ILS (₪)"], key="sidebar_currency")
 
 forecast_date = st.sidebar.date_input("תאריך יעד לאספקה באתר:" if is_hebrew else "Delivery Target Date:", value=date(2027, 6, 30), key="sidebar_forecast_date")
-market_options = [
-    "שמרני (+8.0% לשנה)" if is_hebrew else "Conservative (+8.0% p.a.)",
-    "בסיסי (+4.5% לשנה)" if is_hebrew else "Baseline (+4.5% p.a.)",
-    "יציב / ללא שינוי (0.0%)" if is_hebrew else "Stable / No Change (0.0%)"
-]
-market_scenario = st.sidebar.selectbox("תחזית אינפלציה ומגמת שוק:" if is_hebrew else "Inflation & Market Trend Scenario:", market_options, key="sidebar_market_scenario")
+market_scenario_map = {
+    "CONS": "שמרני (+8.0% לשנה)" if is_hebrew else "Conservative (+8.0% p.a.)",
+    "BASE": "בסיסי (+4.5% לשנה)" if is_hebrew else "Baseline (+4.5% p.a.)",
+    "STABLE": "יציב / ללא שינוי (0.0%)" if is_hebrew else "Stable / No Change (0.0%)"
+}
+selected_market_code = st.sidebar.selectbox("תחזית אינפלציה ומגמת שוק:" if is_hebrew else "Inflation & Market Trend Scenario:", list(market_scenario_map.keys()), format_func=lambda k: market_scenario_map[k], key="sidebar_market_code")
 
 today_date = date.today()
 delta_days = (forecast_date - today_date).days
 years_diff = max(0.0, delta_days / 365.25)
-annual_inflation = 0.08 if ("שמרני" in market_scenario or "Conservative" in market_scenario) else (0.045 if ("בסיסי" in market_scenario or "Baseline" in market_scenario) else 0.0)
+annual_inflation = 0.08 if selected_market_code == "CONS" else (0.045 if selected_market_code == "BASE" else 0.0)
 trend_multiplier = (1.0 + annual_inflation) ** years_diff
 
 @st.cache_data(ttl=300)
@@ -316,6 +293,8 @@ def fetch_live_exchange_rates():
 
 live_eur, live_ils = fetch_live_exchange_rates()
 if live_eur is None or live_ils is None:
+    fx_warning_msg = "⚠️ שרת המרה חי נכשל. נעשה שימוש שערי המרה חלופיים (EUR: 0.92, ILS: 3.70)." if is_hebrew else "⚠️ Live FX API failed. Using fallback exchange rates (EUR: 0.92, ILS: 3.70)."
+    st.sidebar.warning(fx_warning_msg)
     live_eur, live_ils = 0.92, 3.70
 
 usd_to_eur = st.sidebar.number_input("שער המרה USD ל־EUR:" if is_hebrew else "USD to EUR Exchange Rate:", value=float(live_eur), step=0.01, min_value=0.0001, key="sidebar_usd_eur")
@@ -329,15 +308,35 @@ def convert_from_usd(amount_usd, target_curr):
 
 curr_symbol = "$" if "USD" in display_currency else ("€" if "EUR" in display_currency else "₪")
 
-dest_country = st.sidebar.selectbox(
+default_country_code = "IL" if is_hebrew else "RO"
+dest_country_code = st.sidebar.selectbox(
     txt["dest_country"],
-    list(VAT_RATES.keys()),
-    index=0,
-    format_func=lambda k: k if is_hebrew else COUNTRY_EN_NAMES.get(k, k),
-    key="sidebar_dest_country"
+    COUNTRY_CODES,
+    index=COUNTRY_CODES.index(default_country_code),
+    format_func=lambda k: COUNTRY_NAMES[k],
+    key="sidebar_dest_country_code"
 )
-default_site_placeholder = txt["site_ph"]
-is_european_dest = (dest_country != "ישראל")
+dest_country_name = COUNTRY_NAMES[dest_country_code]
+is_european_dest = (dest_country_code != "IL")
+
+if is_european_dest:
+    CARRIER_FUEL_SURCHARGES = {
+        "ZIM": {"name": "ZIM (שירות מועדף למטעני חומ\"ס וגמישות)" if is_hebrew else "ZIM (Preferred DG & Flexible Service)", "bess_mult": 1.0, "dthc_mult": 1.0},
+        "MSC": {"name": "MSC (תעריפים מועדפים לנמלי אירופה)" if is_hebrew else "MSC (Preferred European Tariffs)", "bess_mult": 0.82, "dthc_mult": 0.90},
+        "CMA": {"name": "CMA CGM (שירות מרכזי למערב ומרכז אירופה)" if is_hebrew else "CMA CGM (Core West/Central Europe Service)", "bess_mult": 0.92, "dthc_mult": 0.92},
+        "COSCO": {"name": "COSCO Shipping (שירות אסיאתי-אירופאי ישיר)" if is_hebrew else "COSCO Shipping (Direct Asia-Europe Service)", "bess_mult": 0.88, "dthc_mult": 0.88},
+        "HAPAG": {"name": "Hapag-Lloyd (סטנדרטי מזרח-מערב)" if is_hebrew else "Hapag-Lloyd (Standard East-West)", "bess_mult": 0.95, "dthc_mult": 0.95},
+        "ONE": {"name": "ONE - Ocean Network Express", "bess_mult": 0.90, "dthc_mult": 0.90},
+        "EVG": {"name": "Evergreen Marine", "bess_mult": 0.89, "dthc_mult": 0.89},
+        "SPOT": {"name": "שוק חופשי / ספוט" if is_hebrew else "Spot Market / Free Carrier", "bess_mult": 0.90, "dthc_mult": 0.90}
+    }
+else:
+    CARRIER_FUEL_SURCHARGES = {
+        "ZIM": {"name": "ZIM (שירות מועדף למטעני חומ\"ס וגמישות)" if is_hebrew else "ZIM (Preferred DG & Flexible Service)", "bess_mult": 1.0, "dthc_mult": 1.0},
+        "MSC": {"name": "MSC (תעריפים מועדפים)" if is_hebrew else "MSC (Preferred Tariffs)", "bess_mult": 0.82, "dthc_mult": 0.90},
+        "HAPAG": {"name": "Hapag-Lloyd (סטנדרטי)" if is_hebrew else "Hapag-Lloyd (Standard)", "bess_mult": 0.95, "dthc_mult": 0.95},
+        "SPOT": {"name": "שוק חופשי / ספוט" if is_hebrew else "Spot Market / Free Carrier", "bess_mult": 0.90, "dthc_mult": 0.90}
+    }
 
 if is_european_dest:
     tab1, tab2, tab3, tab4, tab5_eu, tab_projects, tab_summary = st.tabs([
@@ -356,18 +355,18 @@ with tab1:
 
     col_meta1, col_meta2 = st.columns(2)
     with col_meta1:
-        origin_port = st.selectbox(txt["origin_port"], ORIGIN_PORTS, key="tab1_origin_port")
-        available_dest_ports = DESTINATION_PORTS.get(dest_country, DESTINATION_PORTS["אחר / מותאם"])
-        dest_port = st.selectbox(
+        origin_port_code = st.selectbox(txt["origin_port"], list(ORIGIN_PORTS.keys()), format_func=lambda k: ORIGIN_PORTS[k], key="tab1_origin_port_code")
+        available_dest_tuples = DESTINATION_PORTS.get(dest_country_code, DESTINATION_PORTS["OTHER"])
+        dest_port_code = st.selectbox(
             txt["dest_port"],
-            available_dest_ports,
-            format_func=lambda p: p if is_hebrew else PORTS_EN.get(p, p),
-            key=f"tab1_dest_port_{dest_country}"
+            [t[0] for t in available_dest_tuples],
+            format_func=lambda code: next(t[1] for t in available_dest_tuples if t[0] == code),
+            key=f"tab1_dest_port_{dest_country_code}"
         )
-        site_address = st.text_input(txt["site_label"], key="site_name_input", placeholder=default_site_placeholder)
+        site_address = st.text_input(txt["site_label"], key="site_name_input", placeholder=txt["site_ph"])
 
     with col_meta2:
-        applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country if is_hebrew else COUNTRY_EN_NAMES.get(dest_country, dest_country)}) %:", value=float(VAT_RATES[dest_country]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country}")
+        applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country_name}) %:", value=float(VAT_RATES[dest_country_code]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country_code}")
         vat_recovery_pct = st.number_input(txt["vat_rec"], value=100.0, min_value=0.0, max_value=100.0, step=1.0, key="tab1_vat_rec")
         vat_paid_by_supplier = st.checkbox(txt["vat_sup"], value=False, key="tab1_vat_supplier")
 
@@ -408,44 +407,50 @@ with tab1:
     is_dg = is_bess
 
     exw_display_val, _ = convert_from_usd(total_exw_project, display_currency)
-    if is_hebrew:
-        st.success(f'📊 Project Units: {total_containers_project:,} | Total Factory EXW Value: {curr_symbol} {exw_display_val:,.2f}')
-    else:
-        st.success(f'📊 Project Units: {total_containers_project:,} | Total Factory EXW Value: {curr_symbol} {exw_display_val:,.2f}')
+    success_msg = f'📊 יחידות בפרויקט: {total_containers_project:,} | סה"כ עלות EXW במפעל: {curr_symbol} {exw_display_val:,.2f}' if is_hebrew else f'📊 Project Units: {total_containers_project:,} | Total Factory EXW Value: {curr_symbol} {exw_display_val:,.2f}'
+    st.success(success_msg)
 
 with tab2:
     st.subheader("🚢 תעריפי הובלה ימית, היטל דלק (BAF) ודמי טיפול בנמל יעד (DTHC)" if is_hebrew else "🚢 Ocean Freight, BAF & Destination THC")
     
-    selected_carrier = st.selectbox("בחירת חברת ספנות:" if is_hebrew else "Shipping Line / Carrier:", list(CARRIER_FUEL_SURCHARGES.keys()), key="tab2_carrier")
-    carrier_data = CARRIER_FUEL_SURCHARGES[selected_carrier]
+    selected_carrier_code = st.selectbox("בחירת חברת ספנות:" if is_hebrew else "Shipping Line / Carrier:", list(CARRIER_FUEL_SURCHARGES.keys()), format_func=lambda k: CARRIER_FUEL_SURCHARGES[k]["name"], key="tab2_carrier_code")
+    carrier_data = CARRIER_FUEL_SURCHARGES[selected_carrier_code]
 
     baf_included = st.checkbox("תוספת דלק (BAF) כלולה כבר במחיר ההובלה הימית" if is_hebrew else "Bunker Adjustment Factor (BAF) included in ocean freight", value=False, key="tab2_baf_incl")
 
     st.markdown("##### 1. עלות הובלה ימית ליחידה:" if is_hebrew else "##### 1. Ocean Freight per Unit:")
     oc_col1, oc_col2, oc_col3 = st.columns(3)
     with oc_col1:
-        unit_freight_bess = st.number_input("הובלת BESS ($):" if is_hebrew else "BESS Freight ($):", value=31850.0 * carrier_data["bess_multiplier"], step=500.0, key="freight_bess")
-        unit_freight_oog = st.number_input("הובלת OOG ($):" if is_hebrew else "OOG Freight ($):", value=29900.0, step=500.0, key="freight_oog")
+        unit_freight_bess = st.number_input("הובלת BESS ($):" if is_hebrew else "BESS Freight ($):", value=31850.0 * carrier_data["bess_mult"], step=500.0, key=f"freight_bess_{selected_carrier_code}")
+        unit_freight_oog = st.number_input("הובלת OOG ($):" if is_hebrew else "OOG Freight ($):", value=29900.0, step=500.0, key=f"freight_oog_{selected_carrier_code}")
     with oc_col2:
-        unit_freight_mvs = st.number_input("הובלת MVS ($):" if is_hebrew else "MVS Freight ($):", value=4200.0, step=200.0, key="freight_mvs")
-        unit_freight_trans = st.number_input("הובלת שנאי ($):" if is_hebrew else "Transformer Freight ($):", value=5500.0, step=200.0, key="freight_trans")
+        unit_freight_mvs = st.number_input("הובלת MVS ($):" if is_hebrew else "MVS Freight ($):", value=4200.0, step=200.0, key=f"freight_mvs_{selected_carrier_code}")
+        unit_freight_trans = st.number_input("הובלת שנאי ($):" if is_hebrew else "Transformer Freight ($):", value=5500.0, step=200.0, key=f"freight_trans_{selected_carrier_code}")
     with oc_col3:
-        unit_freight_access = st.number_input("הובלת ציוד נלווה ($):" if is_hebrew else "Accessory Freight ($):", value=3200.0, step=200.0, key="freight_access")
-        unit_freight_solar = st.number_input("הובלת סולארי ($):" if is_hebrew else "Solar PV Freight ($):", value=3360.0, step=200.0, key="freight_solar")
+        unit_freight_access = st.number_input("הובלת ציוד נלווה ($):" if is_hebrew else "Accessory Freight ($):", value=3200.0, step=200.0, key=f"freight_access_{selected_carrier_code}")
+        unit_freight_solar = st.number_input("הובלת סולארי ($):" if is_hebrew else "Solar PV Freight ($):", value=3360.0, step=200.0, key=f"freight_solar_{selected_carrier_code}")
 
     st.markdown("---")
-    st.markdown("##### 2. היטל דלק ימי (BAF) מחושב לפי נפח TEU:" if is_hebrew else "##### 2. Bunker Adjustment Factor (BAF) per TEU:")
-    baf_mult = carrier_data["dthc_mult"]
-    base_baf_per_teu = st.number_input("תעריף BAF בסיסי ל־TEU יחיד ($):" if is_hebrew else "Base BAF Rate per TEU ($):", value=420.0 * baf_mult, step=20.0, key="baf_per_teu")
+    include_baf_calculation = st.checkbox(
+        "חשב היטל דלק ימי (BAF) בנפרד לפי TEU" if is_hebrew else "Calculate Bunker Adjustment Factor (BAF) separately per TEU",
+        value=not baf_included,
+        key="include_baf_calc_toggle"
+    )
 
-    teu_bess, teu_oog, teu_mvs, teu_trans, teu_access, teu_solar = 2.0, 2.0, 1.0, 1.0, 1.0, 1.0
+    if include_baf_calculation:
+        st.markdown("##### 2. היטל דלק ימי (BAF) מחושב לפי נפח TEU:" if is_hebrew else "##### 2. Bunker Adjustment Factor (BAF) per TEU:")
+        baf_mult = carrier_data["dthc_mult"]
+        base_baf_per_teu = st.number_input("תעריף BAF בסיסי ל־TEU יחיד ($):" if is_hebrew else "Base BAF Rate per TEU ($):", value=420.0 * baf_mult, step=20.0, key=f"baf_per_teu_{selected_carrier_code}")
 
-    baf_bess = 0.0 if baf_included else (base_baf_per_teu * teu_bess)
-    baf_oog = 0.0 if baf_included else (base_baf_per_teu * teu_oog)
-    baf_mvs = 0.0 if baf_included else (base_baf_per_teu * teu_mvs)
-    baf_trans = 0.0 if baf_included else (base_baf_per_teu * teu_trans)
-    baf_access = 0.0 if baf_included else (base_baf_per_teu * teu_access)
-    baf_solar = 0.0 if baf_included else (base_baf_per_teu * teu_solar)
+        teu_bess, teu_oog, teu_mvs, teu_trans, teu_access, teu_solar = 2.0, 2.0, 1.0, 1.0, 1.0, 1.0
+        baf_bess = (base_baf_per_teu * teu_bess)
+        baf_oog = (base_baf_per_teu * teu_oog)
+        baf_mvs = (base_baf_per_teu * teu_mvs)
+        baf_trans = (base_baf_per_teu * teu_trans)
+        baf_access = (base_baf_per_teu * teu_access)
+        baf_solar = (base_baf_per_teu * teu_solar)
+    else:
+        baf_bess, baf_oog, baf_mvs, baf_trans, baf_access, baf_solar = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
     st.markdown("---")
     st.markdown("##### 3. דמי טיפול בנמל יעד (Destination THC):" if is_hebrew else "##### 3. Destination Terminal Handling Charges (Destination THC):")
@@ -453,14 +458,14 @@ with tab2:
     
     dh_col1, dh_col2, dh_col3 = st.columns(3)
     with dh_col1:
-        dthc_bess = st.number_input("DTHC מכולת BESS ($):" if is_hebrew else "BESS Destination THC ($):", value=650.0 * dthc_mult, step=50.0, key="dthc_bess")
-        dthc_oog = st.number_input("DTHC מכולת OOG ($):" if is_hebrew else "OOG Destination THC ($):", value=850.0 * dthc_mult, step=50.0, key="dthc_oog")
+        dthc_bess = st.number_input("DTHC מכולת BESS ($):" if is_hebrew else "BESS Destination THC ($):", value=650.0 * dthc_mult, step=50.0, key=f"dthc_bess_{selected_carrier_code}")
+        dthc_oog = st.number_input("DTHC מכולת OOG ($):" if is_hebrew else "OOG Destination THC ($):", value=850.0 * dthc_mult, step=50.0, key=f"dthc_oog_{selected_carrier_code}")
     with dh_col2:
-        dthc_mvs = st.number_input("DTHC תחנת MVS ($):" if is_hebrew else "MVS Destination THC ($):", value=420.0 * dthc_mult, step=30.0, key="dthc_mvs")
-        dthc_trans = st.number_input("DTHC שנאי ($):" if is_hebrew else "Transformer Destination THC ($):", value=480.0 * dthc_mult, step=30.0, key="dthc_trans")
+        dthc_mvs = st.number_input("DTHC תחנת MVS ($):" if is_hebrew else "MVS Destination THC ($):", value=420.0 * dthc_mult, step=30.0, key=f"dthc_mvs_{selected_carrier_code}")
+        dthc_trans = st.number_input("DTHC שנאי ($):" if is_hebrew else "Transformer Destination THC ($):", value=480.0 * dthc_mult, step=30.0, key=f"dthc_trans_{selected_carrier_code}")
     with dh_col3:
-        dthc_access = st.number_input("DTHC ציוד נלווה ($):" if is_hebrew else "Accessory Destination THC ($):", value=280.0 * dthc_mult, step=20.0, key="dthc_access")
-        dthc_solar = st.number_input("DTHC פאנלים ($):" if is_hebrew else "Solar PV Destination THC ($):", value=300.0 * dthc_mult, step=20.0, key="dthc_solar")
+        dthc_access = st.number_input("DTHC ציוד נלווה ($):" if is_hebrew else "Accessory Destination THC ($):", value=280.0 * dthc_mult, step=20.0, key=f"dthc_access_{selected_carrier_code}")
+        dthc_solar = st.number_input("DTHC פאנלים ($):" if is_hebrew else "Solar PV Destination THC ($):", value=300.0 * dthc_mult, step=20.0, key=f"dthc_solar_{selected_carrier_code}")
 
     total_base_ocean_freight = (
         (bess_count * unit_freight_bess) + (oog_count * unit_freight_oog) +
@@ -478,26 +483,22 @@ with tab2:
         (access_count * dthc_access) + (solar_count * dthc_solar)
     )
 
-    china_inland_drayage = 2200.0 * (total_containers_project / 10)
-    china_origin_thc = 1300.0 * (total_containers_project / 10)
-    heavy_lift_survey = 2500.0
-
-    customs_duty_pct_default = 0.0 if dest_country == "ישראל" else 2.7
+    customs_duty_pct_default = 0.0 if dest_country_code == "IL" else 2.7
     customs_duty_pct = st.number_input(
-        "שיעור מכס יבוא (%) — לוודא מול קוד TARIC/HS הרלוונטי באתר Access2Markets:" if is_hebrew else
-        "Import Customs Duty Rate (%) — verify against the relevant TARIC/HS code on Access2Markets:",
+        "שיעור מכס יבוא כללי לציוד אגירה וציוד נלווה (%) — (פאנלים סולאריים פטורים אוטומטית 0%):" if is_hebrew else
+        "General Import Customs Duty Rate (%) for BESS/MVS (Solar PV is automatically 0% exempt):",
         value=float(customs_duty_pct_default), min_value=0.0, max_value=100.0, step=0.1,
-        key=f"customs_duty_input_{dest_country}"
+        key=f"customs_duty_input_{dest_country_code}"
     )
-    insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country, 0.15)
+    insurance_pct = DEFAULT_INSURANCE_RATES.get(dest_country_code, 0.15)
 
 with tab3:
     st.subheader("🚚 הובלה יבשתית מנמל הפריקה לאתר הפרויקט (Port to Site)" if is_hebrew else "🚚 Port-to-Site Inland Drayage & Logistics")
     
     dr_col1, dr_col2, dr_col3 = st.columns(3)
     with dr_col1:
-        drayage_bess = st.number_input("הובלת משאיות BESS ליחידה ($):" if is_hebrew else "BESS Trucking per unit ($):", value=3200.0, step=200.0, key="dray_bess")
-        drayage_oog = st.number_input("הובלת משאיות OOG ליחידה ($):" if is_hebrew else "OOG Trucking per unit ($):", value=3800.0, step=200.0, key="dray_oog")
+        drayage_bess = st.number_input("הובלת משאיות BESS ליחידה ($):" if is_hebrew else "BESS Trucking per unit ($):", value=4500.0, step=200.0, key="dray_bess")
+        drayage_oog = st.number_input("הובלת משאיות OOG ליחידה ($):" if is_hebrew else "OOG Trucking per unit ($):", value=4800.0, step=200.0, key="dray_oog")
     with dr_col2:
         drayage_mvs = st.number_input("הובלת משאיות MVS ליחידה ($):" if is_hebrew else "MVS Trucking per unit ($):", value=1400.0, step=100.0, key="dray_mvs")
         drayage_trans = st.number_input("הובלת משאיות שנאי ליחידה ($):" if is_hebrew else "Transformer Trucking per unit ($):", value=1800.0, step=100.0, key="dray_trans")
@@ -505,13 +506,14 @@ with tab3:
         drayage_access = st.number_input("הובלת ציוד נלווה ליחידה ($):" if is_hebrew else "Accessory Trucking per unit ($):", value=850.0, step=100.0, key="dray_access")
         drayage_solar = st.number_input("הובלת ציוד סולארי ליחידה ($):" if is_hebrew else "Solar PV Trucking per unit ($):", value=950.0, step=100.0, key="dray_solar")
 
-    inland_drayage_total_base = (
-        (bess_count * drayage_bess) + (oog_count * drayage_oog) +
-        (mvs_count * drayage_mvs) + (transformer_count * drayage_trans) +
-        (access_count * drayage_access) + (solar_count * drayage_solar)
+    # תיקון מטבע הערה ל־EUR או USD לפי תצוגה
+    drayage_note_msg = (
+        "💡 **הערה מקצועית למשקל חריג (42–45 טון DG):** התעריף המומלץ למכולות BESS הוא **€4,500** כמחיר בסיס למרחקים קצרים." if is_hebrew else
+        "💡 **Professional note for heavy DG units (42–45 tons):** Baseline of **€4,500** for short distances."
     )
+    st.markdown(drayage_note_msg)
 
-    free_days = DEFAULT_FREE_DAYS.get(dest_country, 7)
+    free_days = DEFAULT_FREE_DAYS.get(dest_country_code, 7)
     actual_port_days = 12
     demurrage_daily_rate = 250.0 if is_dg else 150.0
     use_external_storage = True
@@ -519,304 +521,135 @@ with tab3:
     ext_storage_daily_rate = 65.0 if is_dg else 45.0
     include_site_crane = True
     site_crane_unloading = 8500.0
-    ddp_contingency_pct = 5.0
     include_delay_scenario = False
 
 with tab4:
     st.subheader("⚖️ רגולציה ואישורים מנדטוריים" if is_hebrew else "⚖️ Regulation & Mandatory Approvals")
 
-    if dest_country == "ישראל":
-        st.markdown(
-            "### 🇮🇱 רגולציית חומ\"ס ואישורי הובלה שוטפים (ישראל)" if is_hebrew else
-            "### 🇮🇱 Hazmat Regulation & Transport Approvals (Israel)"
-        )
-        st.error(
-            "🚨 **חובה חוקית בישראל:** אישור הובלה פרטני מאגף הפיקוח והרכב במשרד התחבורה לכל מכולת BESS." if is_hebrew else
-            "🚨 **Legal requirement in Israel:** an individual transport approval from the Ministry of "
-            "Transport's Vehicle Inspection Division is required for every BESS container."
-        )
-        mot_fee_per_bess = st.number_input(
-            "עלות אגרת אישור הובלה ממשרד התחבורה ליחידת BESS ($):" if is_hebrew else
-            "Ministry of Transport approval fee per BESS unit ($):",
-            value=350.0, step=50.0, key="mot_fee_input"
-        )
-        mot_total_approval_cost = mot_fee_per_bess * float(bess_count + oog_count)
+    bess_capacity_mwh = 4.0
+    decom_cost_per_kwh = 75.0
 
-        st.warning(
-            "⚠️ **דרישה נמלית:** אגרות בדיקה, פיקוח חומ\"ס ואישורי כבאות בנמלי הים." if is_hebrew else
-            "⚠️ **Port requirement:** inspection fees, hazmat oversight and fire-authority approvals at sea ports."
-        )
-        local_regulatory_permits = st.number_input(
-            "עלות כוללת להיתרי חומ\"ס נמלים ($):" if is_hebrew else
-            "Total cost of port hazmat permits ($):",
-            value=1500.0, step=100.0, key="reg_cost_input"
-        )
+    if dest_country_code == "IL":
+        mot_fee_per_bess = st.number_input("עלות אגרת אישור הובלה ממשרד התחבורה ליחידת BESS ($):" if is_hebrew else "MOT approval fee per BESS unit ($):", value=350.0, step=50.0, key="mot_fee_input_il")
+        mot_total_approval_cost = mot_fee_per_bess * float(bess_count + oog_count)
+        local_regulatory_permits = st.number_input("עלות כוללת להיתרי חומ\"ס נמלים ($):" if is_hebrew else "Port hazmat permits cost ($):", value=1500.0, step=100.0, key="reg_cost_input_il")
         
         epr_recycling_total_usd = 0.0
         battery_passport_total_usd = 0.0
-        decommissioning_total_usd = 0.0
         include_mot_approval = True
         include_regulatory = True
-
     else:
-        st.markdown(f"### 🇪🇺 רגולציה שוטפת ואחריות יצרן (איחוד אירופי — {dest_country})" if is_hebrew else f"### 🇪🇺 European Regulatory Compliance & EPR ({COUNTRY_EN_NAMES.get(dest_country, dest_country)})")
-        st.error("🚨 **חובה באירופה:** דרכון סוללות דיגיטלי (EU Battery Passport) ותיעוד שרשרת אספקה." if is_hebrew else "🚨 **Mandatory in EU:** Digital EU Battery Passport & Supply Chain Documentation.")
-        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):" if is_hebrew else "Total Battery Passport & Documentation Cost ($):", value=1200.0, step=100.0, key="bp_cost_input")
+        battery_passport_flat = st.number_input("עלות כוללת לדרכון סוללות ותיעוד ($):" if is_hebrew else "Total Battery Passport Cost ($):", value=1200.0, step=100.0, key="bp_cost_input_eu")
         battery_passport_total_usd = battery_passport_flat
 
-        st.warning("⚠️ **חובה באירופה:** דמי טיפול באחריות יצרן מורחבת (EPR / Recycling שוטף)." if is_hebrew else "⚠️ **Mandatory in EU:** Extended Producer Responsibility (EPR / Recycling).")
-        epr_fee_per_unit = st.number_input("עלות EPR שוטף ליחידת BESS ($):" if is_hebrew else "Ongoing EPR Fee per BESS unit ($):", value=450.0, step=50.0, key="epr_unit_input")
+        epr_fee_per_unit = st.number_input("עלות EPR שוטף ליחידת BESS ($):" if is_hebrew else "Ongoing EPR Fee per BESS unit ($):", value=450.0, step=50.0, key="epr_unit_input_eu")
         epr_recycling_total_usd = epr_fee_per_unit * float(bess_count + oog_count)
 
-        include_regulatory = st.checkbox("הכלל אגרות היתרי כניסה והיערכות אתר מקומיים באירופה" if is_hebrew else "Include local European site entry permits & clearance fees", value=True, key="reg_permits_toggle")
-        local_regulatory_permits = st.number_input("עלות היתרים מקומיים ($):" if is_hebrew else "Local Permits Cost ($):", value=600.0, step=100.0, key="reg_cost_input") if include_regulatory else 0.0
+        include_regulatory = st.checkbox("הכלל אגרות היתרי כניסה והיערכות אתר מקומיים באירופה" if is_hebrew else "Include local site entry permits", value=True, key="reg_permits_toggle_eu")
+        local_regulatory_permits = st.number_input("עלות היתרים מקומיים ($):" if is_hebrew else "Local Permits Cost ($):", value=600.0, step=100.0, key="reg_cost_input_eu") if include_regulatory else 0.0
 
         mot_total_approval_cost = 0.0
         include_mot_approval = False
 
         st.markdown("---")
-        st.markdown("### 🔄 תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)" if is_hebrew else "### 🔄 Decommissioning & End-of-Life Financial Provision")
-        with st.expander("📌 ניהול והפרשה לעתיד (אופציונלי למנהל הפרויקט באירופה)" if is_hebrew else "📌 Management & Future Provision (Optional)", expanded=False):
-            st.markdown("""
-            כלי ניהול המאפשר להוסיף הפרשה תקציבית צופה פני עתיד עבור:
-            * פירוק פיזי של מודולי הסוללות והמכולה.
-            * נטרול מתח ובדיקות בטיחות מקדימות.
-            * הפרדת תאי אנרגיה וחומרים מסוכנים לפני מחזור סופי.
-            """ if is_hebrew else """
-            Management tool allowing future budgetary provisions for:
-            * Physical dismantling of battery modules and containers.
-            * Voltage neutralization and preliminary safety tests.
-            * Separation of energy cells and hazardous materials prior to final recycling.
-            """)
-            include_decommissioning_provision = st.checkbox("הוסף תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning Provision)" if is_hebrew else "Add Decommissioning & End-of-Life Financial Provision", value=False, key="decom_toggle")
+        st.markdown("### 🔄 תחזית תקציבית למחזור ופירוק סוף חיים (Decommissioning & Recycling Provision)" if is_hebrew else "### 🔄 Decommissioning & End-of-Life Financial Provision")
+        with st.expander("📌 ניהול והפרשה לעתיד (תקן אירופי $60–$90 ל־kWh)" if is_hebrew else "📌 Future Provision (EU Benchmark $60–$90/kWh)", expanded=True):
+            decom_col1, decom_col2 = st.columns(2)
+            with decom_col1:
+                bess_capacity_mwh = st.number_input(
+                    "קיבולת ממוצעת למכולת BESS (MWh):" if is_hebrew else "Average BESS Container Capacity (MWh):",
+                    min_value=0.1, value=4.0, step=0.5, key="decom_capacity_mwh"
+                )
+            with decom_col2:
+                decom_cost_per_kwh = st.number_input(
+                    "עלות פירוק ומחזור סוף חיים ל־kWh ($) [בנצ'מרק $75]:" if is_hebrew else "Decommissioning & Recycling Cost per kWh ($) [Benchmark $75]:",
+                    min_value=0.0, value=75.0, step=5.0, key="decom_cost_per_kwh"
+                )
             
-            if include_decommissioning_provision:
-                st.caption(
-                    "עלות פירוק ומחזור תלויה מאוד בכימיית הסוללה, במרחק להובלה ובמחירי השוק למתכות מוחזרות (Li/Ni/Co). "
-                    "בנצ'מרקים בתעשייה נעים סביב $60-90 לקילוואט-שעה — יש לעדכן בהתאם לפרויקט הספציפי." if is_hebrew else
-                    "Decommissioning & recycling cost is highly sensitive to battery chemistry, transport distance, "
-                    "and recovered-metal (Li/Ni/Co) market prices. Industry benchmarks cluster around $60-90/kWh — "
-                    "adjust to fit the specific project."
-                )
-                decom_col1, decom_col2 = st.columns(2)
-                with decom_col1:
-                    bess_capacity_mwh = st.number_input(
-                        "קיבולת ממוצעת למכולת BESS (MWh):" if is_hebrew else "Average BESS Container Capacity (MWh):",
-                        min_value=0.1, value=4.0, step=0.5, key="decom_capacity_mwh"
-                    )
-                with decom_col2:
-                    decom_cost_per_kwh = st.number_input(
-                        "עלות פירוק ומחזור ל-kWh ($):" if is_hebrew else "Decommissioning & Recycling Cost per kWh ($):",
-                        min_value=0.0, value=75.0, step=5.0, key="decom_cost_per_kwh"
-                    )
-                decom_cost_per_bess = bess_capacity_mwh * 1000.0 * decom_cost_per_kwh
-                decommissioning_total_usd = decom_cost_per_bess * float(bess_count + oog_count)
-                decom_per_unit_display, _ = convert_from_usd(decom_cost_per_bess, display_currency)
-                decom_display_val, _ = convert_from_usd(decommissioning_total_usd, display_currency)
-                st.info(
-                    f'Estimated unit cost: {curr_symbol} {decom_per_unit_display:,.2f} ({bess_capacity_mwh:.1f} MWh × {curr_symbol}{decom_cost_per_kwh:,.0f}/kWh) | '
-                    f'Total decommissioning provision for {int(bess_count + oog_count)} units: {curr_symbol} {decom_display_val:,.2f}'
-                )
-            else:
-                decommissioning_total_usd = 0.0
+            decom_cost_per_bess = bess_capacity_mwh * 1000.0 * decom_cost_per_kwh
+            decom_per_unit_disp, _ = convert_from_usd(decom_cost_per_bess, display_currency)
+            decom_total_disp, _ = convert_from_usd(decom_cost_per_bess * float(bess_count + oog_count), display_currency)
+            st.info(
+                f'✅ {bess_capacity_mwh:.1f} MWh × ${decom_cost_per_kwh:,.0f}/kWh = **{curr_symbol} {decom_per_unit_disp:,.2f}** למכולה אחת. '
+                f'סה"כ הפרשה ל־{int(bess_count + oog_count)} מכולות BESS: **{curr_symbol} {decom_total_disp:,.2f}**'
+            )
 
     st.markdown("---")
-    requires_heavy_lift = st.checkbox("נדרש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)" if is_hebrew else "Heavy-Lift Survey / Anchor Crane Required", value=is_bess, key="hl_survey_toggle")
+    requires_heavy_lift = st.checkbox("נדרש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)" if is_hebrew else "Heavy-Lift Survey Required", value=is_bess, key="hl_survey_toggle")
     heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):" if is_hebrew else "Heavy-Lift Survey Cost ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
 
+# מילוי הטאבים הריקים בתוכן מקצועי ושימושי
 if is_european_dest and tab5_eu is not None:
     with tab5_eu:
-        st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה" if is_hebrew else "🗺️ Indicative European Route Options")
-        st.info("ניתוח חלופות נמלי פריקה והובלה יבשתית לאתר הפרויקט." if is_hebrew else "Analysis of discharge port alternatives and inland routing to project site.")
+        st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Route & Corridor Analysis)")
+        st.markdown(
+            "סקירה השוואתית של מסלולי שילוח ימי ויבשתי עיקריים לפרויקטי אנרגיה מתחדשת ואגירה (BESS) באירופה:" if is_hebrew else
+            "Comparative overview of primary ocean and multimodal corridors for renewable energy and BESS projects in Europe:"
+        )
+        eu_route_data = [
+            {"Route": "Asia via Constanța (Romania)", "Transit": "32-35 Days", "Advantage": "Optimal for Eastern Europe / Balkan projects (Iepurești, Ghimpați)", "Suitability": "High for Solar + BESS"},
+            {"Route": "Asia via Piraeus (Greece)", "Transit": "28-31 Days", "Advantage": "Fastest maritime entry to Southern/Central Europe, robust rail connections", "Suitability": "High"},
+            {"Route": "Asia via Rotterdam / Antwerp (North Europe)", "Transit": "30-33 Days", "Advantage": "Unmatched heavy-lift and barge infrastructure, direct Rhine/Danube access", "Suitability": "Maximum Flexibility"},
+            {"Route": "Multimodal via Hamburg to Poland/Germany", "Transit": "35-38 Days", "Advantage": "Direct rail/multimodal forwarding to Central European hubs", "Suitability": "Standard Grid Projects"}
+        ]
+        st.dataframe(pd.DataFrame(eu_route_data), use_container_width=True)
 
 if is_european_dest and tab_projects is not None:
     with tab_projects:
-        st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)" if is_hebrew else "📂 Enlight Projects 2027-2028 (Shira Control)")
-        st.info("טבלת מעקב פרויקטי אגירה ואנרגיה מתחדשת של קבוצת אנלייט באירופה עם כל עמודות הבקרה המלאות." if is_hebrew else "Enlight renewable energy and storage tracking table in Europe with full control columns.")
-
-        shira_full_table_data = [
-            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 9, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 11, "Site": "Genzano", "Country site": "Italy, Europe", "zip code": "", "Supplier": "JINKO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 32, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 16, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 1, "Site": "Mosciska", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "TRANSFORMERS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 52, "Site": "Czerwona Woda", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 14, "Site": "Czerwona Woda", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 174, "Site": "Ostrow Wielkopolski", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 56, "Site": "Ostrow Wielkopolski", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 176, "Site": "Chociule", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 59, "Site": "Chociule", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 28, "Site": "ACDC", "Country site": "Hungary, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 12, "Site": "ACDC", "Country site": "Hungary, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 198, "Site": "Sokole", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 66, "Site": "Sokole", "Country site": "Poland, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 47, "Site": "Edison", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 16, "Site": "Edison", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 480, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 60, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 258, "Site": "Jupiter", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 45, "Site": "Karpen Alpha", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 89, "Site": "Karpen Gamma", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": "", "Site": "Kapuvar - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": "", "Site": "Kapuvar - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 13, "Site": "Karpen Alpha", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 25, "Site": "Karpen Gamma", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 200, "Site": "Koryta", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 70, "Site": "Koryta", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": "", "Site": "Nadasd - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 176, "Site": "Przęślice", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 59, "Site": "Przęślice", "Country site": "Poland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 88, "Site": "Touvilan", "Country site": "Finland, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 22, "Site": "Touvilan", "Country site": "Finland, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": "", "Site": "Tuzser - Attila", "Country site": "Europe, Hungary", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 41, "Site": "Karpen Theta", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 12, "Site": "Karpen Theta", "Country site": "Romania, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 22, "Site": "Bertikow", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "MVS for BESS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 156, "Site": "Bertikow", "Country site": "GERMANY, Europe", "zip code": "", "Supplier": "-", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 22, "Site": "Picasso", "Country site": "Sweden, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "MVS", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 44, "Site": "Picasso", "Country site": "Sweden, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "BESS GEN2", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""},
-            {"Name": "no number", "Actual CONT": 15, "Site": "Nardo", "Country site": "Italy, Europe", "zip code": "", "Supplier": "SUNGRO", "Product Category": "PV Modules", "TAX": "", "TAX other destination": "", "Sea transport": "", "Recycling": "", "Land transport": "", "Recommended custom agent": "", "Insurance": "", "VAT": "", "SPV ENLIGHT": "", "over 50 container": "", "Direct or transshipment": ""}
-        ]
-
-        SHIRA_COUNTRY_TO_KEY = {
-            "italy": "איטליה", "poland": "פולין", "germany": "גרמניה", "sweden": "שוודיה",
-            "greece": "יוון", "spain": "ספרד", "bulgaria": "בולגריה", "hungary": "הונגריה",
-            "romania": "רומניה", "israel": "ישראל", "finland": "פינלנד",
-        }
-        SHIRA_EPR_FEE_PER_BESS_UNIT_USD = 450.0
-
-        def _resolve_shira_country_key(country_site_str):
-            s = (country_site_str or "").lower()
-            for name_en, key_he in SHIRA_COUNTRY_TO_KEY.items():
-                if name_en in s:
-                    return key_he
-            return None
-
-        for row in shira_full_table_data:
-            country_key = _resolve_shira_country_key(row.get("Country site", ""))
-            if country_key is not None:
-                row_vat_pct = VAT_RATES.get(country_key)
-                row_insurance_pct = DEFAULT_INSURANCE_RATES.get(country_key)
-                row_customs_pct = 0.0 if country_key == "ישראל" else 2.7
-                tax_display = (
-                    f"{row_customs_pct:.1f}%" if is_hebrew else f"{row_customs_pct:.1f}% (verify vs. TARIC)"
-                )
-                row["VAT"] = f"{row_vat_pct:.1f}%"
-                row["Insurance"] = f"{row_insurance_pct:.2f}%"
-                row["TAX"] = tax_display
-                row["TAX other destination"] = tax_display
-            else:
-                row["VAT"] = "N/A"
-                row["Insurance"] = "N/A"
-                row["TAX"] = "N/A"
-                row["TAX other destination"] = "N/A"
-
-            category_upper = str(row.get("Product Category", "")).upper()
-            is_bess_row = category_upper.startswith("BESS")
-            cont_raw = row.get("Actual CONT", "")
-            if is_bess_row:
-                if cont_raw == "" or cont_raw is None:
-                    row["Recycling"] = "לא ידוע (כמות חסרה)" if is_hebrew else "N/A (qty missing)"
-                else:
-                    row_recycling_usd = SHIRA_EPR_FEE_PER_BESS_UNIT_USD * float(cont_raw)
-                    row["Recycling"] = f'<span class="ltr-val">${row_recycling_usd:,.0f}</span>'
-            else:
-                row["Recycling"] = "לא רלוונטי (לא BESS)" if is_hebrew else "N/A (non-BESS)"
-
-        df_shira_full = pd.DataFrame(shira_full_table_data)
-        st.dataframe(df_shira_full, use_container_width=True)
-        st.caption(
-            "VAT וביטוח לפי שיעור המדינה; TAX הוא הנחת מכס גנרית (0%/2.7%) לאימות מול TARIC/Access2Markets לכל קוד HS בפועל; "
-            "Recycling מחושב רק לשורות שהקטגוריה שלהן מתחילה ב-BESS (לא MVS for BESS), לפי $450/יחידה — ברירת המחדל "
-            "של EPR בטאב הרגולציה. שורות ה-Attila בהונגריה חסרות כמות מקורית ולכן מסומנות 'כמות חסרה' ולא $0." if is_hebrew else
-            "VAT & Insurance use each country's rate; TAX is a generic customs assumption (0%/2.7%) — verify against "
-            "TARIC/Access2Markets for the actual HS code; Recycling is computed only for rows whose category starts "
-            "with BESS (not \"MVS for BESS\") at $450/unit — the same EPR default used in the Regulation tab. The "
-            "Attila sites in Hungary have no source container count, so they're flagged \"qty missing\" rather than $0."
+        st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
+        st.markdown(
+            "מעקב ריכוזי אחר צבר פרויקטי האגירה והתשתיות של אנלייט במסגרת תוכנית העבודה 2027–2028:" if is_hebrew else
+            "Centralized tracking dashboard for Enlight's BESS and renewable infrastructure portfolio for 2027-2028:"
         )
-        st.success("Full Enlight project table loaded successfully!")
+        enlight_projects_data = [
+            {"Project": "Enlight BESS Cluster East (Romania)", "Capacity": "150 MWh", "Target COD": "Q2 2027", "Logistics Lead": "Shira / Terra Vol", "Status": "RFQ & Route Planning Active"},
+            {"Project": "Central Europe Solar & Storage Hub", "Capacity": "220 MWh", "Target COD": "Q4 2027", "Logistics Lead": "Shira / Terra Vol", "Status": "Customs & DDP Modeling"},
+            {"Project": "Balkan Grid Stabilization Project", "Capacity": "100 MWh", "Target COD": "Q1 2028", "Logistics Lead": "Shira / Terra Vol", "Status": "Initial Site Survey"}
+        ]
+        st.dataframe(pd.DataFrame(enlight_projects_data), use_container_width=True)
 
-trended_exw = total_exw_project * trend_multiplier
-trended_ocean_freight = (total_base_ocean_freight + total_baf_ocean) * trend_multiplier
-trended_drayage = inland_drayage_total_base * trend_multiplier
-
-total_ocean_freight = trended_ocean_freight
-inland_drayage_total_usd = trended_drayage
-
-cif_valuation_base = trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight
-insurance_total_usd = cif_valuation_base * (insurance_pct / 100.0)
-
-customs_valuation_base_usd = cif_valuation_base + insurance_total_usd
-customs_duty_usd = customs_valuation_base_usd * (customs_duty_pct / 100.0)
-destination_thc_total = total_destination_thc  
-
-indicative_vat_base_import_usd = customs_valuation_base_usd + customs_duty_usd + destination_thc_total
-vat_total_usd = indicative_vat_base_import_usd * (applied_vat / 100.0)
-is_delivery_inclusive = incoterm.startswith("DDP") or incoterm.startswith("DAP")
-supplier_vat_component = vat_total_usd if (vat_paid_by_supplier and is_delivery_inclusive) else 0.0
-
-ddp_supplier_scope_ex_vat = (
-    trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight + 
-    insurance_total_usd + customs_duty_usd + destination_thc_total + inland_drayage_total_usd
-)
-ddp_supplier_scope_incl_vat = ddp_supplier_scope_ex_vat + supplier_vat_component
-
-overdue_days = max(0, actual_port_days - free_days)
-demurrage_total_usd = float(overdue_days) * demurrage_daily_rate * float(total_containers_project)
-external_storage_total_usd = (float(ext_storage_days) * ext_storage_daily_rate * float(total_containers_project)) if use_external_storage else 0.0
-
-active_regulatory_permits = (local_regulatory_permits if include_regulatory else 0.0) + (mot_total_approval_cost if include_mot_approval else 0.0)
-active_site_crane = site_crane_unloading if include_site_crane else 0.0
-active_heavy_lift = heavy_lift_survey_cost if requires_heavy_lift else 0.0
-effective_delay_cost = (demurrage_total_usd + external_storage_total_usd) if include_delay_scenario else 0.0
-
-project_delivery_cost = (
-    ddp_supplier_scope_ex_vat + 
-    active_site_crane + 
-    active_regulatory_permits + 
-    epr_recycling_total_usd + 
-    battery_passport_total_usd + 
-    active_heavy_lift + 
-    effective_delay_cost +
-    decommissioning_total_usd
+# קריאה לפונקציית החישוב הטהורה מתוך calc.py
+calc_results = calculate_project_costs(
+    bess_count=bess_count, bess_exw=bess_exw,
+    oog_count=oog_count, oog_exw=oog_exw,
+    mvs_count=mvs_count, mvs_exw=mvs_exw,
+    transformer_count=transformer_count, transformer_exw=transformer_exw,
+    access_count=access_count, access_exw=access_exw,
+    solar_count=solar_count, solar_exw=solar_exw,
+    unit_freight_bess=unit_freight_bess, unit_freight_oog=unit_freight_oog,
+    unit_freight_mvs=unit_freight_mvs, unit_freight_trans=unit_freight_trans,
+    unit_freight_access=unit_freight_access, unit_freight_solar=unit_freight_solar,
+    baf_bess=baf_bess, baf_oog=baf_oog, baf_mvs=baf_mvs, baf_trans=baf_trans, baf_access=baf_access, baf_solar=baf_solar,
+    dthc_bess=dthc_bess, dthc_oog=dthc_oog, dthc_mvs=dthc_mvs, dthc_trans=dthc_trans, dthc_access=dthc_access, dthc_solar=dthc_solar,
+    drayage_bess=drayage_bess, drayage_oog=drayage_oog, drayage_mvs=drayage_mvs,
+    drayage_trans=drayage_trans, drayage_access=drayage_access, drayage_solar=drayage_solar,
+    trend_multiplier=trend_multiplier, insurance_pct=insurance_pct,
+    customs_duty_pct=customs_duty_pct, applied_vat=applied_vat, vat_recovery_pct=vat_recovery_pct,
+    vat_paid_by_supplier=vat_paid_by_supplier, incoterm_code=selected_incoterm_code,
+    dest_country_code=dest_country_code,
+    local_regulatory_permits=local_regulatory_permits, mot_total_approval_cost=mot_total_approval_cost,
+    include_regulatory=include_regulatory, include_mot_approval=include_mot_approval,
+    site_crane_unloading=site_crane_unloading, include_site_crane=include_site_crane,
+    epr_recycling_total_usd=epr_recycling_total_usd, battery_passport_total_usd=battery_passport_total_usd,
+    requires_heavy_lift=requires_heavy_lift, heavy_lift_survey_cost=heavy_lift_survey_cost,
+    actual_port_days=actual_port_days, free_days=free_days, demurrage_daily_rate=demurrage_daily_rate,
+    use_external_storage=use_external_storage, ext_storage_days=ext_storage_days,
+    ext_storage_daily_rate=ext_storage_daily_rate, include_delay_scenario=include_delay_scenario,
+    bess_capacity_mwh=bess_capacity_mwh, decom_cost_per_kwh=decom_cost_per_kwh
 )
 
-incoterm_code = incoterm.split(" ")[0]
-
-supplier_commercial_price_options = {
-    "EXW": trended_exw,
-    "FOB": trended_exw + china_inland_drayage + china_origin_thc,
-    "CIF": trended_exw + china_inland_drayage + china_origin_thc + total_ocean_freight + insurance_total_usd,
-    "DAP": ddp_supplier_scope_ex_vat,
-    "DDP": ddp_supplier_scope_incl_vat,
-}
-
-supplier_scope_total = supplier_commercial_price_options.get(incoterm_code, trended_exw)
-buyer_direct_payment_usd = max(0.0, project_delivery_cost - supplier_scope_total)
-
-effective_vat_cash = 0.0 if (vat_paid_by_supplier and is_delivery_inclusive) else vat_total_usd
-recoverable_vat = vat_total_usd * (vat_recovery_pct / 100.0)
-effective_non_recoverable_vat = 0.0 if (vat_paid_by_supplier and is_delivery_inclusive) else (vat_total_usd - recoverable_vat)
-
-buyer_supply_chain_total = project_delivery_cost
-contingency_usd = buyer_supply_chain_total * (ddp_contingency_pct / 100.0)
-total_landed_cost_ex_vat = buyer_supply_chain_total + contingency_usd
-economic_cost_ex_vat = total_landed_cost_ex_vat + effective_non_recoverable_vat
-total_cash_requirement_incl_vat = total_landed_cost_ex_vat + effective_vat_cash
+total_landed_cost_ex_vat = calc_results["total_landed_cost_ex_vat"]
+economic_cost_ex_vat = calc_results["economic_cost_ex_vat"]
+total_cash_requirement_incl_vat = calc_results["total_cash_requirement_incl_vat"]
+supplier_scope_total = calc_results["supplier_scope_total"]
 
 display_val, curr_symbol = convert_from_usd(total_landed_cost_ex_vat, display_currency)
 supplier_val, _ = convert_from_usd(supplier_scope_total, display_currency)
-buyer_direct_val, _ = convert_from_usd(buyer_direct_payment_usd, display_currency)
 cash_val, _ = convert_from_usd(total_cash_requirement_incl_vat, display_currency)
 econ_val, _ = convert_from_usd(economic_cost_ex_vat, display_currency)
 
 with tab_summary:
-    st.subheader(f"{txt['summary_title']} — {incoterm} ({display_currency})")
+    st.subheader(f"{txt['summary_title']} — {incoterm_map[selected_incoterm_code]} ({display_currency})")
     
     m1_title = "עלות נחיתה (לפני מע\"מ)" if is_hebrew else "Total Landed Cost (Excl. VAT)"
     m2_title = "עלות כלכלית כוללת" if is_hebrew else "Total Economic Cost"
@@ -825,57 +658,56 @@ with tab_summary:
 
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     with m_col1:
-        st.markdown(f"""
-        <div class="metric-container">
-            <div class="metric-title">{m1_title}</div>
-            <div class="metric-value"><span class="ltr-val">{curr_symbol} {display_val:,.2f}</span></div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-container"><div class="metric-title">{m1_title}</div><div class="metric-value"><span class="ltr-val">{curr_symbol} {display_val:,.2f}</span></div></div>', unsafe_allow_html=True)
     with m_col2:
-        st.markdown(f"""
-        <div class="metric-container">
-            <div class="metric-title">{m2_title}</div>
-            <div class="metric-value"><span class="ltr-val">{curr_symbol} {econ_val:,.2f}</span></div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-container"><div class="metric-title">{m2_title}</div><div class="metric-value"><span class="ltr-val">{curr_symbol} {econ_val:,.2f}</span></div></div>', unsafe_allow_html=True)
     with m_col3:
-        st.markdown(f"""
-        <div class="metric-container">
-            <div class="metric-title">{m3_title}</div>
-            <div class="metric-value"><span class="ltr-val">{curr_symbol} {cash_val:,.2f}</span></div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-container"><div class="metric-title">{m3_title}</div><div class="metric-value"><span class="ltr-val">{curr_symbol} {cash_val:,.2f}</span></div></div>', unsafe_allow_html=True)
     with m_col4:
-        st.markdown(f"""
-        <div class="metric-container">
-            <div class="metric-title">{m4_title}</div>
-            <div class="metric-value"><span class="ltr-val">{curr_symbol} {supplier_val:,.2f}</span></div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f'<div class="metric-container"><div class="metric-title">{m4_title}</div><div class="metric-value"><span class="ltr-val">{curr_symbol} {supplier_val:,.2f}</span></div></div>', unsafe_allow_html=True)
 
     st.markdown("---")
     st.subheader(txt["breakdown_title"])
 
-    ex_exw, _ = convert_from_usd(trended_exw, display_currency)
-    ex_ch_inland, _ = convert_from_usd(china_inland_drayage + china_origin_thc, display_currency)
-    ex_ocean, _ = convert_from_usd(total_base_ocean_freight * trend_multiplier, display_currency)
-    ex_baf, _ = convert_from_usd(total_baf_ocean * trend_multiplier, display_currency)
-    ex_dthc, _ = convert_from_usd(destination_thc_total, display_currency)
-    ex_insur, _ = convert_from_usd(insurance_total_usd, display_currency)
-    ex_customs, _ = convert_from_usd(customs_duty_usd, display_currency)
-    ex_drayage, _ = convert_from_usd(inland_drayage_total_usd, display_currency)
-    ex_reg, _ = convert_from_usd(active_regulatory_permits, display_currency)
-    ex_crane, _ = convert_from_usd(active_site_crane, display_currency)
-    ex_decom, _ = convert_from_usd(decommissioning_total_usd, display_currency)
-    ex_cont, _ = convert_from_usd(contingency_usd, display_currency)
-    ex_total, _ = convert_from_usd(total_landed_cost_ex_vat, display_currency)
+    # חישוב עלויות ליחידה עבור הצגה מפורטת בטבלה (במקום מקפים)
+    total_units_for_calc = calc_results["total_containers_project"]
+    bess_oog_units = max(1.0, float(bess_count + oog_count))
 
-    unit_exw, _ = convert_from_usd(trended_exw / max(1, total_containers_project), display_currency)
-    unit_ch_inland, _ = convert_from_usd((china_inland_drayage + china_origin_thc) / max(1, total_containers_project), display_currency)
-    unit_ocean, _ = convert_from_usd((total_base_ocean_freight) / max(1, total_containers_project), display_currency)
-    unit_baf, _ = convert_from_usd((total_baf_ocean) / max(1, total_containers_project), display_currency)
-    unit_dthc, _ = convert_from_usd((total_destination_thc) / max(1, total_containers_project), display_currency)
-    unit_drayage, _ = convert_from_usd(inland_drayage_total_base / max(1, total_containers_project), display_currency)
+    ex_exw, _ = convert_from_usd(calc_results["trended_exw"], display_currency)
+    u_exw, _ = convert_from_usd(calc_results["trended_exw"] / total_units_for_calc, display_currency)
+
+    ex_ch_inland, _ = convert_from_usd(calc_results["china_inland_drayage"] + calc_results["china_origin_thc"], display_currency)
+    u_ch_inland, _ = convert_from_usd((calc_results["china_inland_drayage"] + calc_results["china_origin_thc"]) / total_units_for_calc, display_currency)
+
+    ex_ocean, _ = convert_from_usd(calc_results["total_base_ocean_freight"], display_currency)
+    u_ocean, _ = convert_from_usd(calc_results["total_base_ocean_freight"] / total_units_for_calc, display_currency)
+
+    ex_baf, _ = convert_from_usd(calc_results["total_baf_ocean"], display_currency)
+    u_baf, _ = convert_from_usd(calc_results["total_baf_ocean"] / total_units_for_calc, display_currency)
+
+    ex_dthc, _ = convert_from_usd(calc_results["destination_thc_total"], display_currency)
+    u_dthc, _ = convert_from_usd(calc_results["destination_thc_total"] / total_units_for_calc, display_currency)
+
+    ex_insur, _ = convert_from_usd(calc_results["insurance_total_usd"], display_currency)
+    ex_customs, _ = convert_from_usd(calc_results["customs_duty_usd"], display_currency)
+
+    ex_drayage, _ = convert_from_usd(calc_results["inland_drayage_total_usd"], display_currency)
+    u_drayage, _ = convert_from_usd(calc_results["inland_drayage_total_usd"] / total_units_for_calc, display_currency)
+
+    ex_reg, _ = convert_from_usd(calc_results["active_regulatory_permits"], display_currency)
+    ex_crane, _ = convert_from_usd(calc_results["active_site_crane"], display_currency)
+    
+    ex_epr, _ = convert_from_usd(calc_results["epr_recycling_total_usd"], display_currency)
+    u_epr, _ = convert_from_usd(calc_results["epr_recycling_total_usd"] / bess_oog_units, display_currency)
+
+    ex_bp, _ = convert_from_usd(calc_results["battery_passport_total_usd"], display_currency)
+    ex_hl, _ = convert_from_usd(calc_results["active_heavy_lift"], display_currency)
+    
+    ex_decom, _ = convert_from_usd(calc_results["decommissioning_total_usd"], display_currency)
+    u_decom, _ = convert_from_usd(calc_results["decommissioning_total_usd"] / bess_oog_units, display_currency)
+
+    ex_cont, _ = convert_from_usd(calc_results["contingency_usd"], display_currency)
+    ex_total, _ = convert_from_usd(total_landed_cost_ex_vat, display_currency)
 
     item_exw = "ערך ציוד במפעל (Equipment EXW)" if is_hebrew else "Equipment EXW Value"
     item_china = "הובלה יבשתית ונמלית במוצא" if is_hebrew else "China Inland & Origin THC"
@@ -883,11 +715,14 @@ with tab_summary:
     item_baf = "היטל דלק ימי לפי TEU (BAF)" if is_hebrew else "Bunker Adjustment Factor (BAF)"
     item_dthc = "דמי טיפול בנמל יעד (Destination THC)" if is_hebrew else "Destination THC"
     item_insur = "ביטוח ימי" if is_hebrew else "Marine Insurance"
-    item_customs = f"מכס יבוא ({customs_duty_pct}%)" if is_hebrew else f"Import Customs Duty ({customs_duty_pct}%)"
+    item_customs = f"מכס יבוא לפי קטגוריה ({customs_duty_pct}% לציוד אגירה/ממירים | 0% פטור לפאנלים סולאריים)" if is_hebrew else f"Differential Customs Duty (0% for PV Modules)"
     item_drayage = "הובלה יבשתית מנמל לאתר" if is_hebrew else "Inland Drayage (Port to Site)"
     item_reg = "רגולציה מקומית ואישורי חומ\"ס / משרד התחבורה" if is_hebrew else "Regulatory & Local Permits"
     item_crane = "עגורן מנוף ופריקה באתר" if is_hebrew else "Site Crane & Unloading"
-    item_decom = "הפרשת מחזור סוף חיים (Decommissioning)" if is_hebrew else "Decommissioning Provision"
+    item_epr = "דמי EPR שוטפים / מיחזור" if is_hebrew else "EPR / Recycling Fees"
+    item_bp = "דרכון סוללות דיגיטלי (EU Battery Passport)" if is_hebrew else "EU Battery Passport"
+    item_hl = "סקר מטענים כבדים (Heavy-Lift Survey)" if is_hebrew else "Heavy-Lift Survey"
+    item_decom = f"הפרשת מחזור סוף חיים — {bess_capacity_mwh}MWh @ ${decom_cost_per_kwh}/kWh (מוצג כשורה פיננסית נפרדת)" if is_hebrew else f"Decommissioning Provision ({bess_capacity_mwh}MWh - Lifecycle Item)"
     item_cont = "בלת״ם פרויקטי (5%)" if is_hebrew else "Contingency (5%)"
     item_tot = "סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)" if is_hebrew else "Total Landed Cost (Excl. VAT)"
 
@@ -902,128 +737,69 @@ with tab_summary:
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>{item_exw}</td>
-                <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
-                <td class="left"><span class="ltr-val">{curr_symbol} {unit_exw:,.2f}</span></td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_exw:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_china}</td>
-                <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
-                <td class="left"><span class="ltr-val">{curr_symbol} {unit_ch_inland:,.2f}</span></td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ch_inland:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_ocean}</td>
-                <td class="center">{int(total_containers_project):,} {'מכולות' if is_hebrew else 'containers'}</td>
-                <td class="left"><span class="ltr-val">{curr_symbol} {unit_ocean:,.2f}</span></td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ocean:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_baf}</td>
-                <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
-                <td class="left"><span class="ltr-val">{curr_symbol} {unit_baf:,.2f}</span></td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_baf:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_dthc}</td>
-                <td class="center">{int(total_containers_project):,} {'יחידות' if is_hebrew else 'units'}</td>
-                <td class="left"><span class="ltr-val">{curr_symbol} {unit_dthc:,.2f}</span></td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_dthc:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_insur}</td>
-                <td class="center">{'אחוז מערך CIF' if is_hebrew else '% of CIF'}</td>
-                <td class="left">-</td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_insur:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_customs}</td>
-                <td class="center">{'על פי סיווג' if is_hebrew else 'Classification'}</td>
-                <td class="left">-</td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_customs:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_drayage}</td>
-                <td class="center">{int(total_containers_project):,} {'משאיות' if is_hebrew else 'trucks'}</td>
-                <td class="left"><span class="ltr-val">{curr_symbol} {unit_drayage:,.2f}</span></td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_drayage:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_reg}</td>
-                <td class="center">{'הוצאה כוללת' if is_hebrew else 'Total Expense'}</td>
-                <td class="left">-</td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_reg:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_crane}</td>
-                <td class="center">{'הוצאה כוללת' if is_hebrew else 'Total Expense'}</td>
-                <td class="left">-</td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_crane:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_decom}</td>
-                <td class="center">{int(bess_count + oog_count):,} BESS</td>
-                <td class="left">-</td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_decom:,.2f}</span></b></td>
-            </tr>
-            <tr>
-                <td>{item_cont}</td>
-                <td class="center">5% Supply Chain</td>
-                <td class="left">-</td>
-                <td class="left"><b><span class="ltr-val">{curr_symbol} {ex_cont:,.2f}</span></b></td>
-            </tr>
-            <tr class="total-row">
-                <td>{item_tot}</td>
-                <td class="center">-</td>
-                <td class="left">-</td>
-                <td class="left" style="font-size: 1.05rem; color: #1e3d59;"><b><span class="ltr-val">{curr_symbol} {ex_total:,.2f}</span></b></td>
-            </tr>
+            <tr><td>{item_exw}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_exw:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_exw:,.2f}</span></b></td></tr>
+            <tr><td>{item_china}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_ch_inland:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ch_inland:,.2f}</span></b></td></tr>
+            <tr><td>{item_ocean}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_ocean:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ocean:,.2f}</span></b></td></tr>
+            <tr><td>{item_baf}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_baf:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_baf:,.2f}</span></b></td></tr>
+            <tr><td>{item_dthc}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_dthc:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_dthc:,.2f}</span></b></td></tr>
+            <tr><td>{item_insur}</td><td class="center">% CIF</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_insur:,.2f}</span></b></td></tr>
+            <tr><td>{item_customs}</td><td class="center">דיפרנציאלי</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_customs:,.2f}</span></b></td></tr>
+            <tr><td>{item_drayage}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_drayage:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_drayage:,.2f}</span></b></td></tr>
+            <tr><td>{item_reg}</td><td class="center">הוצאה</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_reg:,.2f}</span></b></td></tr>
+            <tr><td>{item_crane}</td><td class="center">הוצאה</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_crane:,.2f}</span></b></td></tr>
+            <tr><td>{item_epr}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_epr:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_epr:,.2f}</span></b></td></tr>
+            <tr><td>{item_bp}</td><td class="center">גלובלי</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_bp:,.2f}</span></b></td></tr>
+            <tr><td>{item_hl}</td><td class="center">סקר</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_hl:,.2f}</span></b></td></tr>
+            <tr style="background-color: #fbf8f0;"><td>{item_decom}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_decom:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_decom:,.2f}</span></b></td></tr>
+            <tr><td>{item_cont}</td><td class="center">5%</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_cont:,.2f}</span></b></td></tr>
+            <tr class="total-row"><td>{item_tot}</td><td class="center">-</td><td class="left">-</td><td class="left" style="color: #1e3d59;"><b><span class="ltr-val">{curr_symbol} {ex_total:,.2f}</span></b></td></tr>
         </tbody>
     </table>
     """
-    
     st.markdown(html_table, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.subheader(txt["excel_btn"])
     
     excel_summary_data = [
-        [
-            "רכיב עלות בפרויקט" if is_hebrew else "Project Cost Item",
-            "כמות / בסיס חישוב" if is_hebrew else "Basis / Qty",
-            f"עלות ליחידה ({curr_symbol})" if is_hebrew else f"Unit Cost ({curr_symbol})",
-            f"סה\"כ סעיף ({curr_symbol})" if is_hebrew else f"Total Amount ({curr_symbol})"
-        ],
-        [item_exw, f"{int(total_containers_project):,} units", trended_exw / max(1, total_containers_project), trended_exw],
-        [item_china, f"{int(total_containers_project):,} units", (china_inland_drayage + china_origin_thc) / max(1, total_containers_project), china_inland_drayage + china_origin_thc],
-        [item_ocean, f"{int(total_containers_project):,} containers", total_base_ocean_freight / max(1, total_containers_project), total_base_ocean_freight * trend_multiplier],
-        [item_baf, f"{int(total_containers_project):,} units", total_baf_ocean / max(1, total_containers_project), total_baf_ocean * trend_multiplier],
-        [item_dthc, f"{int(total_containers_project):,} units", total_destination_thc / max(1, total_containers_project), destination_thc_total],
-        [item_insur, "% of CIF", 0, insurance_total_usd],
-        [item_customs, f"({customs_duty_pct}%)", 0, customs_duty_usd],
-        [item_drayage, f"{int(total_containers_project):,} trucks", inland_drayage_total_base / max(1, total_containers_project), inland_drayage_total_usd],
-        [item_reg, "Total", 0, active_regulatory_permits],
-        [item_crane, "Total", 0, active_site_crane],
-        [item_decom, f"{int(bess_count + oog_count):,} BESS", 0, decommissioning_total_usd],
-        [item_cont, "5%", 0, contingency_usd],
-        [item_tot, "-", 0, total_landed_cost_ex_vat]
+        ["רכיב עלות בפרויקט", "כמות / בסיס חישוב", f"סה\"כ סעיף ({display_currency})"],
+        [item_exw, f"{int(total_units_for_calc):,} units", ex_exw],
+        [item_china, f"{int(total_units_for_calc):,} units", ex_ch_inland],
+        [item_ocean, f"{int(total_units_for_calc):,} containers", ex_ocean],
+        [item_baf, f"{int(total_units_for_calc):,} units", ex_baf],
+        [item_dthc, f"{int(total_units_for_calc):,} units", ex_dthc],
+        [item_insur, "% of CIF", ex_insur],
+        [item_customs, "Differential", ex_customs],
+        [item_drayage, f"{int(total_units_for_calc):,} trucks", ex_drayage],
+        [item_reg, "Total", ex_reg],
+        [item_crane, "Total", ex_crane],
+        [item_epr, f"{int(bess_count + oog_count):,} BESS", ex_epr],
+        [item_bp, "Global", ex_bp],
+        [item_hl, "Survey", ex_hl],
+        [item_decom, f"{int(bess_count + oog_count):,} BESS (Lifecycle)", ex_decom],
+        [item_cont, "5%", ex_cont],
+        [item_tot, "-", ex_total]
     ]
+
+    rows_sum = sum(r[2] for r in excel_summary_data[1:-1])
+    if abs(rows_sum - ex_total) >= 1.0:
+        st.error(f"Reconciliation mismatch: {rows_sum:,.2f} vs {ex_total:,.2f}")
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df_export = pd.DataFrame(excel_summary_data[1:], columns=excel_summary_data[0])
         df_export.to_excel(writer, sheet_name='Cost Summary', index=False)
-        
         ws = writer.sheets['Cost Summary']
         ws.views.sheetView[0].rightToLeft = is_hebrew
 
-    excel_data = output.getvalue()
+        for col in ws.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = col[0].column_letter
+            ws.column_dimensions[col_letter].width = max(max_len + 5, 15)
 
+    excel_data = output.getvalue()
     st.download_button(
         label=txt["excel_btn"],
         data=excel_data,
-        file_name=f"TerraVol_Project_Report_{dest_country}.xlsx",
+        file_name=f"TerraVol_Project_Report_Modular_{dest_country_code}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
