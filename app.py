@@ -357,7 +357,7 @@ dest_country_name = COUNTRY_NAMES[dest_country_code]
 is_european_dest = (dest_country_code != "IL")
 
 if dest_country_code == "OTHER":
-    st.sidebar.warning("⚠️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם). נא לוודא אם נדרש חישוב מע\"מ ידני." if is_hebrew else "⚠️️ VAT rate is set to 0% (Custom destination). Please verify if manual VAT is required.")
+    st.sidebar.warning("⚠️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם). נא לוודא אם נדרש חישוב מע\"מ ידני." if is_hebrew else "⚠ VAT rate is set to 0% (Custom destination). Please verify if manual VAT is required.")
 
 if is_european_dest:
     CARRIER_FUEL_SURCHARGES = {
@@ -404,6 +404,14 @@ with tab1:
             key=f"tab1_dest_port_{dest_country_code}"
         )
         site_address = st.text_input(txt["site_label"], key="site_name_input", placeholder=txt["site_ph"])
+
+        # ---------------------------------------------------------
+        # החזרת שדות המיקום המפורטים שביקשת (כתובת מדויקת, מיקוד, קואורדינטות)
+        # ---------------------------------------------------------
+        st.markdown("##### 📍 פרטי מיקום מדויקים של אתר הפרויקט:" if is_hebrew else "##### 📍 Detailed Project Site Location:")
+        site_street_address = st.text_input("כתובת אתר מלאה (רוב/רחוב מספר):" if is_hebrew else "Full Street Address:", key="site_street_address_input")
+        site_postal_code = st.text_input("מיקוד (Postal Code):" if is_hebrew else "Postal Code:", key="site_postal_code_input")
+        site_coordinates = st.text_input("קואורדינטות GPS (Latitude, Longitude):" if is_hebrew else "GPS Coordinates (Lat, Long):", key="site_coordinates_input", placeholder="31.0461° N, 34.8516° E")
 
     with col_meta2:
         applied_vat = st.number_input(f"{txt['vat_label']} ({dest_country_name}) %:", value=float(VAT_RATES[dest_country_code]), step=0.5, min_value=0.0, max_value=100.0, key=f"tab1_vat_{dest_country_code}")
@@ -620,7 +628,7 @@ with tab4:
 if is_european_dest and tab5_eu is not None:
     with tab5_eu:
         st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Route & Corridor Analysis)")
-        st.warning("⚠️ נתונים אינדיקטיביים בלבד, לאימות מול משלח." if is_hebrew else "⚠️️ Indicative data only, subject to freight forwarder verification.")
+        st.warning("⚠️ נתונים אינדיקטיביים בלבד, לאימות מול משלח." if is_hebrew else "⚠ Indicative data only, subject to freight forwarder verification.")
         st.markdown(
             "סקירה השוואתית של מסלולי שילוח ימי ויבשתי עיקריים לפרויקטי אנרגיה מתחדשת ואגירה (BESS) באירופה:" if is_hebrew else
             "Comparative overview of primary ocean and multimodal corridors for renewable energy and BESS projects in Europe:"
