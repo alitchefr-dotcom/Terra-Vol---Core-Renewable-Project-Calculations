@@ -108,6 +108,7 @@ T = {
         "summary_title": "📊 דוח בקרה פיננסית ורגולטורית",
         "breakdown_title": "📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)",
         "excel_btn": "📥 הורד דוח פיננסי מלא לאקסל",
+        "projects_header": "📂 פרויקטי אנרגיה תשתיות ואגירה (ניהול ומעקב מלא באירופה)",
         "col_item": "רכיב עלות בפרויקט",
         "col_qty": "כמות / בסיס חישוב",
         "col_unit": "עלות ליחידה (קטגוריה)",
@@ -141,6 +142,7 @@ T = {
         "summary_title": "📊 Financial & Regulatory Control Report",
         "breakdown_title": "📋 Project Budget Cost Breakdown",
         "excel_btn": "📥 Download Full Excel Report",
+        "projects_header": "📂 Infrastructure & Energy Projects (Full European Tracking)",
         "col_item": "Project Cost Item",
         "col_qty": "Basis / Qty",
         "col_unit": "Unit Cost (Category)",
@@ -402,7 +404,7 @@ dest_country_name = COUNTRY_NAMES[dest_country_code]
 is_european_dest = (dest_country_code != "IL")
 
 if dest_country_code == "OTHER":
-    st.sidebar.warning("⚠️️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם)." if is_hebrew else "⚠ VAT rate is set to 0% (Custom destination).")
+    st.sidebar.warning("⚠️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם)." if is_hebrew else "⚠ VAT rate is set to 0% (Custom destination).")
 
 if is_european_dest:
     CARRIER_FUEL_SURCHARGES = {
@@ -617,7 +619,7 @@ with tab3:
     include_delay_scenario = False
 
 with tab4:
-    st.subheader("⚖️ רגולציה ואישורים מנדטוריים" if is_hebrew else "⚖️ Regulation & Mandatory Approvals")
+    st.subheader("⚖️ רגולציה ואישורים מנדטוריים" if is_hebrew else "⚖️️ Regulation & Mandatory Approvals")
 
     bess_capacity_mwh = 4.0
     decom_cost_per_kwh = 0.0 if dest_country_code == "IL" else 75.0
@@ -693,7 +695,7 @@ if is_european_dest and tab5_eu is not None:
 
 if is_european_dest and tab_projects is not None:
     with tab_projects:
-        st.subheader("📂 פרויקטי אנרגיה תשתיות ואגירה (ניהול ומעקב מלא באירופה)")
+        st.subheader(txt["projects_header"])
         csv_path = os.path.join(os.path.dirname(__file__), "projects.csv")
         try:
             df_projects = pd.read_csv(csv_path)
