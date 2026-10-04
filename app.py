@@ -420,7 +420,8 @@ with tab2:
     st.markdown("##### 1. עלות הובלה ימית ליחידה:" if is_hebrew else "##### 1. Ocean Freight per Unit:")
     oc_col1, oc_col2, oc_col3 = st.columns(3)
     with oc_col1:
-        unit_freight_bess = st.number_input("הובלת BESS ($):" if is_hebrew else "BESS Freight ($):", value=31850.0 * carrier_data["bess_mult"], step=500.0, key=f"freight_bess_{selected_carrier_code}")
+        # עדכון ברירת המחדל ל־$21,000 בהתאם למחירי השוק העדכניים
+        unit_freight_bess = st.number_input("הובלת BESS ($):" if is_hebrew else "BESS Freight ($):", value=21000.0 * carrier_data["bess_mult"], step=500.0, key=f"freight_bess_{selected_carrier_code}")
         unit_freight_oog = st.number_input("הובלת OOG ($):" if is_hebrew else "OOG Freight ($):", value=29900.0, step=500.0, key=f"freight_oog_{selected_carrier_code}")
     with oc_col2:
         unit_freight_mvs = st.number_input("הובלת MVS ($):" if is_hebrew else "MVS Freight ($):", value=4200.0, step=200.0, key=f"freight_mvs_{selected_carrier_code}")
@@ -593,17 +594,17 @@ if is_european_dest and tab5_eu is not None:
 
 if is_european_dest and tab_projects is not None:
     with tab_projects:
-        st.subheader("📂 פרויקטי Enlight 2027-2028 (ניהול ובקרה — שירה)")
+        st.subheader("📂 פרויקטי אנרגיה תשתיות ואגירה (ניהול ובקרה)")
         st.markdown(
-            "מעקב ריכוזי אחר צבר פרויקטי האגירה והתשתיות של אנלייט במסגרת תוכנית העבודה 2027–2028:" if is_hebrew else
-            "Centralized tracking dashboard for Enlight's BESS and renewable infrastructure portfolio for 2027-2028:"
+            "מעקב ריכוזי אחר צבר פרויקטי האגירה והתשתיות במסגרת תוכנית העבודה העדכנית:" if is_hebrew else
+            "Centralized tracking dashboard for BESS and renewable infrastructure portfolio:"
         )
-        enlight_projects_data = [
-            {"Project": "Enlight BESS Cluster East (Romania)", "Capacity": "150 MWh", "Target COD": "Q2 2027", "Logistics Lead": "Shira / Terra Vol", "Status": "RFQ & Route Planning Active"},
-            {"Project": "Central Europe Solar & Storage Hub", "Capacity": "220 MWh", "Target COD": "Q4 2027", "Logistics Lead": "Shira / Terra Vol", "Status": "Customs & DDP Modeling"},
-            {"Project": "Balkan Grid Stabilization Project", "Capacity": "100 MWh", "Target COD": "Q1 2028", "Logistics Lead": "Shira / Terra Vol", "Status": "Initial Site Survey"}
+        projects_data = [
+            {"Project": "BESS Cluster East (Europe/Balkans)", "Capacity": "150 MWh", "Target COD": "Q2 2027", "Logistics Lead": "Terra Vol", "Status": "RFQ & Route Planning Active"},
+            {"Project": "Central Europe Solar & Storage Hub", "Capacity": "220 MWh", "Target COD": "Q4 2027", "Logistics Lead": "Terra Vol", "Status": "Customs & DDP Modeling"},
+            {"Project": "Grid Stabilization Project", "Capacity": "100 MWh", "Target COD": "Q1 2028", "Logistics Lead": "Terra Vol", "Status": "Initial Site Survey"}
         ]
-        st.dataframe(pd.DataFrame(enlight_projects_data), use_container_width=True)
+        st.dataframe(pd.DataFrame(projects_data), use_container_width=True)
 
 calc_results = calculate_project_costs(
     bess_count=bess_count, bess_exw=bess_exw,
