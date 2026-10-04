@@ -65,14 +65,14 @@ T = {
         "tab3": "📦 אחסנה, השהיות והובלת משאיות לאתר",
         "tab4": "⚖️ רגולציה ואישורים מנדטוריים",
         "tab5_eu": "🗺️ הנחות מסלולים באירופה",
-        "tab_projects": "📂 פרויקטי Enlight 2027-2028 (שירה)",
+        "tab_projects": "📂 פרויקטי אנרגיה תשתיות ואגירה",
         "tab_summary": "📊 דוח בקרה תקציבית ורגולטורית",
         "summary_title": "📊 דוח בקרה פיננסית ורגולטורית",
         "breakdown_title": "📋 פירוט רכיבי תקציב הפרויקט (Cost Breakdown)",
         "excel_btn": "📥 הורד דוח פיננסי מלא לאקסל (Download Excel Report)",
         "col_item": "רכיב עלות בפרויקט",
         "col_qty": "כמות / בסיס חישוב",
-        "col_unit": "עלות ליחידה",
+        "col_unit": "עלות ליחידה (קטגוריה)",
         "col_total": "סה\"כ סעיף",
     },
     "en": {
@@ -94,14 +94,14 @@ T = {
         "tab3": "📦 Storage, Demurrage & Inland Drayage",
         "tab4": "⚖️ Regulation & Mandatory Approvals",
         "tab5_eu": "🗺️ European Route Options",
-        "tab_projects": "📂 Enlight Projects 2027-2028 (Shira)",
+        "tab_projects": "📂 Infrastructure & Energy Projects",
         "tab_summary": "📊 Budget & Regulatory Control Report",
         "summary_title": "📊 Financial & Regulatory Control Report",
         "breakdown_title": "📋 Project Budget Cost Breakdown",
         "excel_btn": "📥 Download Full Excel Report",
         "col_item": "Project Cost Item",
         "col_qty": "Basis / Qty",
-        "col_unit": "Unit Cost",
+        "col_unit": "Unit Cost (Category)",
         "col_total": "Total Amount",
     }
 }
@@ -318,6 +318,9 @@ dest_country_code = st.sidebar.selectbox(
 dest_country_name = COUNTRY_NAMES[dest_country_code]
 is_european_dest = (dest_country_code != "IL")
 
+if dest_country_code == "OTHER":
+    st.sidebar.warning("⚠️ שיעור המע\"מ מוגדר כ־0% (יעד מותאם). נא לוודא אם נדרש חישוב מע\"מ ידני." if is_hebrew else "⚠️ VAT rate is set to 0% (Custom destination). Please verify if manual VAT is required.")
+
 if is_european_dest:
     CARRIER_FUEL_SURCHARGES = {
         "ZIM": {"name": "ZIM (שירות מועדף למטעני חומ\"ס וגמישות)" if is_hebrew else "ZIM (Preferred DG & Flexible Service)", "bess_mult": 1.0, "dthc_mult": 1.0},
@@ -420,7 +423,6 @@ with tab2:
     st.markdown("##### 1. עלות הובלה ימית ליחידה:" if is_hebrew else "##### 1. Ocean Freight per Unit:")
     oc_col1, oc_col2, oc_col3 = st.columns(3)
     with oc_col1:
-        # עדכון ברירת המחדל ל־$21,000 בהתאם למחירי השוק העדכניים
         unit_freight_bess = st.number_input("הובלת BESS ($):" if is_hebrew else "BESS Freight ($):", value=21000.0 * carrier_data["bess_mult"], step=500.0, key=f"freight_bess_{selected_carrier_code}")
         unit_freight_oog = st.number_input("הובלת OOG ($):" if is_hebrew else "OOG Freight ($):", value=29900.0, step=500.0, key=f"freight_oog_{selected_carrier_code}")
     with oc_col2:
@@ -580,31 +582,47 @@ with tab4:
 if is_european_dest and tab5_eu is not None:
     with tab5_eu:
         st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Route & Corridor Analysis)")
+        st.warning("⚠️ נתונים אינדיקטיביים בלבד, לאימות מול משלח." if is_hebrew else "⚠️ Indicative data only, subject to freight forwarder verification.")
         st.markdown(
-            "סקירה השוואתית של מסלולי שילוח ימי ויבשתי עיקריים לפרויקטי אנרגיה מתחדשת ואגירה (BESS) באירופה:" if is_hebrew else
+            "סקירה השוואתית של מסלולי שילוח ימי ויבשתי עיקריים לפרויקטי אנרגיה מתחדשת ואגירה (BESS באירופה):" if is_hebrew else
             "Comparative overview of primary ocean and multimodal corridors for renewable energy and BESS projects in Europe:"
         )
-        eu_route_data = [
-            {"Route": "Asia via Constanța (Romania)", "Transit": "32-35 Days", "Advantage": "Optimal for Eastern Europe / Balkan projects", "Suitability": "High for Solar + BESS"},
-            {"Route": "Asia via Piraeus (Greece)", "Transit": "28-31 Days", "Advantage": "Fastest maritime entry to Southern/Central Europe", "Suitability": "High"},
-            {"Route": "Asia via Rotterdam / Antwerp (North Europe)", "Transit": "30-33 Days", "Advantage": "Unmatched heavy-lift and barge infrastructure", "Suitability": "Maximum Flexibility"},
-            {"Route": "Multimodal via Hamburg to Poland/Germany", "Transit": "35-38 Days", "Advantage": "Direct rail/multimodal forwarding to Central European hubs", "Suitability": "Standard Grid Projects"}
-        ]
-        st.dataframe(pd.DataFrame(eu_route_data), use_container_width=True)
+        if is_hebrew:
+            eu_route_data = [
+                {"מסלול": "אסיה דרך קונסטנצה (רומניה)", "זמן מעבר": "32-35 ימים", "יתרון מרכזי": "אופטימלי לפרויקטים במזרח אירופה ובבלקן", "התאמה": "גבוהה לפאנלים ו־BESS"},
+                {"מסלול": "אסיה דרך פיראוס (יוון)", "זמן מעבר": "28-31 ימים", "יתרון מרכזי": "כניסה ימית מהירה לדרום ומרכז אירופה", "התאמה": "גבוהה מאוד"},
+                {"מסלול": "אסיה דרך רוטרדם / אנטוורפן (צפון אירופה)", "זמן מעבר": "30-33 ימים", "יתרון מרכזי": "תשתיות מטענים כבדים ומדוברות מתקדמות", "התאמה": "גמישות מקסימלית"},
+                {"מסלול": "מולטימודלי דרך המבורג לפולין/גרמניה", "זמן מעבר": "35-38 ימים", "יתרון מרכזי": "שילוח רכבתי ישיר למרכז אירופה", "התאמה": "פרויקטי רשת סטנדרטיים"}
+            ]
+        else:
+            eu_route_data = [
+                {"Route": "Asia via Constanța (Romania)", "Transit": "32-35 Days", "Advantage": "Optimal for Eastern Europe / Balkan projects", "Suitability": "High for Solar + BESS"},
+                {"Route": "Asia via Piraeus (Greece)", "Transit": "28-31 Days", "Advantage": "Fastest maritime entry to Southern/Central Europe", "Suitability": "High"},
+                {"Route": "Asia via Rotterdam / Antwerp (North Europe)", "Transit": "30-33 Days", "Advantage": "Unmatched heavy-lift and barge infrastructure", "Suitability": "Maximum Flexibility"},
+                {"Route": "Multimodal via Hamburg to Poland/Germany", "Transit": "35-38 Days", "Advantage": "Direct rail/multimodal forwarding to Central European hubs", "Suitability": "Standard Grid Projects"}
+            ]
+        st.dataframe(pd.DataFrame(eu_route_data), use_container_width=False, hide_index=True)
 
 if is_european_dest and tab_projects is not None:
     with tab_projects:
-        st.subheader("📂 פרויקטי אנרגיה תשתיות ואגירה (ניהול ובקרה)")
+        st.subheader("📂 פרויקטי אנרגיה תשתיות ואגירה (ניהול ובקרה באירופה)")
         st.markdown(
-            "מעקב ריכוזי אחר צבר פרויקטי האגירה והתשתיות במסגרת תוכנית העבודה העדכנית:" if is_hebrew else
-            "Centralized tracking dashboard for BESS and renewable infrastructure portfolio:"
+            "ניהול ומעקב אחר צבר פרויקטי האגירה והתשתיות במסגרת תוכנית העבודה (רומניה, יוון, פולין וכו'):" if is_hebrew else
+            "Management and tracking of BESS and renewable infrastructure portfolio in Europe:"
         )
-        projects_data = [
-            {"Project": "BESS Cluster East (Europe/Balkans)", "Capacity": "150 MWh", "Target COD": "Q2 2027", "Logistics Lead": "Terra Vol", "Status": "RFQ & Route Planning Active"},
-            {"Project": "Central Europe Solar & Storage Hub", "Capacity": "220 MWh", "Target COD": "Q4 2027", "Logistics Lead": "Terra Vol", "Status": "Customs & DDP Modeling"},
-            {"Project": "Grid Stabilization Project", "Capacity": "100 MWh", "Target COD": "Q1 2028", "Logistics Lead": "Terra Vol", "Status": "Initial Site Survey"}
-        ]
-        st.dataframe(pd.DataFrame(projects_data), use_container_width=True)
+        if is_hebrew:
+            projects_portfolio = [
+                {"שם הפרויקט": "פרויקט Iepurești (רומניה)", "קיבולת": "50 MWh / 12 BESS", "סטטוס": "בבדיקת הובלה כבדה", "משלח/סוכן": "Hyperstrong Local"},
+                {"שם הפרויקט": "פרויקט Ghimpați (רומניה)", "קיבולת": "100 MWh / 24 BESS", "סטטוס": "תכנון נתיבי משאיות מונטנגרו", "משלח/סוכן": "CN Logistics EU"},
+                {"שם הפרויקט": "אתר אגירה מרכזי אטיקה (יוון)", "קיבולת": "40 MWh / 10 BESS", "סטטוס": "אישור מכס ודרכון סוללות", "משלח/סוכן": "Piraeus Hub"}
+            ]
+        else:
+            projects_portfolio = [
+                {"Project Name": "Iepurești Project (Romania)", "Capacity": "50 MWh / 12 BESS", "Status": "Heavy Route Review", "Partner": "Hyperstrong Local"},
+                {"Project Name": "Ghimpați Project (Romania)", "Capacity": "100 MWh / 24 BESS", "Status": "Trucking Routing", "Partner": "CN Logistics EU"},
+                {"Project Name": "Attica Central BESS (Greece)", "Capacity": "40 MWh / 10 BESS", "Status": "Customs & Passport", "Partner": "Piraeus Hub"}
+            ]
+        st.dataframe(pd.DataFrame(projects_portfolio), use_container_width=False, hide_index=True)
 
 calc_results = calculate_project_costs(
     bess_count=bess_count, bess_exw=bess_exw,
@@ -670,25 +688,21 @@ with tab_summary:
     bess_oog_units = max(1.0, float(bess_count + oog_count))
 
     ex_exw, _ = convert_from_usd(calc_results["trended_exw"], display_currency)
-    u_exw, _ = convert_from_usd(calc_results["trended_exw"] / total_units_for_calc, display_currency)
+    u_bess_exw, _ = convert_from_usd(bess_exw * trend_multiplier, display_currency)
 
     ex_ch_inland, _ = convert_from_usd(calc_results["china_inland_drayage"] + calc_results["china_origin_thc"], display_currency)
     u_ch_inland, _ = convert_from_usd((calc_results["china_inland_drayage"] + calc_results["china_origin_thc"]) / total_units_for_calc, display_currency)
 
     ex_ocean, _ = convert_from_usd(calc_results["total_base_ocean_freight"], display_currency)
-    u_ocean, _ = convert_from_usd(calc_results["total_base_ocean_freight"] / total_units_for_calc, display_currency)
+    u_ocean_bess, _ = convert_from_usd(unit_freight_bess * trend_multiplier, display_currency)
 
     ex_baf, _ = convert_from_usd(calc_results["total_baf_ocean"], display_currency)
-    u_baf, _ = convert_from_usd(calc_results["total_baf_ocean"] / total_units_for_calc, display_currency)
-
     ex_dthc, _ = convert_from_usd(calc_results["destination_thc_total"], display_currency)
-    u_dthc, _ = convert_from_usd(calc_results["destination_thc_total"] / total_units_for_calc, display_currency)
-
     ex_insur, _ = convert_from_usd(calc_results["insurance_total_usd"], display_currency)
     ex_customs, _ = convert_from_usd(calc_results["customs_duty_usd"], display_currency)
 
     ex_drayage, _ = convert_from_usd(calc_results["inland_drayage_total_usd"], display_currency)
-    u_drayage, _ = convert_from_usd(calc_results["inland_drayage_total_usd"] / total_units_for_calc, display_currency)
+    u_drayage_bess, _ = convert_from_usd(drayage_bess * trend_multiplier, display_currency)
 
     ex_reg, _ = convert_from_usd(calc_results["active_regulatory_permits"], display_currency)
     ex_crane, _ = convert_from_usd(calc_results["active_site_crane"], display_currency)
@@ -722,6 +736,8 @@ with tab_summary:
     item_cont = "בלת״ם פרויקטי (5%)" if is_hebrew else "Contingency (5%)"
     item_tot = "סה\"כ עלות נחיתה לפני מע\"מ (Total Landed Cost)" if is_hebrew else "Total Landed Cost (Excl. VAT)"
 
+    decom_row_html = f'<tr style="background-color: #fbf8f0;"><td>{item_decom}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_decom:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_decom:,.2f}</span></b></td></tr>' if dest_country_code != "IL" else ""
+
     html_table = f"""
     <table class="custom-finance-table">
         <thead>
@@ -733,22 +749,22 @@ with tab_summary:
             </tr>
         </thead>
         <tbody>
-            <tr><td>{item_exw}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_exw:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_exw:,.2f}</span></b></td></tr>
+            <tr><td>{item_exw}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_bess_exw:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_exw:,.2f}</span></b></td></tr>
             <tr><td>{item_china}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_ch_inland:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ch_inland:,.2f}</span></b></td></tr>
-            <tr><td>{item_ocean}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_ocean:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ocean:,.2f}</span></b></td></tr>
-            <tr><td>{item_baf}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_baf:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_baf:,.2f}</span></b></td></tr>
-            <tr><td>{item_dthc}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_dthc:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_dthc:,.2f}</span></b></td></tr>
+            <tr><td>{item_ocean}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_ocean_bess:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_ocean:,.2f}</span></b></td></tr>
+            <tr><td>{item_baf}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_baf:,.2f}</span></b></td></tr>
+            <tr><td>{item_dthc}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_dthc:,.2f}</span></b></td></tr>
             <tr><td>{item_insur}</td><td class="center">% CIF</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_insur:,.2f}</span></b></td></tr>
             <tr><td>{item_customs}</td><td class="center">דיפרנציאלי</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_customs:,.2f}</span></b></td></tr>
-            <tr><td>{item_drayage}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">{curr_symbol} {u_drayage:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_drayage:,.2f}</span></b></td></tr>
+            <tr><td>{item_drayage}</td><td class="center">{int(total_units_for_calc):,}</td><td class="left"><span class="ltr-val">BESS: {curr_symbol} {u_drayage_bess:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_drayage:,.2f}</span></b></td></tr>
             <tr><td>{item_reg}</td><td class="center">הוצאה</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_reg:,.2f}</span></b></td></tr>
             <tr><td>{item_crane}</td><td class="center">הוצאה</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_crane:,.2f}</span></b></td></tr>
             <tr><td>{item_epr}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_epr:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_epr:,.2f}</span></b></td></tr>
             <tr><td>{item_bp}</td><td class="center">גלובלי</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_bp:,.2f}</span></b></td></tr>
             <tr><td>{item_hl}</td><td class="center">סקר</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_hl:,.2f}</span></b></td></tr>
-            <tr style="background-color: #fbf8f0;"><td>{item_decom}</td><td class="center">{int(bess_count + oog_count):,} BESS</td><td class="left"><span class="ltr-val">{curr_symbol} {u_decom:,.2f}</span></td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_decom:,.2f}</span></b></td></tr>
             <tr><td>{item_cont}</td><td class="center">5%</td><td class="left">-</td><td class="left"><b><span class="ltr-val">{curr_symbol} {ex_cont:,.2f}</span></b></td></tr>
             <tr class="total-row"><td>{item_tot}</td><td class="center">-</td><td class="left">-</td><td class="left" style="color: #1e3d59;"><b><span class="ltr-val">{curr_symbol} {ex_total:,.2f}</span></b></td></tr>
+            {decom_row_html}
         </tbody>
     </table>
     """
@@ -771,14 +787,11 @@ with tab_summary:
         [item_epr, f"{int(bess_count + oog_count):,} BESS", ex_epr],
         [item_bp, "Global", ex_bp],
         [item_hl, "Survey", ex_hl],
-        [item_decom, f"{int(bess_count + oog_count):,} BESS (Lifecycle)", ex_decom],
         [item_cont, "5%", ex_cont],
         [item_tot, "-", ex_total]
     ]
-
-    rows_sum = sum(r[2] for r in excel_summary_data[1:-1])
-    if abs(rows_sum - ex_total) >= 1.0:
-        st.error(f"Reconciliation mismatch: {rows_sum:,.2f} vs {ex_total:,.2f}")
+    if dest_country_code != "IL":
+        excel_summary_data.append([item_decom, f"{int(bess_count + oog_count):,} BESS (Lifecycle)", ex_decom])
 
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -786,6 +799,9 @@ with tab_summary:
         df_export.to_excel(writer, sheet_name='Cost Summary', index=False)
         ws = writer.sheets['Cost Summary']
         ws.views.sheetView[0].rightToLeft = is_hebrew
+
+        for row in ws.iter_rows(min_row=2, min_col=3, max_col=3):
+            row[0].number_format = '#,##0.00'
 
         for col in ws.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
