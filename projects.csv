@@ -1,0 +1,43 @@
+Site,Country,CONT,Supplier,Category,TAX,Sea freight,Recycling,Land transport,Customs agent,Insurance,VAT,SPV,Transshipment
+Genzano,Italy,9,JINKO,PV Modules,0.0% (HS: 8541430000),Standard CE / N/A,Standard CE,Included,Local Italian Agent,0.15%,22.00%,Genzano Solar Energy S.r.l. (Enlight Italy),Direct
+Genzano,Italy,9,JINKO,PV Modules,0.0% (HS: 8541430000),Standard CE / N/A,Standard CE,Included,Local Italian Agent,0.15%,22.00%,Genzano Solar Energy S.r.l. (Enlight Italy),Direct
+Genzano,Italy,9,JINKO,PV Modules,0.0% (HS: 8541430000),Standard CE / N/A,Standard CE,Included,Local Italian Agent,0.15%,22.00%,Genzano Solar Energy S.r.l. (Enlight Italy),Direct
+Genzano,Italy,9,JINKO,PV Modules,0.0% (HS: 8541430000),Standard CE / N/A,Standard CE,Included,Local Italian Agent,0.15%,22.00%,Genzano Solar Energy S.r.l. (Enlight Italy),Direct
+Genzano,Italy,11,JINKO,PV Modules,0.0% (HS: 8541430000),Standard CE / N/A,Standard CE,Included,Local Italian Agent,0.15%,22.00%,Genzano Solar Energy S.r.l. (Enlight Italy),Direct
+Mosciska,Poland,32,SUNGROW,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Mosciska,Poland,16,SUNGROW,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Mosciska,Poland,1,SUNGROW,TRANSFORMERS,0.0% (HS: 8504230000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Czerwona Woda,Poland,52,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Czerwona Woda,Poland,14,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Ostrow Wielkopolski,Poland,174,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Ostrow Wielkopolski,Poland,56,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Chociule,Poland,176,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Chociule,Poland,59,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+ACDC,Hungary,28,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Hungarian Agent,0.15%,27.00%,Enlight Hungary SPV,Direct
+ACDC,Hungary,12,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Hungarian Agent,0.15%,27.00%,Enlight Hungary SPV,Direct
+Sokole,Poland,198,SUNGROW,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Sokole,Poland,66,SUNGROW,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Edison,Poland,47,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Edison,Poland,16,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Jupiter,Germany,480,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local German Agent,0.15%,19.00%,Prime Capital / Enlight Germany SPV,Direct
+Jupiter,Germany,60,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local German Agent,0.15%,19.00%,Prime Capital / Enlight Germany SPV,Direct
+Jupiter,Germany,258,-,PV Modules,0.0% (HS: 8541430000),Standard CE / N/A,Standard CE,Included,Local German Agent,0.15%,19.00%,Prime Capital / Enlight Germany SPV,Direct
+Karpen Alpha,Romania,45,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Romanian Agent,0.15%,19.00%,Enlight Romania SPV,Direct
+Karpen Gamma,Romania,89,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Romanian Agent,0.15%,19.00%,Enlight Romania SPV,Direct
+Karpen Alpha,Romania,13,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Romanian Agent,0.15%,19.00%,Enlight Romania SPV,Direct
+Karpen Gamma,Romania,25,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Romanian Agent,0.15%,19.00%,Enlight Romania SPV,Direct
+Koryta,Poland,200,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Koryta,Poland,70,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Przęślice,Poland,176,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Przęślice,Poland,59,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Polish Agent,0.15%,23.00%,Enlight Poland SPV,Direct
+Touvilan,Finland,88,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Finnish Agent,0.15%,25.50%,Enlight Finland SPV,Direct
+Touvilan,Finland,22,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Finnish Agent,0.15%,25.50%,Enlight Finland SPV,Direct
+Karpen Theta,Romania,41,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Romanian Agent,0.15%,19.00%,Enlight Romania SPV,Direct
+Karpen Theta,Romania,12,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Romanian Agent,0.15%,19.00%,Enlight Romania SPV,Direct
+Bertikow,Germany,22,-,MVS for BESS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local German Agent,0.15%,19.00%,Prime Capital / Enlight Germany SPV,Direct
+Bertikow,Germany,156,-,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local German Agent,0.15%,19.00%,Prime Capital / Enlight Germany SPV,Direct
+Picasso,Sweden,22,SUNGROW,MVS,0.0% (HS: 8504409000),Standard CE / N/A,Standard CE,Included,Local Swedish Agent,0.15%,25.00%,Enlight Sweden SPV,Direct
+Picasso,Sweden,44,SUNGROW,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Swedish Agent,0.15%,25.00%,Enlight Sweden SPV,Direct
+Nardo,Italy,15,SUNGROW,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Italian Agent,0.15%,22.00%,Nardò Solar Energy S.r.l. (Enlight Italy),Direct
+Nardo,Italy,15,SUNGROW,BESS GEN2,2.7% (HS: 8507600000),Required (Battery Passport & EPR),Required,Included,Local Italian Agent,0.15%,22.00%,Nardò Solar Energy S.r.l. (Enlight Italy),Direct
+Nardo,Italy,15,JINKO,PV Modules,0.0% (HS: 8541430000),Standard CE / N/A,Standard CE,Included,Local Italian Agent,0.15%,22.00%,Nardò Solar Energy S.r.l. (Enlight Italy),Direct
