@@ -54,7 +54,7 @@ T = {
         "dest_port": "נמל פריקה (יעד):",
         "dest_country": "מדינת יעד לפרויקט:",
         "site_label": "שם אתר הפרויקט:",
-        "site_ph": "אשלים / עמק הירדן (אנלייט)",
+        "site_ph": "פרויקט אלפא / אתר פרויקט",
         "vat_label": "שיעור מע\"מ",
         "vat_rec": "אחוז החזר מע\"מ (%)",
         "vat_sup": "המע\"מ משולם על ידי הספק במסגרת תנאי המסחר",
@@ -83,7 +83,7 @@ T = {
         "dest_port": "Destination Port:",
         "dest_country": "Project Destination Country:",
         "site_label": "Project Site Name:",
-        "site_ph": "Project Site / Site Address",
+        "site_ph": "Project Site Name / Alpha Site",
         "vat_label": "VAT Rate",
         "vat_rec": "VAT Recovery Rate (%)",
         "vat_sup": "VAT paid by supplier under commercial terms",
@@ -110,7 +110,6 @@ txt = T[current_lang]
 direction_css = "rtl" if is_hebrew else "ltr"
 text_align_css = "right" if is_hebrew else "left"
 
-# תיקון הסלקטור הרחב ב־CSS למניעת פגיעה ברכיבי Streamlit פנימיים
 st.markdown(
     f"""
     <style>
@@ -506,7 +505,6 @@ with tab3:
         drayage_access = st.number_input("הובלת ציוד נלווה ליחידה ($):" if is_hebrew else "Accessory Trucking per unit ($):", value=850.0, step=100.0, key="dray_access")
         drayage_solar = st.number_input("הובלת ציוד סולארי ליחידה ($):" if is_hebrew else "Solar PV Trucking per unit ($):", value=950.0, step=100.0, key="dray_solar")
 
-    # תיקון מטבע הערה ל־EUR או USD לפי תצוגה
     drayage_note_msg = (
         "💡 **הערה מקצועית למשקל חריג (42–45 טון DG):** התעריף המומלץ למכולות BESS הוא **€4,500** כמחיר בסיס למרחקים קצרים." if is_hebrew else
         "💡 **Professional note for heavy DG units (42–45 tons):** Baseline of **€4,500** for short distances."
@@ -578,7 +576,6 @@ with tab4:
     requires_heavy_lift = st.checkbox("נדרש סקר מטענים כבדים / מנוף עוגן (Heavy-Lift Survey)" if is_hebrew else "Heavy-Lift Survey Required", value=is_bess, key="hl_survey_toggle")
     heavy_lift_survey_cost = st.number_input("עלות סקר מטענים כבדים ($):" if is_hebrew else "Heavy-Lift Survey Cost ($):", value=2500.0, step=250.0, key="hl_cost_input") if requires_heavy_lift else 0.0
 
-# מילוי הטאבים הריקים בתוכן מקצועי ושימושי
 if is_european_dest and tab5_eu is not None:
     with tab5_eu:
         st.subheader("🗺️ הנחות מסלולים אינדיקטיביות באירופה (Route & Corridor Analysis)")
@@ -587,9 +584,9 @@ if is_european_dest and tab5_eu is not None:
             "Comparative overview of primary ocean and multimodal corridors for renewable energy and BESS projects in Europe:"
         )
         eu_route_data = [
-            {"Route": "Asia via Constanța (Romania)", "Transit": "32-35 Days", "Advantage": "Optimal for Eastern Europe / Balkan projects (Iepurești, Ghimpați)", "Suitability": "High for Solar + BESS"},
-            {"Route": "Asia via Piraeus (Greece)", "Transit": "28-31 Days", "Advantage": "Fastest maritime entry to Southern/Central Europe, robust rail connections", "Suitability": "High"},
-            {"Route": "Asia via Rotterdam / Antwerp (North Europe)", "Transit": "30-33 Days", "Advantage": "Unmatched heavy-lift and barge infrastructure, direct Rhine/Danube access", "Suitability": "Maximum Flexibility"},
+            {"Route": "Asia via Constanța (Romania)", "Transit": "32-35 Days", "Advantage": "Optimal for Eastern Europe / Balkan projects", "Suitability": "High for Solar + BESS"},
+            {"Route": "Asia via Piraeus (Greece)", "Transit": "28-31 Days", "Advantage": "Fastest maritime entry to Southern/Central Europe", "Suitability": "High"},
+            {"Route": "Asia via Rotterdam / Antwerp (North Europe)", "Transit": "30-33 Days", "Advantage": "Unmatched heavy-lift and barge infrastructure", "Suitability": "Maximum Flexibility"},
             {"Route": "Multimodal via Hamburg to Poland/Germany", "Transit": "35-38 Days", "Advantage": "Direct rail/multimodal forwarding to Central European hubs", "Suitability": "Standard Grid Projects"}
         ]
         st.dataframe(pd.DataFrame(eu_route_data), use_container_width=True)
@@ -608,7 +605,6 @@ if is_european_dest and tab_projects is not None:
         ]
         st.dataframe(pd.DataFrame(enlight_projects_data), use_container_width=True)
 
-# קריאה לפונקציית החישוב הטהורה מתוך calc.py
 calc_results = calculate_project_costs(
     bess_count=bess_count, bess_exw=bess_exw,
     oog_count=oog_count, oog_exw=oog_exw,
@@ -669,7 +665,6 @@ with tab_summary:
     st.markdown("---")
     st.subheader(txt["breakdown_title"])
 
-    # חישוב עלויות ליחידה עבור הצגה מפורטת בטבלה (במקום מקפים)
     total_units_for_calc = calc_results["total_containers_project"]
     bess_oog_units = max(1.0, float(bess_count + oog_count))
 
